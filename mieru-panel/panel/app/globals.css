@@ -1054,10 +1054,18 @@ h3,
   color: var(--text-muted);
 }
 
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
 .field input[type='text'],
 .field input[type='password'],
 .field input[type='number'],
-.field input {
+.field input,
+.field select,
+.field textarea {
   width: 100%;
   background: color-mix(in oklab, var(--bg-base) 65%, var(--bg-elevated));
   border: 1px solid var(--border);
@@ -1068,9 +1076,29 @@ h3,
   color: var(--text-primary);
   outline: none;
   box-sizing: border-box;
+  appearance: none;
 }
 
-.field input:focus {
+/* Native dropdown caret on selects (since we set appearance:none above). */
+.field select {
+  background-image: linear-gradient(
+      45deg,
+      transparent 50%,
+      var(--text-secondary) 50%
+    ),
+    linear-gradient(135deg, var(--text-secondary) 50%, transparent 50%);
+  background-position:
+    calc(100% - 16px) 18px,
+    calc(100% - 11px) 18px;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+  padding-right: 36px;
+  cursor: pointer;
+}
+
+.field input:focus,
+.field select:focus,
+.field textarea:focus {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--accent-dim);
 }
@@ -1852,16 +1880,37 @@ h3,
   padding: 8px 10px;
 }
 
-/* Tabbed dashboard panes: hidden via [hidden] without unmount, so tab
-   switches don't trigger fetch flickering. */
-.tab-pane[hidden] {
-  display: none !important;
+/* Tabbed dashboard panes are stacked: only the active pane is visible,
+   inactive panes stay mounted with full width via position:absolute, so
+   Recharts' ResizeObserver does not see width=0 → no white flicker on
+   tab switch. */
+.tabs-stack {
+  position: relative;
+  width: 100%;
 }
 
 .tab-pane {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  width: 100%;
+}
+
+.tab-pane.inactive {
+  position: absolute;
+  top: 0;
+  left: 0;
+  visibility: hidden;
+  pointer-events: none;
+  z-index: -1;
+  /* Keep layout intact for measurement, just don't animate it. */
+}
+
+.tab-pane.active {
+  position: relative;
+  visibility: visible;
+  pointer-events: auto;
+  z-index: 1;
 }
 
 /* Inline quota editor inside the expanded user subscription panel. */

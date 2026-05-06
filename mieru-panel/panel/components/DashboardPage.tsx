@@ -196,7 +196,8 @@ export function DashboardPage() {
         <StatCard label={t('stat_server_status')} value={statusLabel} />
       </div>
 
-      <div className="tab-pane" hidden={tab !== 'users'}>
+      <div className={`tabs-stack tab-${tab}`}>
+      <div className={`tab-pane ${tab === 'users' ? 'active' : 'inactive'}`}>
         <>
           {!loading && users.length === 0 ? (
             <div className="dashboard-card empty-state">
@@ -271,6 +272,7 @@ export function DashboardPage() {
                         fill={accentColor}
                         name={t('stats_day')}
                         radius={[6, 6, 0, 0]}
+                        isAnimationActive={false}
                       />
                     </BarChart>
                   </ResponsiveContainer>
@@ -310,7 +312,7 @@ export function DashboardPage() {
         </>
       </div>
 
-      <div className="tab-pane" hidden={tab !== 'server'}>
+      <div className={`tab-pane ${tab === 'server' ? 'active' : 'inactive'}`}>
         <div className="dashboard-card">
           <ServerStatus initialStatus={status} onStatusChange={setStatus} />
         </div>
@@ -321,8 +323,9 @@ export function DashboardPage() {
         <AdminCredentialsPanel />
       </div>
 
-      <div className="tab-pane" hidden={tab !== 'logs'}>
+      <div className={`tab-pane ${tab === 'logs' ? 'active' : 'inactive'}`}>
         <LogsPanel />
+      </div>
       </div>
 
       <AddUserModal open={showAdd} onClose={() => setShowAdd(false)} onSubmit={onAddUser} />
