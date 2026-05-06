@@ -44,6 +44,3 @@ __pycache__/
 
 # Local reference only (separate clone); do not commit
 /sharx-code/
-
-# WIP Next.js scaffold (not wired to Go embed yet)
-/mieru-panel/panel/

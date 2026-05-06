@@ -23,8 +23,8 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-//go:embed web/dist web/dist/*
-var webDist embed.FS
+//go:embed panel/out panel/out/*
+var uiDist embed.FS
 
 type mitaAdapter struct {
 	client *mita.Client
@@ -88,7 +88,7 @@ func main() {
 	}
 
 	mux := http.NewServeMux()
-	frontendFS, err := fs.Sub(webDist, "web/dist")
+	frontendFS, err := fs.Sub(uiDist, "panel/out")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -190,12 +190,23 @@ func spaHandler(static fs.FS) http.Handler {
 			p = "/"
 		}
 		target := strings.TrimPrefix(p, "/")
+		var candidates []string
 		if target == "" {
-			target = "index.html"
+			candidates = []string{"index.html"}
+		} else {
+			candidates = []string{
+				target,
+				target + ".html",
+				path.Join(target, "index.html"),
+			}
 		}
-		f, err := static.Open(target)
-		if err == nil {
+		for _, candidate := range candidates {
+			f, err := static.Open(candidate)
+			if err != nil {
+				continue
+			}
 			_ = f.Close()
+			r.URL.Path = "/" + candidate
 			fileServer.ServeHTTP(w, r)
 			return
 		}

@@ -1,8 +1,8 @@
 FROM node:22-alpine AS web-builder
-WORKDIR /web
-COPY web/package*.json ./
+WORKDIR /panel
+COPY panel/package*.json ./
 RUN npm install
-COPY web ./
+COPY panel ./
 RUN npm run build
 
 FROM golang:1.24-alpine AS builder
@@ -10,7 +10,7 @@ WORKDIR /app
 COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
-COPY --from=web-builder /web/dist ./web/dist
+COPY --from=web-builder /panel/out ./panel/out
 RUN CGO_ENABLED=0 GOOS=linux go build -o mieru-panel .
 
 FROM alpine:3.21
