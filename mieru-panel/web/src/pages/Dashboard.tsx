@@ -191,7 +191,7 @@ export function DashboardPage() {
                     background: 'var(--bg-elevated)',
                     border: '1px solid var(--border)',
                     borderRadius: 8,
-                    fontFamily: 'JetBrains Mono',
+                    fontFamily: 'Fira Mono',
                   }}
                 />
                 <Area

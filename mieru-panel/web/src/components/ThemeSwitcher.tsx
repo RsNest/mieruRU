@@ -14,7 +14,7 @@ export function ThemeSwitcher() {
   const setTheme = useSettingsStore((state) => state.setTheme)
 
   return (
-    <div className="theme-switcher" role="group" aria-label="theme switcher">
+    <div className="theme-switcher" role="group" aria-label={t('theme_switcher_aria')}>
       {options.map((option) => (
         <button
           key={option.value}
@@ -22,6 +22,8 @@ export function ThemeSwitcher() {
           className={`theme-btn ${theme === option.value ? 'active' : ''}`}
           onClick={() => setTheme(option.value)}
           title={t(option.labelKey)}
+          aria-label={t(option.labelKey)}
+          aria-pressed={theme === option.value}
         >
           {option.icon}
         </button>

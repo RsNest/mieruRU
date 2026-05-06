@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/auth'
 import { useSettingsStore } from '../store/settings'
+import { syncThemeColorMeta } from '../syncThemeMeta'
 
 export function LoginPage() {
   const { t, i18n } = useTranslation()
@@ -18,6 +19,7 @@ export function LoginPage() {
   const [shakeSeed, setShakeSeed] = useState(0)
 
   document.documentElement.setAttribute('data-theme', theme)
+  syncThemeColorMeta(theme)
   if (i18n.language !== lang) {
     void i18n.changeLanguage(lang)
   }
@@ -36,6 +38,7 @@ export function LoginPage() {
 
   return (
     <div className="login-page">
+      <div className="login-backdrop" aria-hidden />
       <div className="login-glyph" aria-hidden="true">
         見
       </div>

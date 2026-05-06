@@ -2,6 +2,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import { Link, Outlet, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { dashboardTabParams, parseDashboardTab } from '../dashboardTab'
+import { syncThemeColorMeta } from '../syncThemeMeta'
 import { useAuthStore } from '../store/auth'
 import { useSettingsStore } from '../store/settings'
 import { LangSwitcher } from './LangSwitcher'
@@ -18,6 +19,7 @@ export function Layout() {
   const logout = useAuthStore((state) => state.logout)
 
   document.documentElement.setAttribute('data-theme', theme)
+  syncThemeColorMeta(theme)
   if (i18n.language !== lang) {
     void i18n.changeLanguage(lang)
   }

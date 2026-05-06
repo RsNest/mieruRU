@@ -76,4 +76,6 @@ export const ru = {
   theme_midnight: 'Midnight',
   theme_sakura: 'Sakura',
   theme_ghost: 'Ghost',
+  theme_switcher_aria: 'Оформление',
+  lang_switcher_aria: 'Язык интерфейса',
 } as const

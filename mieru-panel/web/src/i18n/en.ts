@@ -78,4 +78,6 @@ export const en = {
   theme_midnight: 'Midnight',
   theme_sakura: 'Sakura',
   theme_ghost: 'Ghost',
+  theme_switcher_aria: 'Theme',
+  lang_switcher_aria: 'Language',
 } satisfies Record<keyof typeof ru, string>

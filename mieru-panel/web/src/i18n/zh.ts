@@ -78,4 +78,6 @@ export const zh = {
   theme_midnight: '深夜',
   theme_sakura: '樱花',
   theme_ghost: '纸白',
+  theme_switcher_aria: '主题',
+  lang_switcher_aria: '界面语言',
 } satisfies Record<keyof typeof ru, string>

@@ -9,7 +9,7 @@ const options: Array<{ value: Lang; label: string }> = [
 ]
 
 export function LangSwitcher() {
-  const { i18n } = useTranslation()
+  const { t, i18n } = useTranslation()
   const lang = useSettingsStore((state) => state.lang)
   const setLang = useSettingsStore((state) => state.setLang)
 
@@ -19,13 +19,15 @@ export function LangSwitcher() {
   }
 
   return (
-    <div className="lang-switcher" role="group" aria-label="language switcher">
+    <div className="lang-switcher" role="group" aria-label={t('lang_switcher_aria')}>
       {options.map((option) => (
         <button
           key={option.value}
           type="button"
           className={`lang-btn ${lang === option.value ? 'active' : ''}`}
           onClick={() => onChange(option.value)}
+          aria-label={option.label}
+          aria-pressed={lang === option.value}
         >
           {option.label}
         </button>
