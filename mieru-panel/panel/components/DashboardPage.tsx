@@ -196,7 +196,7 @@ export function DashboardPage() {
         <StatCard label={t('stat_server_status')} value={statusLabel} />
       </div>
 
-      {tab === 'users' ? (
+      <div className="tab-pane" hidden={tab !== 'users'}>
         <>
           {!loading && users.length === 0 ? (
             <div className="dashboard-card empty-state">
@@ -308,22 +308,22 @@ export function DashboardPage() {
             />
           </div>
         </>
-      ) : null}
+      </div>
 
-      {tab === 'server' ? (
-        <>
-          <div className="dashboard-card">
-            <ServerStatus initialStatus={status} onStatusChange={setStatus} />
-          </div>
-          <ConnectionsPanel />
-          <ServerConfigPanel />
-          <AdvancedSettingsPanel />
-          <ConfigBackupPanel onRestored={() => void fetchData(false)} />
-          <AdminCredentialsPanel />
-        </>
-      ) : null}
+      <div className="tab-pane" hidden={tab !== 'server'}>
+        <div className="dashboard-card">
+          <ServerStatus initialStatus={status} onStatusChange={setStatus} />
+        </div>
+        <ConnectionsPanel />
+        <ServerConfigPanel />
+        <AdvancedSettingsPanel />
+        <ConfigBackupPanel onRestored={() => void fetchData(false)} />
+        <AdminCredentialsPanel />
+      </div>
 
-      {tab === 'logs' ? <LogsPanel /> : null}
+      <div className="tab-pane" hidden={tab !== 'logs'}>
+        <LogsPanel />
+      </div>
 
       <AddUserModal open={showAdd} onClose={() => setShowAdd(false)} onSubmit={onAddUser} />
 

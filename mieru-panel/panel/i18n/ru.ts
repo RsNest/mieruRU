@@ -178,4 +178,6 @@ export const ru = {
   // misc
   loading: 'Загрузка…',
   saving: 'Сохранение…',
+  sub_quota_edit_title: 'Изменить квоты',
+  sub_quota_save: 'Применить квоты',
 } as const

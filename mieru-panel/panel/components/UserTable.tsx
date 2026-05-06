@@ -88,6 +88,7 @@ export function UserTable({
   return (
     <div className="user-table">
       <div className="user-table-head">
+        <span aria-hidden="true" />
         <span>{t('users_col_name')}</span>
         <span>{t('users_col_quota_day')}</span>
         <span>{t('users_col_quota_month')}</span>

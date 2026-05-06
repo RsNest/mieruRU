@@ -178,7 +178,10 @@ export function UserRow({
         userName={user.name}
         subUrl={subUrl}
         newPassword={newPassword}
+        quotaDayMB={user.quotaDayMB}
+        quotaMonMB={user.quotaMonMB}
         onClearPassword={onClearPassword}
+        onUpdateQuotas={onUpdate}
       />
     </div>
   )

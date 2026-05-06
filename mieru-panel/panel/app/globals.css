@@ -1852,6 +1852,38 @@ h3,
   padding: 8px 10px;
 }
 
+/* Tabbed dashboard panes: hidden via [hidden] without unmount, so tab
+   switches don't trigger fetch flickering. */
+.tab-pane[hidden] {
+  display: none !important;
+}
+
+.tab-pane {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Inline quota editor inside the expanded user subscription panel. */
+.quota-editor {
+  margin-top: 14px;
+  padding: 12px;
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  background: color-mix(in oklab, var(--bg-elevated) 50%, transparent);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.quota-editor-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
 /* === Daylight theme: classic light pastel with crisp accents === */
 [data-theme='daylight'] {
   --bg-base: #f6f8fc;

@@ -166,4 +166,6 @@ export const zh = {
   backup_restore_ok: '配置已还原，mita 已重新同步。',
   loading: '加载中…',
   saving: '保存中…',
+  sub_quota_edit_title: '修改配额',
+  sub_quota_save: '应用配额',
 } satisfies Record<keyof typeof ru, string>

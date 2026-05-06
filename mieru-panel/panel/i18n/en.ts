@@ -171,4 +171,6 @@ export const en = {
   backup_restore_ok: 'Configuration restored, mita re-synced.',
   loading: 'Loading…',
   saving: 'Saving…',
+  sub_quota_edit_title: 'Edit quotas',
+  sub_quota_save: 'Apply quotas',
 } satisfies Record<keyof typeof ru, string>

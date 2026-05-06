@@ -12,10 +12,25 @@ interface SubPanelProps {
   userName: string
   subUrl: string
   newPassword: string | null
+  quotaDayMB: number
+  quotaMonMB: number
   onClearPassword: () => void
+  onUpdateQuotas: (
+    name: string,
+    payload: { quotaDayMB?: number; quotaMonthMB?: number },
+  ) => Promise<void>
 }
 
-export function SubPanel({ open, userName, subUrl, newPassword, onClearPassword }: SubPanelProps) {
+export function SubPanel({
+  open,
+  userName,
+  subUrl,
+  newPassword,
+  quotaDayMB,
+  quotaMonMB,
+  onClearPassword,
+  onUpdateQuotas,
+}: SubPanelProps) {
   const { t } = useTranslation()
   const { success, error } = useToast()
   const [fgColor, setFgColor] = useState('black')
@@ -23,6 +38,14 @@ export function SubPanel({ open, userName, subUrl, newPassword, onClearPassword 
   const [configOpen, setConfigOpen] = useState(false)
   const [configJson, setConfigJson] = useState<string | null>(null)
   const [configLoading, setConfigLoading] = useState(false)
+  const [draftDay, setDraftDay] = useState(String(quotaDayMB))
+  const [draftMonth, setDraftMonth] = useState(String(quotaMonMB))
+  const [savingQuota, setSavingQuota] = useState(false)
+
+  useEffect(() => {
+    setDraftDay(String(quotaDayMB))
+    setDraftMonth(String(quotaMonMB))
+  }, [quotaDayMB, quotaMonMB, open])
 
   useEffect(() => {
     const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()
@@ -49,6 +72,20 @@ export function SubPanel({ open, userName, subUrl, newPassword, onClearPassword 
       success(t('toast_copied'))
     } catch {
       error(t('toast_error'))
+    }
+  }
+
+  const saveQuotas = async () => {
+    const day = Math.max(0, Number(draftDay) || 0)
+    const month = Math.max(0, Number(draftMonth) || 0)
+    if (day === quotaDayMB && month === quotaMonMB) return
+    setSavingQuota(true)
+    try {
+      await onUpdateQuotas(userName, { quotaDayMB: day, quotaMonthMB: month })
+    } catch (err) {
+      error((err as Error).message || t('toast_error'))
+    } finally {
+      setSavingQuota(false)
     }
   }
 
@@ -122,6 +159,41 @@ export function SubPanel({ open, userName, subUrl, newPassword, onClearPassword 
                 </button>
               </div>
               <p className="sub-hint">{t('sub_qr_hint')}</p>
+
+              <div className="quota-editor">
+                <strong className="quota-editor-title">{t('sub_quota_edit_title')}</strong>
+                <div className="field-grid">
+                  <label className="field">
+                    {t('modal_quota_day')}
+                    <input
+                      type="number"
+                      min={0}
+                      value={draftDay}
+                      onChange={(ev) => setDraftDay(ev.target.value)}
+                    />
+                  </label>
+                  <label className="field">
+                    {t('modal_quota_month')}
+                    <input
+                      type="number"
+                      min={0}
+                      value={draftMonth}
+                      onChange={(ev) => setDraftMonth(ev.target.value)}
+                    />
+                  </label>
+                </div>
+                <div className="inline-actions">
+                  <button
+                    type="button"
+                    className="btn-primary"
+                    onClick={() => void saveQuotas()}
+                    disabled={savingQuota}
+                  >
+                    {savingQuota ? t('saving') : t('sub_quota_save')}
+                  </button>
+                </div>
+              </div>
+
               {passwordBlock}
               <div className="inline-actions" style={{ marginTop: 12 }}>
                 <button
