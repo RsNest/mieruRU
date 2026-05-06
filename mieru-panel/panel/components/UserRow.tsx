@@ -144,13 +144,31 @@ export function UserRow({
           )}
         </div>
         <div className="row-actions">
-          <button type="button" className="action-btn" onClick={onToggleOpen}>
-            {t('users_action_sub')} {open ? '↑' : '↓'}
+          <button
+            type="button"
+            className="action-btn"
+            onClick={onToggleOpen}
+            title={t('users_action_sub')}
+          >
+            <span className="hide-mobile">{t('users_action_sub')}</span>
+            <span aria-hidden="true">{open ? '↑' : '↓'}</span>
           </button>
-          <button type="button" className="action-btn" onClick={() => onRegen(user.name)}>
+          <button
+            type="button"
+            className="action-btn icon-only"
+            onClick={() => onRegen(user.name)}
+            title={t('users_action_regen')}
+            aria-label={t('users_action_regen')}
+          >
             ↺
           </button>
-          <button type="button" className="action-btn danger" onClick={() => onDelete(user.name)}>
+          <button
+            type="button"
+            className="action-btn icon-only danger"
+            onClick={() => onDelete(user.name)}
+            title={t('users_action_delete')}
+            aria-label={t('users_action_delete')}
+          >
             ✕
           </button>
         </div>

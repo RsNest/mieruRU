@@ -578,6 +578,11 @@ h3,
   align-items: center;
   justify-content: space-between;
   gap: 10px;
+  flex-wrap: wrap;
+}
+
+.section-head > div {
+  min-width: 0;
 }
 
 .btn-primary,
@@ -585,7 +590,7 @@ h3,
   position: relative;
   overflow: hidden;
   width: auto;
-  padding: 12px 16px;
+  padding: 10px 18px;
   background: linear-gradient(135deg, var(--ifm-color-primary, var(--accent)), var(--ifm-color-secondary, var(--accent-ambient))) !important;
   color: #0a0a0a !important;
   border: none;
@@ -593,6 +598,9 @@ h3,
   font-family: var(--font-sans) !important;
   font-size: 14px;
   font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+  flex-shrink: 0;
   cursor: pointer;
   letter-spacing: 0.02em;
   box-shadow: var(--accent-glow);
@@ -629,7 +637,7 @@ h3,
 .btn-secondary,
 .ghost-btn {
   width: auto;
-  padding: 12px 16px;
+  padding: 10px 16px;
   background: color-mix(in oklab, var(--bg-elevated) 70%, transparent);
   color: var(--text-secondary);
   border: 1px solid var(--border);
@@ -637,6 +645,9 @@ h3,
   font-family: var(--font-sans);
   font-size: 14px;
   font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+  flex-shrink: 0;
   cursor: pointer;
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
@@ -684,7 +695,7 @@ h3,
 
 .user-table-head {
   display: grid;
-  grid-template-columns: 36px minmax(160px, 1.2fr) 1fr 1fr 120px 180px;
+  grid-template-columns: 36px minmax(160px, 1.2fr) 1fr 1fr 120px 220px;
   gap: 8px;
 }
 
@@ -706,7 +717,7 @@ h3,
 
 .user-row {
   display: grid;
-  grid-template-columns: 36px minmax(160px, 1.2fr) 1fr 1fr 120px 180px;
+  grid-template-columns: 36px minmax(160px, 1.2fr) 1fr 1fr 120px 220px;
   align-items: center;
   gap: 8px;
   border-bottom: 1px solid var(--border);
@@ -750,13 +761,15 @@ h3,
 
 .row-actions {
   display: inline-flex;
-  gap: 8px;
+  flex-wrap: wrap;
+  gap: 6px;
   justify-content: flex-end;
 }
 
 .action-btn {
-  width: 28px;
+  min-width: 28px;
   height: 28px;
+  padding: 0 10px;
   border-radius: 6px;
   border: 1px solid var(--border);
   background: none;
@@ -765,8 +778,19 @@ h3,
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 13px;
+  gap: 4px;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
   transition: all 0.15s ease;
+}
+
+/* Icon-only action buttons (regen, delete) keep the original square. */
+.action-btn.icon-only {
+  width: 28px;
+  padding: 0;
+  font-size: 13px;
 }
 
 .action-btn:hover {
@@ -1695,7 +1719,20 @@ h3,
   border: 1px solid var(--border);
   background: var(--bg-elevated);
   color: var(--text-primary);
-  min-width: 220px;
+  width: 240px;
+  max-width: 100%;
+}
+
+@media (max-width: 640px) {
+  .search-input {
+    width: 100%;
+    flex: 1 1 100%;
+  }
+
+  .inline-actions {
+    width: 100%;
+    flex-direction: row;
+  }
 }
 
 .search-input:focus {
@@ -1772,6 +1809,17 @@ h3,
 .user-row-wrap.is-expired {
   opacity: 0.65;
   background: color-mix(in oklab, #dc2626 6%, transparent);
+}
+
+/* Helper utility used by row-actions to show text on desktop only. */
+.hide-mobile {
+  display: inline;
+}
+
+@media (max-width: 768px) {
+  .hide-mobile {
+    display: none;
+  }
 }
 
 /* Generic small badge (e.g. session count) */

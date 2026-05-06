@@ -18,7 +18,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const dashTab = parseDashboardTab(searchParams)
-  const routeKey = pathname + (searchParams.toString() ? `?${searchParams.toString()}` : '')
+  // The route key intentionally does NOT include `?tab=`. The dashboard handles
+  // tab switching internally (it just reads `?tab` to highlight the right
+  // section). Including search params would force AnimatePresence to unmount
+  // and remount the entire page on every tab click, causing a white flash and
+  // a fresh data refetch.
+  const routeKey = pathname
   const { t, i18n } = useTranslation()
   const theme = useSettingsStore((state) => state.theme)
   const lang = useSettingsStore((state) => state.lang)
