@@ -825,6 +825,9 @@ body {
 }
 
 .login-card {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
   width: 100%;
   max-width: 360px;
   background: var(--bg-card);
@@ -838,7 +841,6 @@ body {
 
 .login-logo {
   text-align: center;
-  margin-bottom: 28px;
 }
 
 .login-logo-kanji {
