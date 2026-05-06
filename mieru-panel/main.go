@@ -104,7 +104,11 @@ func main() {
 	mux.Handle("/api/", app.RequireAuth(protected))
 
 	cfg := store.Snapshot()
-	addr := cfg.BindAddr + ":" + itoa(cfg.PanelPort)
+	host := strings.TrimSpace(os.Getenv("PANEL_HOST"))
+	if host == "" {
+		host = "0.0.0.0"
+	}
+	addr := host + ":" + itoa(cfg.PanelPort)
 	log.Printf("mieru-panel listening on %s", addr)
 	if err := http.ListenAndServe(addr, mux); err != nil {
 		log.Fatal(err)
