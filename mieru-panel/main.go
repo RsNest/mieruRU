@@ -3,8 +3,8 @@ package main
 import (
 	"crypto/rand"
 	"embed"
-	"encoding/json"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"flag"
 	"io/fs"
@@ -101,6 +101,7 @@ func main() {
 	protected.HandleFunc("/api/status", app.HandleStatus)
 	protected.HandleFunc("/api/mita/start", app.HandleStart)
 	protected.HandleFunc("/api/mita/stop", app.HandleStop)
+	protected.HandleFunc("/api/admin/credentials", app.HandleAdminCredentials)
 	mux.Handle("/api/", app.RequireAuth(protected))
 
 	cfg := store.Snapshot()
@@ -118,12 +119,12 @@ func main() {
 func runInit(args []string) error {
 	fs := flag.NewFlagSet("init", flag.ContinueOnError)
 	var (
-		configPath     = fs.String("config", envOr("PANEL_CONFIG", "data/config.json"), "path to config file")
-		serverIP       = fs.String("server-ip", "", "mita server public IP")
-		adminPass      = fs.String("admin-pass", "", "admin password")
-		firstUser      = fs.String("first-user", "", "first username")
-		firstUserPass  = fs.String("first-user-pass", "", "first user password")
-		defaultPort    = fs.Int("default-port", 2015, "default mita port")
+		configPath      = fs.String("config", envOr("PANEL_CONFIG", "data/config.json"), "path to config file")
+		serverIP        = fs.String("server-ip", "", "mita server public IP")
+		adminPass       = fs.String("admin-pass", "", "admin password")
+		firstUser       = fs.String("first-user", "", "first username")
+		firstUserPass   = fs.String("first-user-pass", "", "first user password")
+		defaultPort     = fs.Int("default-port", 2015, "default mita port")
 		serverPortRange = fs.String("server-port-range", "2012-2022", "server port range")
 	)
 	if err := fs.Parse(args); err != nil {
@@ -142,6 +143,7 @@ func runInit(args []string) error {
 		return err
 	}
 	cfg := config.Config{
+		AdminUsername:     "admin",
 		AdminPasswordHash: string(hash),
 		ServerIP:          *serverIP,
 		ServerPortRange:   *serverPortRange,

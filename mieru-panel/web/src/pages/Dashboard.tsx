@@ -1,17 +1,18 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useSearchParams } from 'react-router-dom'
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { api } from '../api/client'
 import { AddUserModal } from '../components/AddUserModal'
+import { AdminCredentialsPanel } from '../components/AdminCredentialsPanel'
 import { ConfirmModal } from '../components/ConfirmModal'
 import { ServerStatus } from '../components/ServerStatus'
 import { StatCard } from '../components/StatCard'
 import { Toasts } from '../components/Toast'
 import { UserTable } from '../components/UserTable'
 import { useToast } from '../components/useToast'
+import { dashboardTabParams, parseDashboardTab } from '../dashboardTab'
 import type { ServerStatus as ServerStatusValue, User } from '../types'
-
-type Tab = 'users' | 'stats' | 'server'
 
 function parseTraffic(raw?: string): number {
   if (!raw) return 0
@@ -27,7 +28,8 @@ function parseTraffic(raw?: string): number {
 export function DashboardPage() {
   const { t } = useTranslation()
   const { success, error } = useToast()
-  const [tab, setTab] = useState<Tab>('users')
+  const [searchParams, setSearchParams] = useSearchParams()
+  const tab = parseDashboardTab(searchParams)
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [hasError, setHasError] = useState(false)
@@ -119,13 +121,25 @@ export function DashboardPage() {
     <section className="dashboard-stack">
       <Toasts />
       <div className="tabs-row">
-        <button type="button" className={`tab-btn ${tab === 'users' ? 'active' : ''}`} onClick={() => setTab('users')}>
+        <button
+          type="button"
+          className={`tab-btn ${tab === 'users' ? 'active' : ''}`}
+          onClick={() => setSearchParams(dashboardTabParams('users'))}
+        >
           {t('tab_users')}
         </button>
-        <button type="button" className={`tab-btn ${tab === 'stats' ? 'active' : ''}`} onClick={() => setTab('stats')}>
+        <button
+          type="button"
+          className={`tab-btn ${tab === 'stats' ? 'active' : ''}`}
+          onClick={() => setSearchParams(dashboardTabParams('stats'))}
+        >
           {t('tab_stats')}
         </button>
-        <button type="button" className={`tab-btn ${tab === 'server' ? 'active' : ''}`} onClick={() => setTab('server')}>
+        <button
+          type="button"
+          className={`tab-btn ${tab === 'server' ? 'active' : ''}`}
+          onClick={() => setSearchParams(dashboardTabParams('server'))}
+        >
           {t('tab_server')}
         </button>
       </div>
@@ -213,9 +227,12 @@ export function DashboardPage() {
       ) : null}
 
       {tab === 'server' ? (
-        <div className="dashboard-card">
-          <ServerStatus initialStatus={status} onStatusChange={setStatus} />
-        </div>
+        <>
+          <div className="dashboard-card">
+            <ServerStatus initialStatus={status} onStatusChange={setStatus} />
+          </div>
+          <AdminCredentialsPanel />
+        </>
       ) : null}
 
       <AddUserModal open={showAdd} onClose={() => setShowAdd(false)} onSubmit={onAddUser} />

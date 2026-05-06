@@ -804,24 +804,29 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--bg-base);
   position: relative;
   overflow: hidden;
+  background: radial-gradient(
+    ellipse 85% 70% at 50% 38%,
+    color-mix(in srgb, var(--bg-card) 40%, var(--bg-base)),
+    var(--bg-base)
+  );
 }
 
 .login-glyph {
   position: absolute;
   font-family: 'Noto Sans JP', serif;
-  font-size: 60vw;
+  font-size: min(38vw, 260px);
   font-weight: 300;
   color: var(--accent);
-  opacity: var(--glyph-opacity);
+  opacity: calc(var(--glyph-opacity) * 3.2);
   line-height: 1;
   pointer-events: none;
   user-select: none;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
+  filter: saturate(0.65);
 }
 
 .login-card {
@@ -830,13 +835,18 @@ body {
   gap: 16px;
   width: 100%;
   max-width: 360px;
-  background: var(--bg-card);
+  background: color-mix(in srgb, var(--bg-card) 92%, transparent);
   border: 1px solid var(--border-bright);
   border-radius: 20px;
   padding: 36px 32px;
   position: relative;
   z-index: 1;
-  box-shadow: var(--accent-glow);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.28);
+}
+
+[data-theme='ghost'] .login-card {
+  background: color-mix(in srgb, var(--bg-card) 96%, var(--bg-base));
+  box-shadow: 0 12px 40px rgba(26, 26, 46, 0.09);
 }
 
 .login-logo {
@@ -845,9 +855,9 @@ body {
 
 .login-logo-kanji {
   font-family: 'Noto Sans JP', serif;
-  font-size: 52px;
+  font-size: 44px;
   font-weight: 300;
-  color: var(--accent);
+  color: color-mix(in srgb, var(--accent) 75%, var(--text-secondary));
   line-height: 1;
   display: block;
 }
@@ -858,6 +868,17 @@ body {
   letter-spacing: 3px;
   text-transform: uppercase;
   color: var(--text-muted);
+  margin-top: 8px;
+}
+
+.admin-credentials-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 420px;
+}
+
+.admin-credentials-card {
   margin-top: 8px;
 }
 

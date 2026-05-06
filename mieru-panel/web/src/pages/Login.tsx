@@ -4,20 +4,29 @@ import { motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/auth'
+import { useSettingsStore } from '../store/settings'
 
 export function LoginPage() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const navigate = useNavigate()
   const login = useAuthStore((state) => state.login)
+  const theme = useSettingsStore((state) => state.theme)
+  const lang = useSettingsStore((state) => state.lang)
+  const [username, setUsername] = useState('admin')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [shakeSeed, setShakeSeed] = useState(0)
+
+  document.documentElement.setAttribute('data-theme', theme)
+  if (i18n.language !== lang) {
+    void i18n.changeLanguage(lang)
+  }
 
   const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setError('')
     try {
-      await login(password)
+      await login(username.trim(), password)
       navigate('/')
     } catch {
       setError(t('login_error'))
@@ -48,10 +57,22 @@ export function LoginPage() {
           <div className="login-logo-title">{t('app_title')}</div>
         </div>
         <div className="field">
+          <label htmlFor="username">{t('login_username')}</label>
+          <input
+            id="username"
+            type="text"
+            autoComplete="username"
+            placeholder={t('login_username')}
+            value={username}
+            onChange={(event) => setUsername(event.target.value)}
+          />
+        </div>
+        <div className="field">
           <label htmlFor="password">{t('login_password')}</label>
           <input
             id="password"
             type="password"
+            autoComplete="current-password"
             placeholder={t('login_password')}
             value={password}
             onChange={(event) => setPassword(event.target.value)}

@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
-import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { Link, Outlet, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
+import { dashboardTabParams, parseDashboardTab } from '../dashboardTab'
 import { useAuthStore } from '../store/auth'
 import { useSettingsStore } from '../store/settings'
 import { LangSwitcher } from './LangSwitcher'
@@ -9,6 +10,8 @@ import { ThemeSwitcher } from './ThemeSwitcher'
 export function Layout() {
   const location = useLocation()
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const dashTab = parseDashboardTab(searchParams)
   const { t, i18n } = useTranslation()
   const theme = useSettingsStore((state) => state.theme)
   const lang = useSettingsStore((state) => state.lang)
@@ -51,13 +54,25 @@ export function Layout() {
           <span>{t('app_title')}</span>
         </Link>
         <nav className="nav-tabs">
-          <button type="button" className="nav-tab active">
+          <button
+            type="button"
+            className={`nav-tab ${dashTab === 'users' ? 'active' : ''}`}
+            onClick={() => setSearchParams(dashboardTabParams('users'))}
+          >
             {t('nav_users')}
           </button>
-          <button type="button" className="nav-tab">
+          <button
+            type="button"
+            className={`nav-tab ${dashTab === 'stats' ? 'active' : ''}`}
+            onClick={() => setSearchParams(dashboardTabParams('stats'))}
+          >
             {t('nav_stats')}
           </button>
-          <button type="button" className="nav-tab">
+          <button
+            type="button"
+            className={`nav-tab ${dashTab === 'server' ? 'active' : ''}`}
+            onClick={() => setSearchParams(dashboardTabParams('server'))}
+          >
             {t('nav_server')}
           </button>
         </nav>
@@ -85,15 +100,27 @@ export function Layout() {
         </AnimatePresence>
       </main>
       <nav className="mobile-bottom-nav">
-        <button type="button" className="mobile-tab active">
+        <button
+          type="button"
+          className={`mobile-tab ${dashTab === 'users' ? 'active' : ''}`}
+          onClick={() => setSearchParams(dashboardTabParams('users'))}
+        >
           <span className="mobile-tab-icon">👤</span>
           <span>{t('nav_users')}</span>
         </button>
-        <button type="button" className="mobile-tab">
+        <button
+          type="button"
+          className={`mobile-tab ${dashTab === 'stats' ? 'active' : ''}`}
+          onClick={() => setSearchParams(dashboardTabParams('stats'))}
+        >
           <span className="mobile-tab-icon">📊</span>
           <span>{t('nav_stats')}</span>
         </button>
-        <button type="button" className="mobile-tab">
+        <button
+          type="button"
+          className={`mobile-tab ${dashTab === 'server' ? 'active' : ''}`}
+          onClick={() => setSearchParams(dashboardTabParams('server'))}
+        >
           <span className="mobile-tab-icon">🖥</span>
           <span>{t('nav_server')}</span>
         </button>

@@ -30,6 +30,7 @@ type User struct {
 }
 
 type Config struct {
+	AdminUsername     string `json:"adminUsername"`
 	AdminPasswordHash string `json:"adminPasswordHash"`
 	ServerIP          string `json:"serverIP"`
 	ServerPortRange   string `json:"serverPortRange"`
@@ -114,6 +115,7 @@ func defaultConfig() (Config, error) {
 		return Config{}, err
 	}
 	return Config{
+		AdminUsername:     "admin",
 		AdminPasswordHash: string(hash),
 		ServerIP:          "127.0.0.1",
 		ServerPortRange:   "2012-2022",
@@ -126,6 +128,9 @@ func defaultConfig() (Config, error) {
 }
 
 func normalizeDefaults(cfg *Config) {
+	if cfg.AdminUsername == "" {
+		cfg.AdminUsername = "admin"
+	}
 	if cfg.PanelPort == 0 {
 		cfg.PanelPort = defaultPanelPort
 	}

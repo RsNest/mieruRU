@@ -3,15 +3,15 @@ import { api } from '../api/client'
 
 type AuthState = {
   isAuthed: boolean
-  login: (password: string) => Promise<void>
+  login: (username: string, password: string) => Promise<void>
   logout: () => Promise<void>
   bootstrap: () => Promise<void>
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
   isAuthed: false,
-  login: async (password) => {
-    await api.login(password)
+  login: async (username, password) => {
+    await api.login(username, password)
     set({ isAuthed: true })
   },
   logout: async () => {

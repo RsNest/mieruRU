@@ -28,10 +28,10 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export const api = {
-  login(password: string) {
+  login(username: string, password: string) {
     return request<LoginResponse>('/api/login', {
       method: 'POST',
-      body: JSON.stringify({ password }),
+      body: JSON.stringify({ username, password }),
     })
   },
   logout() {
@@ -72,5 +72,15 @@ export const api = {
   },
   stopServer() {
     return request<{ ok: boolean }>('/api/mita/stop', { method: 'POST' })
+  },
+  updateAdminCredentials(payload: {
+    currentPassword: string
+    newUsername: string
+    newPassword: string
+  }) {
+    return request<{ ok: boolean }>('/api/admin/credentials', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    })
   },
 }

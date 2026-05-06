@@ -11,8 +11,8 @@ import (
 	"strings"
 	"time"
 
-	"mieru-panel/config"
 	"golang.org/x/crypto/bcrypt"
+	"mieru-panel/config"
 )
 
 const sessionCookieName = "mieru_panel_session"
@@ -53,18 +53,28 @@ func (a *App) HandleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var req struct {
+		Username string `json:"username"`
 		Password string `json:"password"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		writeJSON(w, http.StatusBadRequest, apiError{Error: "invalid json"})
 		return
 	}
+	req.Username = strings.TrimSpace(req.Username)
 	cfg := a.Config.Snapshot()
+	if req.Username == "" || req.Password == "" {
+		writeJSON(w, http.StatusUnauthorized, apiError{Error: "invalid credentials"})
+		return
+	}
+	if req.Username != cfg.AdminUsername {
+		writeJSON(w, http.StatusUnauthorized, apiError{Error: "invalid credentials"})
+		return
+	}
 	if err := bcrypt.CompareHashAndPassword([]byte(cfg.AdminPasswordHash), []byte(req.Password)); err != nil {
 		writeJSON(w, http.StatusUnauthorized, apiError{Error: "invalid credentials"})
 		return
 	}
-	if err := setSessionCookie(w, cfg.SessionSecret); err != nil {
+	if err := setSessionCookie(w, cfg.SessionSecret, req.Username); err != nil {
 		writeJSON(w, http.StatusInternalServerError, apiError{Error: "failed to create session"})
 		return
 	}
@@ -91,6 +101,60 @@ func (a *App) HandleMe(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{"authenticated": true})
 }
 
+const minAdminPasswordLen = 5
+
+func (a *App) HandleAdminCredentials(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeJSON(w, http.StatusMethodNotAllowed, apiError{Error: "method not allowed"})
+		return
+	}
+	var req struct {
+		CurrentPassword string `json:"currentPassword"`
+		NewUsername     string `json:"newUsername"`
+		NewPassword     string `json:"newPassword"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeJSON(w, http.StatusBadRequest, apiError{Error: "invalid json"})
+		return
+	}
+	req.NewUsername = strings.TrimSpace(req.NewUsername)
+	if req.CurrentPassword == "" || req.NewUsername == "" || req.NewPassword == "" {
+		writeJSON(w, http.StatusBadRequest, apiError{Error: "missing fields"})
+		return
+	}
+	if len(req.NewPassword) < minAdminPasswordLen {
+		writeJSON(w, http.StatusBadRequest, apiError{Error: "password too short"})
+		return
+	}
+	if !validAdminUsername(req.NewUsername) {
+		writeJSON(w, http.StatusBadRequest, apiError{Error: "invalid username"})
+		return
+	}
+
+	cfgSnap := a.Config.Snapshot()
+	if err := bcrypt.CompareHashAndPassword([]byte(cfgSnap.AdminPasswordHash), []byte(req.CurrentPassword)); err != nil {
+		writeJSON(w, http.StatusUnauthorized, apiError{Error: "invalid current password"})
+		return
+	}
+
+	newHash, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
+	if err != nil {
+		writeJSON(w, http.StatusInternalServerError, apiError{Error: "failed to update credentials"})
+		return
+	}
+
+	if err := a.Config.Update(func(cfg *config.Config) error {
+		cfg.AdminUsername = req.NewUsername
+		cfg.AdminPasswordHash = string(newHash)
+		return nil
+	}); err != nil {
+		writeJSON(w, http.StatusInternalServerError, apiError{Error: err.Error()})
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]any{"ok": true})
+}
+
 func (a *App) RequireAuth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		cfg := a.Config.Snapshot()
@@ -102,9 +166,9 @@ func (a *App) RequireAuth(next http.Handler) http.Handler {
 	})
 }
 
-func setSessionCookie(w http.ResponseWriter, secret string) error {
+func setSessionCookie(w http.ResponseWriter, secret, username string) error {
 	expiry := time.Now().Add(24 * time.Hour).Unix()
-	payload := "admin|" + strconv.FormatInt(expiry, 10)
+	payload := username + "|" + strconv.FormatInt(expiry, 10)
 	signature := signPayload(payload, secret)
 	value := payload + "|" + signature
 	cookieValue := base64.RawURLEncoding.EncodeToString([]byte(value))
