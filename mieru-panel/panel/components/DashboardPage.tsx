@@ -26,15 +26,23 @@ import { Toasts } from './Toast'
 import { UserTable } from './UserTable'
 import { useToast } from './useToast'
 
+// parseTraffic returns the cumulative number of MiB encoded in a "↓ 5.6 MiB
+// / ↑ 2.3 MiB" style string (or any subset). Tokens with KiB/MiB/GiB or
+// the legacy KB/MB/GB suffixes are summed; anything we cannot parse just
+// contributes 0 instead of throwing.
 function parseTraffic(raw?: string): number {
   if (!raw) return 0
-  const value = Number(raw.replace(',', '.').replace(/[^\d.]/g, ''))
-  if (Number.isNaN(value)) return 0
-  const up = raw.toUpperCase()
-  if (up.includes('GB')) return value * 1024
-  if (up.includes('MB')) return value
-  if (up.includes('KB')) return value / 1024
-  return value / (1024 * 1024)
+  const tokens = raw.match(/[\d.,]+\s*[KMG]i?B/gi)
+  if (!tokens || tokens.length === 0) return 0
+  return tokens.reduce((acc, tok) => {
+    const numeric = Number(tok.replace(',', '.').replace(/[^\d.]/g, ''))
+    if (Number.isNaN(numeric)) return acc
+    const upper = tok.toUpperCase()
+    if (upper.includes('GIB') || upper.includes('GB')) return acc + numeric * 1024
+    if (upper.includes('MIB') || upper.includes('MB')) return acc + numeric
+    if (upper.includes('KIB') || upper.includes('KB')) return acc + numeric / 1024
+    return acc + numeric / (1024 * 1024)
+  }, 0)
 }
 
 type BarRow = {
@@ -59,22 +67,27 @@ export function DashboardPage() {
   const [deleteName, setDeleteName] = useState<string | null>(null)
   const [accentColor, setAccentColor] = useState('var(--accent)')
 
-  const fetchData = async () => {
-    setLoading(true)
-    setHasError(false)
+  const fetchData = async (initial = false) => {
+    if (initial) setLoading(true)
     try {
       const [usersResp, statusResp] = await Promise.all([api.getUsers(), api.getStatus()])
       setUsers(usersResp.users)
       setStatus(statusResp.status)
+      setHasError(false)
     } catch {
-      setHasError(true)
+      if (initial) setHasError(true)
     } finally {
-      setLoading(false)
+      if (initial) setLoading(false)
     }
   }
 
   useEffect(() => {
-    void fetchData()
+    void fetchData(true)
+    const id = window.setInterval(() => {
+      void fetchData(false)
+    }, 15000)
+    return () => window.clearInterval(id)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {
@@ -123,9 +136,10 @@ export function DashboardPage() {
     quotaDayMB: number
     quotaMonthMB: number
   }) => {
-    await api.addUser(payload)
+    const res = await api.addUser(payload)
     success(t('toast_user_added'))
-    await fetchData()
+    if (res.autoStarted) success(t('toast_server_auto_started'))
+    await fetchData(false)
   }
 
   const onDeleteUser = async () => {
@@ -134,7 +148,7 @@ export function DashboardPage() {
       await api.deleteUser(deleteName)
       success(t('toast_user_deleted'))
       setDeleteName(null)
-      await fetchData()
+      await fetchData(false)
     } catch {
       error(t('toast_error'))
     }
@@ -142,7 +156,7 @@ export function DashboardPage() {
 
   const onRegenUser = async (name: string) => {
     const response = await api.regenUser(name)
-    await fetchData()
+    await fetchData(false)
     return response.password
   }
 
@@ -187,23 +201,34 @@ export function DashboardPage() {
       </div>
 
       {tab === 'users' ? (
-        <div className="dashboard-card">
-          <div className="section-head">
-            <h2>{t('nav_users')}</h2>
-            <button type="button" className="btn-primary" onClick={() => setShowAdd(true)}>
-              + {t('users_add')}
-            </button>
+        <>
+          {!loading && users.length === 0 ? (
+            <div className="dashboard-card empty-state">
+              <h2>{t('empty_state_title')}</h2>
+              <p className="muted">{t('empty_state_hint')}</p>
+              <button type="button" className="btn-primary" onClick={() => setShowAdd(true)}>
+                + {t('users_add')}
+              </button>
+            </div>
+          ) : null}
+          <div className="dashboard-card">
+            <div className="section-head">
+              <h2>{t('nav_users')}</h2>
+              <button type="button" className="btn-primary" onClick={() => setShowAdd(true)}>
+                + {t('users_add')}
+              </button>
+            </div>
+            <UserTable
+              users={users}
+              loading={loading}
+              error={hasError}
+              onRetry={() => void fetchData(true)}
+              onDelete={(name) => setDeleteName(name)}
+              onRegen={onRegenUser}
+              onAdd={() => setShowAdd(true)}
+            />
           </div>
-          <UserTable
-            users={users}
-            loading={loading}
-            error={hasError}
-            onRetry={() => void fetchData()}
-            onDelete={(name) => setDeleteName(name)}
-            onRegen={onRegenUser}
-            onAdd={() => setShowAdd(true)}
-          />
-        </div>
+        </>
       ) : null}
 
       {tab === 'stats' ? (

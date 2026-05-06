@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api } from '@/lib/api'
 import type { ServerStatus as ServerStatusValue } from '@/lib/types'
@@ -15,6 +15,11 @@ export function ServerStatus({ initialStatus, onStatusChange }: ServerStatusProp
   const { t } = useTranslation()
   const { error } = useToast()
   const [status, setStatus] = useState<ServerStatusValue>(initialStatus)
+  const [busy, setBusy] = useState(false)
+  // Timestamp (ms) until which background polling should ignore the
+  // server-reported status. After a click we trust the optimistic value
+  // long enough for the daemon to actually transition.
+  const suppressPollUntilRef = useRef<number>(0)
 
   useEffect(() => {
     setStatus(initialStatus)
@@ -22,6 +27,7 @@ export function ServerStatus({ initialStatus, onStatusChange }: ServerStatusProp
 
   useEffect(() => {
     const tick = async () => {
+      if (Date.now() < suppressPollUntilRef.current) return
       try {
         const res = await api.getStatus()
         setStatus(res.status)
@@ -39,6 +45,9 @@ export function ServerStatus({ initialStatus, onStatusChange }: ServerStatusProp
   const offline = upper.includes('OFFLINE') || upper.includes('UNAVAILABLE')
 
   const updateOptimistic = async (next: ServerStatusValue, call: () => Promise<unknown>) => {
+    if (busy) return
+    setBusy(true)
+    suppressPollUntilRef.current = Date.now() + 5000
     const prev = status
     setStatus(next)
     onStatusChange(next)
@@ -49,6 +58,8 @@ export function ServerStatus({ initialStatus, onStatusChange }: ServerStatusProp
       onStatusChange(prev)
       const msg = (err as Error)?.message
       error(msg && msg.trim() !== '' ? msg : t('toast_error'))
+    } finally {
+      setBusy(false)
     }
   }
 
@@ -81,6 +92,7 @@ export function ServerStatus({ initialStatus, onStatusChange }: ServerStatusProp
         <button
           type="button"
           className="btn-primary"
+          disabled={busy || running}
           onClick={() => void updateOptimistic('RUNNING', () => api.startServer())}
         >
           {t('server_start')}
@@ -88,6 +100,7 @@ export function ServerStatus({ initialStatus, onStatusChange }: ServerStatusProp
         <button
           type="button"
           className="btn-secondary"
+          disabled={busy || (!running && !offline)}
           onClick={() => void updateOptimistic('IDLE', () => api.stopServer())}
         >
           {t('server_stop')}

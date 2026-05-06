@@ -89,6 +89,14 @@ func (a *App) HandleStart(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Already running? Just acknowledge and skip the apply/reload/start
+	// trio - no point in churning the daemon when a click was duplicated
+	// (every UI click otherwise triggers `apply config` + `reload` + `start`).
+	if status, err := a.Mita.GetStatus(); err == nil && strings.Contains(strings.ToUpper(status), "RUN") {
+		writeJSON(w, http.StatusOK, map[string]any{"ok": true, "alreadyRunning": true})
+		return
+	}
+
 	// Push current users into mita first; this also creates portBindings if
 	// they were missing. Without users mita would refuse to start the proxy
 	// and the daemon may close the gRPC connection (EOF on the client side).

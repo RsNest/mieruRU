@@ -9,6 +9,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -123,28 +124,130 @@ func (c *Client) GetConfig() (*describeConfigEnvelope, error) {
 	return &cfg, nil
 }
 
-// GetUsers reads users from `mita describe config` (there is no `describe users`).
-// Traffic fields are cleared; the panel does not have per-user CLI metrics.
+// GetUsers reads users from `mita describe config` and enriches each row
+// with per-user traffic counters from `mita get users`. The metrics call
+// is best-effort: if mita is IDLE / not running it simply returns the
+// users without metrics so the UI keeps showing the configured user list.
 func (c *Client) GetUsers() ([]UserStats, error) {
 	env, err := c.GetConfig()
 	if err != nil {
 		return nil, err
 	}
+	metrics, _ := c.GetUsersMetrics() // best-effort, may be empty
 	stats := make([]UserStats, 0, len(env.Users))
 	for _, u := range env.Users {
 		name := strings.TrimSpace(u.Name)
 		if name == "" {
 			continue
 		}
-		stats = append(stats, UserStats{
-			Name:      name,
-			TodayRaw:  "",
-			MonthRaw:  "",
-			TotalRaw:  "",
-			RawRecord: "",
-		})
+		row := UserStats{Name: name}
+		if m, ok := metrics[name]; ok {
+			row.TodayRaw = combineDownUp(m.DayDown, m.DayUp)
+			row.MonthRaw = combineDownUp(m.MonthDown, m.MonthUp)
+			row.TotalRaw = combineDownUp(m.MonthDown, m.MonthUp)
+			row.RawRecord = m.LastActive
+		}
+		stats = append(stats, row)
 	}
 	return stats, nil
+}
+
+// UserMetricsRow holds one row from `mita get users` with per-window
+// download/upload byte counters as printed by the CLI (in IEC format,
+// e.g. "5.6 MiB"). Empty / "-" values are normalised to "".
+type UserMetricsRow struct {
+	Name       string
+	LastActive string
+	DayDown    string
+	DayUp      string
+	WeekDown   string
+	WeekUp     string
+	MonthDown  string
+	MonthUp    string
+}
+
+// GetUsersMetrics runs `mita get users` and returns a map of name -> metrics.
+// On failure (typically because the proxy is IDLE) it returns an empty map
+// and a nil error so the caller can keep rendering the user list.
+func (c *Client) GetUsersMetrics() (map[string]UserMetricsRow, error) {
+	out, _, err := c.run("get", "users")
+	if err != nil {
+		// daemon offline / IDLE proxy: not a hard failure for the panel.
+		return map[string]UserMetricsRow{}, nil
+	}
+	return parseGetUsersTable(out), nil
+}
+
+// parseGetUsersTable parses the human-friendly table produced by the
+// upstream `mita get users` CLI. Columns are separated by 2+ spaces but
+// each cell may itself contain a single space (e.g. "10.5 MiB"), so we
+// split on whitespace runs of length 2 or more and rely on the header
+// row to map column indices.
+func parseGetUsersTable(out string) map[string]UserMetricsRow {
+	result := make(map[string]UserMetricsRow)
+	if strings.TrimSpace(out) == "" {
+		return result
+	}
+	sep := regexp.MustCompile(`\s{2,}`)
+	var headerCols []string
+	for _, raw := range strings.Split(out, "\n") {
+		line := strings.TrimRight(raw, " \t\r")
+		if strings.TrimSpace(line) == "" {
+			continue
+		}
+		cols := sep.Split(strings.TrimLeft(line, " "), -1)
+		if headerCols == nil {
+			if !strings.HasPrefix(strings.TrimSpace(line), "User") {
+				continue // skip any leading log noise
+			}
+			headerCols = cols
+			continue
+		}
+		colByName := map[string]string{}
+		for i, h := range headerCols {
+			if i < len(cols) {
+				colByName[h] = strings.TrimSpace(cols[i])
+			}
+		}
+		name := colByName["User"]
+		if name == "" {
+			continue
+		}
+		clean := func(s string) string {
+			s = strings.TrimSpace(s)
+			if s == "-" {
+				return ""
+			}
+			return s
+		}
+		result[name] = UserMetricsRow{
+			Name:       name,
+			LastActive: clean(colByName["LastActive"]),
+			DayDown:    clean(colByName["1DayDown"]),
+			DayUp:      clean(colByName["1DayUp"]),
+			WeekDown:   clean(colByName["7DaysDown"]),
+			WeekUp:     clean(colByName["7DaysUp"]),
+			MonthDown:  clean(colByName["30DaysDown"]),
+			MonthUp:    clean(colByName["30DaysUp"]),
+		}
+	}
+	return result
+}
+
+// combineDownUp builds a "↓ 5.6 MiB / ↑ 2.3 MiB" string skipping empty parts.
+// When both fields are empty the result is empty too.
+func combineDownUp(down, up string) string {
+	d, u := strings.TrimSpace(down), strings.TrimSpace(up)
+	switch {
+	case d == "" && u == "":
+		return ""
+	case u == "":
+		return "↓ " + d
+	case d == "":
+		return "↑ " + u
+	default:
+		return "↓ " + d + " / ↑ " + u
+	}
 }
 
 func effectivePortRange(portRange string) string {

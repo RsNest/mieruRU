@@ -78,6 +78,10 @@ export const zh = {
   toast_user_deleted: '用户已删除',
   toast_password_regenerated: '密码已更新',
   toast_copied: '已复制',
+  toast_server_auto_started: 'mita 代理已自动启动',
+  empty_state_title: '创建第一个用户',
+  empty_state_hint:
+    '创建首个用户后 mita 会自动启动。订阅链接和二维码会出现在用户卡片中。',
   toast_error: '服务器错误',
   quota_unlimited: '无限制',
   unit_mb: 'MB',

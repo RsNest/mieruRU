@@ -51,7 +51,7 @@ export const api = {
     quotaDayMB: number
     quotaMonthMB: number
   }) {
-    return request<{ ok: boolean }>('/api/users', {
+    return request<{ ok: boolean; autoStarted?: boolean }>('/api/users', {
       method: 'POST',
       body: JSON.stringify(payload),
     })

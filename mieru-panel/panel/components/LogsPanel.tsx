@@ -4,7 +4,6 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api } from '@/lib/api'
 import type { LogEntry, LogLevel } from '@/lib/types'
-import { useToast } from './useToast'
 
 const POLL_MS = 2000
 const LEVELS: Array<LogLevel | 'ALL'> = ['ALL', 'DEBUG', 'INFO', 'WARN', 'ERROR']
@@ -18,7 +17,6 @@ const levelClass: Record<LogLevel, string> = {
 
 export function LogsPanel() {
   const { t } = useTranslation()
-  const { error } = useToast()
 
   const [entries, setEntries] = useState<LogEntry[]>([])
   const [paused, setPaused] = useState(false)
@@ -45,8 +43,9 @@ export function LogsPanel() {
           })
           sinceRef.current = data.entries[data.entries.length - 1]!.seq
         }
-      } catch (err) {
-        if (!cancelled) error((err as Error).message || t('toast_error'))
+      } catch {
+        // Silent retry: a failed log poll is almost always a transient
+        // network blip, no need to spam toasts every 2 seconds.
       }
     }
 
@@ -56,7 +55,7 @@ export function LogsPanel() {
       cancelled = true
       window.clearInterval(id)
     }
-  }, [paused, error, t])
+  }, [paused])
 
   useEffect(() => {
     if (paused) return
@@ -79,8 +78,7 @@ export function LogsPanel() {
       const res = await api.getMitaLogs(200)
       setMitaOutput(res.output)
       setMitaAvailable(res.available)
-    } catch (err) {
-      error((err as Error).message || t('toast_error'))
+    } catch {
       setMitaAvailable(false)
     } finally {
       setMitaLoading(false)

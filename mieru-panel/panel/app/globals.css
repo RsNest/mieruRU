@@ -1533,3 +1533,29 @@ h3,
   max-height: 280px;
   overflow-y: auto;
 }
+
+/* === Empty state (first-user onboarding) === */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  border: 1px dashed color-mix(in oklab, var(--accent) 35%, transparent) !important;
+  background:
+    radial-gradient(
+      circle at 0% 0%,
+      color-mix(in oklab, var(--accent) 12%, transparent) 0%,
+      transparent 60%
+    ),
+    color-mix(in oklab, var(--bg-elevated) 80%, transparent) !important;
+}
+
+.empty-state h2 {
+  margin: 0;
+}
+
+.empty-state p {
+  margin: 0;
+  max-width: 60ch;
+  line-height: 1.55;
+}

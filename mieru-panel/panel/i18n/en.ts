@@ -78,6 +78,10 @@ export const en = {
   toast_user_deleted: 'User deleted',
   toast_password_regenerated: 'Password regenerated',
   toast_copied: 'Copied',
+  toast_server_auto_started: 'mita proxy started automatically',
+  empty_state_title: 'Create your first user',
+  empty_state_hint:
+    'mita proxy auto-starts as soon as the first user is created. The subscription URL and QR code show up in the user card.',
   toast_error: 'Server error',
   quota_unlimited: 'Unlimited',
   unit_mb: 'MB',

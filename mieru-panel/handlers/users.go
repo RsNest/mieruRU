@@ -117,7 +117,21 @@ func (a *App) createUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	applog.Infof("users", "user %q created", req.Name)
-	writeJSON(w, http.StatusCreated, map[string]any{"ok": true})
+
+	// First-user onboarding: if mita is currently IDLE, kick it into
+	// RUNNING so the freshly minted user can connect right away. Failures
+	// are non-fatal for this endpoint - the panel still reports the user
+	// as created and the admin can hit the Start button manually later.
+	autoStarted := false
+	if status, err := a.Mita.GetStatus(); err == nil && !strings.Contains(strings.ToUpper(status), "RUN") {
+		if startErr := a.Mita.Start(); startErr != nil {
+			applog.Warnf("mita", "auto-start after first user failed: %v", startErr)
+		} else {
+			autoStarted = true
+			applog.Infof("mita", "proxy auto-started after creating user %q", req.Name)
+		}
+	}
+	writeJSON(w, http.StatusCreated, map[string]any{"ok": true, "autoStarted": autoStarted})
 }
 
 func (a *App) deleteUser(w http.ResponseWriter, name string) {

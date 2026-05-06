@@ -76,6 +76,10 @@ export const ru = {
   toast_user_deleted: 'Пользователь удален',
   toast_password_regenerated: 'Пароль обновлен',
   toast_copied: 'Скопировано',
+  toast_server_auto_started: 'Сервер mita запущен автоматически',
+  empty_state_title: 'Добавь первого пользователя',
+  empty_state_hint:
+    'Сразу после создания пользователя сервер mita запустится автоматически. Подписка и QR-код появятся в карточке пользователя.',
   toast_error: 'Ошибка сервера',
   quota_unlimited: 'Без лимита',
   unit_mb: 'МБ',

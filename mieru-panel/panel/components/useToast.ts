@@ -1,5 +1,6 @@
 'use client'
 
+import { useMemo } from 'react'
 import { create } from 'zustand'
 
 type ToastKind = 'success' | 'error' | 'info'
@@ -33,11 +34,19 @@ const useToastStore = create<ToastStore>((set, get) => ({
 
 export function useToast() {
   const push = useToastStore((state) => state.push)
-  return {
-    success: (message: string) => push('success', message),
-    error: (message: string) => push('error', message),
-    info: (message: string) => push('info', message),
-  }
+  // The push action from the zustand store is reference-stable, so the
+  // returned object is also stable as long as the store identity is.
+  // Components depend on these handlers in useEffect arrays; without
+  // useMemo every render created a fresh object and effects (e.g. the
+  // log polling) thrashed their intervals on every state change.
+  return useMemo(
+    () => ({
+      success: (message: string) => push('success', message),
+      error: (message: string) => push('error', message),
+      info: (message: string) => push('info', message),
+    }),
+    [push],
+  )
 }
 
 export function useToastItems() {

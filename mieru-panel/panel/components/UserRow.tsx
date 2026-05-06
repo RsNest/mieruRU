@@ -19,15 +19,22 @@ interface UserRowProps {
 
 const avatarVars = ['--avatar-1', '--avatar-2', '--avatar-3', '--avatar-4', '--avatar-5']
 
+// parseTrafficToBytes accepts "↓ 5.6 MiB / ↑ 2.3 MiB" (or any subset, or
+// the legacy KB/MB/GB form) and returns the total in bytes. Used by the
+// quota progress bars.
 function parseTrafficToBytes(raw?: string): number {
   if (!raw) return 0
-  const value = Number(raw.replace(',', '.').replace(/[^\d.]/g, ''))
-  if (Number.isNaN(value)) return 0
-  const up = raw.toUpperCase()
-  if (up.includes('GB')) return value * 1024 * 1024 * 1024
-  if (up.includes('MB')) return value * 1024 * 1024
-  if (up.includes('KB')) return value * 1024
-  return value
+  const tokens = raw.match(/[\d.,]+\s*[KMG]i?B/gi)
+  if (!tokens || tokens.length === 0) return 0
+  return tokens.reduce((acc, tok) => {
+    const numeric = Number(tok.replace(',', '.').replace(/[^\d.]/g, ''))
+    if (Number.isNaN(numeric)) return acc
+    const upper = tok.toUpperCase()
+    if (upper.includes('GIB') || upper.includes('GB')) return acc + numeric * 1024 * 1024 * 1024
+    if (upper.includes('MIB') || upper.includes('MB')) return acc + numeric * 1024 * 1024
+    if (upper.includes('KIB') || upper.includes('KB')) return acc + numeric * 1024
+    return acc + numeric
+  }, 0)
 }
 
 export function UserRow({
