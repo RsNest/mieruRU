@@ -19,7 +19,8 @@ UI 中完成。
 - **状态与控制** —— 启动 / 停止 mita，查看 `RUNNING` / `IDLE`，查看基于面板数据的
   当日各用户流量柱状图。
 - **日志** —— 结构化面板日志（INFO / WARN / ERROR）在 UI 内实时滚动，同时输出到
-  stdout（`docker logs mieru-panel`），并附带一个 mita 端的 `mita logs -n 200` 区块。
+  stdout（`docker logs mieru-panel`）。同一面板还会展示 mita 守护进程的 stdout
+  尾部（来自共享文件 `/var/log/mita/mita.log`，等价于 `docker compose logs mita`）。
 - **国际化** —— 俄 / 英 / 中三语，三套主题（Midnight / Sakura / Ghost）。
 
 ## 快速开始（Docker Compose）
@@ -115,7 +116,9 @@ UI 的 **日志** 标签同时展示两路:
    `sub`、`panel`、`init`、`ui`、`go`)。每条记录均带 `INFO / WARN / ERROR / DEBUG` 级别,
    保留最近 1000 条(可通过 `GET /api/logs?since=<seq>` 增量获取),并同步写入 stdout,
    方便 `docker logs mieru-panel` 查看。
-2. **mita 日志** —— 通过 `GET /api/mita/logs` 代理 `mita logs -n 200` 的输出。
+2. **mita 日志** —— 通过 `GET /api/mita/logs` 读取共享文件
+   `/var/log/mita/mita.log`，由 mita 容器的 `tee` 包装写入；同一份内容也可以
+   通过 `docker compose logs mita` 查看。
 
 部署规模较大时,请使用宿主 Docker 日志驱动收集 stdout,内存缓冲仅用于 UI 实时调试。
 

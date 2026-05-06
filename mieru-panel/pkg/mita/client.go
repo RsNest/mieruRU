@@ -1,13 +1,17 @@
 package mita
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"strings"
+	"sync"
+	"time"
 
 	"mieru-panel/pkg/applog"
 )
@@ -15,8 +19,19 @@ import (
 // DefaultPortRange is used when the panel config omits ServerPortRange.
 const DefaultPortRange = "2012-2022"
 
+// DefaultLogFile is where docker-compose tee'd mita stdout/stderr by default.
+// The path can be overridden with the MITA_LOG_FILE environment variable.
+const DefaultLogFile = "/var/log/mita/mita.log"
+
 type Client struct {
-	binary string
+	binary  string
+	logFile string
+
+	// Tracking for noisy "daemon is not running" errors so we don't spam
+	// the log every 2-3 seconds while mita is still warming up.
+	muNoise         sync.Mutex
+	lastOfflineLog  time.Time
+	offlineSquelch  time.Duration
 }
 
 type User struct {
@@ -68,8 +83,30 @@ func NewClient(binary string) *Client {
 	if strings.TrimSpace(binary) == "" {
 		binary = "mita"
 	}
-	return &Client{binary: binary}
+	logFile := strings.TrimSpace(os.Getenv("MITA_LOG_FILE"))
+	if logFile == "" {
+		logFile = DefaultLogFile
+	}
+	return &Client{
+		binary:         binary,
+		logFile:        logFile,
+		offlineSquelch: 30 * time.Second,
+	}
 }
+
+// looksOfflineMessage returns true when the mita CLI failure looks like
+// a daemon-not-running issue.
+func looksOfflineMessage(msg string) bool {
+	m := strings.ToLower(msg)
+	return strings.Contains(m, "daemon is not running") ||
+		strings.Contains(m, "connection refused") ||
+		strings.Contains(m, "no such file or directory") ||
+		strings.Contains(m, "code = unavailable") ||
+		strings.Contains(m, "transport: error while dialing")
+}
+
+// LogFile returns the path the client uses to read mita stdout/stderr.
+func (c *Client) LogFile() string { return c.logFile }
 
 func (c *Client) GetConfig() (*describeConfigEnvelope, error) {
 	out, _, err := c.run("describe", "config")
@@ -216,7 +253,25 @@ func (c *Client) run(args ...string) (stdout, stderr string, err error) {
 		if msg == "" {
 			msg = err.Error()
 		}
-		applog.Errorf("mita", "%s failed: %s", op, msg)
+		// Daemon-down errors are extremely chatty (every status poll, every
+		// stats refresh, etc), so keep them at WARN level and rate-limit.
+		if looksOfflineMessage(msg) {
+			c.muNoise.Lock()
+			squelch := c.offlineSquelch
+			now := time.Now()
+			report := now.Sub(c.lastOfflineLog) >= squelch
+			if report {
+				c.lastOfflineLog = now
+			}
+			c.muNoise.Unlock()
+			if report {
+				applog.Warnf("mita", "%s: mita daemon offline (%s)", op, firstLine(msg))
+			} else {
+				applog.Debugf("mita", "%s failed: %s", op, msg)
+			}
+		} else {
+			applog.Errorf("mita", "%s failed: %s", op, msg)
+		}
 		return so, se, &RunError{Op: op, Reason: msg, Stdout: so, Stderr: se}
 	}
 	so := strings.TrimSpace(stdoutB.String())
@@ -227,12 +282,56 @@ func (c *Client) run(args ...string) (stdout, stderr string, err error) {
 	return so, se, nil
 }
 
-// Logs returns the last `lines` lines from `mita logs`. Empty lines means default.
-func (c *Client) Logs(lines int) (string, error) {
-	args := []string{"logs"}
-	if lines > 0 {
-		args = append(args, "-n", fmt.Sprintf("%d", lines))
+func firstLine(s string) string {
+	if i := strings.IndexByte(s, '\n'); i >= 0 {
+		return strings.TrimSpace(s[:i])
 	}
-	out, _, err := c.run(args...)
-	return out, err
+	return strings.TrimSpace(s)
+}
+
+// Logs returns the last `lines` lines from the shared mita log file.
+// The file is populated by docker-compose's `command: ... | tee mita.log`
+// wrapper. Returns ("", nil) if the file does not exist yet (e.g. mita
+// just started and hasn't written anything yet).
+func (c *Client) Logs(lines int) (string, error) {
+	if lines <= 0 {
+		lines = 200
+	}
+	path := c.logFile
+	if path == "" {
+		path = DefaultLogFile
+	}
+	f, err := os.Open(path)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			return "", nil
+		}
+		return "", fmt.Errorf("open mita log %s: %w", path, err)
+	}
+	defer f.Close()
+
+	const maxRead = 1 << 20 // 1 MiB tail window is enough for ~5000 short lines
+	info, statErr := f.Stat()
+	var startOff int64
+	if statErr == nil && info.Size() > maxRead {
+		startOff = info.Size() - maxRead
+		if _, err := f.Seek(startOff, io.SeekStart); err != nil {
+			return "", err
+		}
+	}
+
+	scanner := bufio.NewScanner(f)
+	scanner.Buffer(make([]byte, 64*1024), 1024*1024)
+	ring := make([]string, 0, lines)
+	for scanner.Scan() {
+		if len(ring) == lines {
+			ring = append(ring[1:], scanner.Text())
+		} else {
+			ring = append(ring, scanner.Text())
+		}
+	}
+	if err := scanner.Err(); err != nil {
+		return "", err
+	}
+	return strings.Join(ring, "\n"), nil
 }

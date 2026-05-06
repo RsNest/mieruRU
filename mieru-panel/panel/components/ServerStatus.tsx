@@ -34,7 +34,9 @@ export function ServerStatus({ initialStatus, onStatusChange }: ServerStatusProp
     return () => window.clearInterval(id)
   }, [onStatusChange])
 
-  const running = String(status).toUpperCase().includes('RUN')
+  const upper = String(status).toUpperCase()
+  const running = upper.includes('RUN')
+  const offline = upper.includes('OFFLINE') || upper.includes('UNAVAILABLE')
 
   const updateOptimistic = async (next: ServerStatusValue, call: () => Promise<unknown>) => {
     const prev = status
@@ -42,10 +44,11 @@ export function ServerStatus({ initialStatus, onStatusChange }: ServerStatusProp
     onStatusChange(next)
     try {
       await call()
-    } catch {
+    } catch (err) {
       setStatus(prev)
       onStatusChange(prev)
-      error(t('toast_error'))
+      const msg = (err as Error)?.message
+      error(msg && msg.trim() !== '' ? msg : t('toast_error'))
     }
   }
 
@@ -62,11 +65,15 @@ export function ServerStatus({ initialStatus, onStatusChange }: ServerStatusProp
           style={{
             fontSize: 32,
             fontWeight: 500,
-            color: running ? 'var(--success)' : 'var(--text-muted)',
+            color: running
+              ? 'var(--success)'
+              : offline
+                ? 'var(--danger, #f87171)'
+                : 'var(--text-muted)',
             marginBottom: 8,
           }}
         >
-          {running ? t('server_running') : t('server_idle')}
+          {running ? t('server_running') : offline ? t('server_offline') : t('server_idle')}
         </div>
         <div style={{ color: 'var(--text-muted)', fontSize: 13, marginBottom: 32 }}>mita · 見た</div>
       </div>

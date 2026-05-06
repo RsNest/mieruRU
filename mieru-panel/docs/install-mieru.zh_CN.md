@@ -325,7 +325,7 @@ shred -u ~/add_user.json
 | `mita apply config <file>` | 应用新配置 |
 | `mita reload` | 不重启重载 users / logging |
 | `mita start` / `mita stop` | 启动 / 停止代理 |
-| `mita logs` | 最近日志 |
+| `docker compose logs mita` | 最近日志（同时镜像到 `/var/log/mita/mita.log`） |
 | `systemctl status mita` | systemd 服务状态 |
 | `ss -tlnp \| grep mita` | 监听端口 |
 

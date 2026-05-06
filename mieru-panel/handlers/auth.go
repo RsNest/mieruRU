@@ -21,7 +21,9 @@ const sessionCookieName = "mieru_panel_session"
 type App struct {
 	Config *config.Store
 	Mita   MitaClient
-	// MitaLogs returns recent lines from `mita logs -n <lines>`. May be nil.
+	// MitaLogs returns the last <lines> lines of the mita daemon stdout
+	// (collected from the shared log file written by docker-compose's tee
+	// wrapper). May be nil.
 	MitaLogs func(lines int) (string, error)
 }
 

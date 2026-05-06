@@ -21,8 +21,9 @@ the rest of the work happens in the UI.
 - **Status & control** – Start / Stop mita, see `RUNNING` / `IDLE` polling, basic per-user
   daily traffic chart from the panel data.
 - **Logs** – structured panel logs (INFO / WARN / ERROR) live-tailed in the UI and also
-  written to stdout (`docker logs mieru-panel`), plus an mita-side block that proxies
-  `mita logs -n 200`.
+  written to stdout (`docker logs mieru-panel`), plus an mita-side block that tails the
+  daemon stdout from a shared file (`/var/log/mita/mita.log`), the same content you can
+  see via `docker compose logs mita`.
 - **i18n** – Russian / English / Chinese, three themes (Midnight / Sakura / Ghost).
 
 ## Quick start (Docker Compose)
@@ -122,7 +123,10 @@ Two streams converge in the UI **Logs** tab:
    `sub`, `panel`, `init`, `ui`, `go`). Each entry is `INFO / WARN / ERROR / DEBUG`,
    buffered in memory (last 1000 entries, queryable via `GET /api/logs?since=<seq>`),
    and also written to stdout so `docker logs mieru-panel` is meaningful.
-2. **mita logs** – output of `mita logs -n 200` proxied via `GET /api/mita/logs`.
+2. **mita logs** – tail of the mita daemon stdout from the shared volume
+   (`/var/log/mita/mita.log`), exposed via `GET /api/mita/logs`. The mita
+   container writes this file via a `tee` wrapper, so `docker compose logs mita`
+   keeps working as well.
 
 If you scale the deployment, prefer collecting stdout via your normal Docker logging
 driver – the in-memory buffer is for live debugging from the UI, not for archival.

@@ -44,6 +44,7 @@ export const en = {
   stat_server_status: 'Server status',
   server_running: 'RUNNING',
   server_idle: 'IDLE',
+  server_offline: 'OFFLINE',
   server_start: 'Start',
   server_stop: 'Stop',
   server_section_title: 'mita Control',
@@ -107,8 +108,9 @@ export const en = {
   logs_filter_all: 'all',
   logs_mita_title: 'mita logs',
   logs_mita_hint:
-    'Output of `mita logs -n 200` from the neighbouring container. Empty means mita is still warming up or the socket is not mounted.',
-  logs_mita_unavailable: 'mita unavailable (CLI failed or socket not mounted).',
+    'Tail of the mita daemon stdout collected from /var/log/mita/mita.log. The same lines are also available via `docker compose logs mita`.',
+  logs_mita_unavailable:
+    'mita log file not created yet. Wait for the mita container to start or check `docker compose logs mita`.',
   logs_mita_refresh: 'Refresh',
   user_show_config: 'Show sing-box JSON',
   user_hide_config: 'Hide JSON',

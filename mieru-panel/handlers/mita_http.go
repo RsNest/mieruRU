@@ -9,6 +9,8 @@ import (
 )
 
 // logMitaCLI sends mita CLI failures to applog (stdout + UI ring buffer).
+// Errors that simply mean "daemon is offline" are downgraded to WARN since
+// pkg/mita.Client.run already rate-limits them to one log per 30s.
 func logMitaCLI(operation string, err error) {
 	if err == nil {
 		return

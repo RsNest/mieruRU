@@ -330,7 +330,7 @@ shred -u ~/add_user.json
 | `mita apply config <file>` | Apply a new config |
 | `mita reload` | Reload users / logging without restart |
 | `mita start` / `mita stop` | Start / stop the proxy |
-| `mita logs` | Recent logs |
+| `docker compose logs mita` | Recent logs (also mirrored to `/var/log/mita/mita.log`) |
 | `systemctl status mita` | Systemd service state |
 | `ss -tlnp \| grep mita` | Which ports it listens on |
 

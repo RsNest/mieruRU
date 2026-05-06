@@ -25,8 +25,10 @@ func (a *App) HandleLogs(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{"entries": entries})
 }
 
-// HandleMitaLogs proxies `mita logs -n <lines>` so admins can see
-// the underlying daemon output from the UI.
+// HandleMitaLogs returns the tail of the mita daemon stdout/stderr.
+// The output is read from a shared file (populated by the mita container's
+// `tee` wrapper). When the file does not exist yet we still respond 200
+// with `available=true` and an empty payload so the UI does not flicker.
 func (a *App) HandleMitaLogs(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		writeJSON(w, http.StatusMethodNotAllowed, apiError{Error: "method not allowed"})
@@ -44,8 +46,12 @@ func (a *App) HandleMitaLogs(w http.ResponseWriter, r *http.Request) {
 	}
 	out, err := a.MitaLogs(lines)
 	if err != nil {
-		logMitaCLI("HandleMitaLogs", err)
-		writeJSON(w, http.StatusOK, map[string]any{"output": "", "available": false, "error": err.Error()})
+		applog.Warnf("mita", "read mita log file failed: %v", err)
+		writeJSON(w, http.StatusOK, map[string]any{
+			"output":    "",
+			"available": false,
+			"error":     err.Error(),
+		})
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"output": out, "available": true})

@@ -13,9 +13,29 @@ services:
     container_name: mita
     restart: unless-stopped
     network_mode: host
+    # Override the upstream CMD so mita stdout/stderr is captured into a
+    # shared log file. The panel reads the tail of this file from the
+    # "Logs" tab. `tee` keeps stdout going so `docker compose logs mita`
+    # still works.
+    command:
+      - sh
+      - -c
+      - |
+        set -e
+        mkdir -p /var/log/mita
+        : > /var/log/mita/mita.log
+        echo "[entrypoint] starting mita run, mirroring stdout to /var/log/mita/mita.log"
+        exec /usr/local/bin/mita run 2>&1 | tee -a /var/log/mita/mita.log
+    environment:
+      # Skip chowning the unix domain socket to user "mita". Inside the
+      # container the panel CLI already runs as root, and chown can fail
+      # when /var/run/mita is a docker-managed volume on certain hosts.
+      - MITA_INSECURE_UDS=1
+      - MITA_LOG_NO_TIMESTAMP=
     volumes:
       - mita_data:/var/lib/mita
       - mita_run:/var/run/mita
+      - mita_logs:/var/log/mita
     cap_add:
       - NET_ADMIN
 
@@ -30,6 +50,7 @@ services:
     volumes:
       - panel_data:/app/data
       - mita_run:/var/run/mita
+      - mita_logs:/var/log/mita:ro
     environment:
       # The panel auto-creates data/config.json on first start.
       # PANEL_ADMIN_PASS resets the admin password on every restart, set it once
@@ -37,6 +58,7 @@ services:
       - PANEL_CONFIG=/app/data/config.json
       - PANEL_HOST=0.0.0.0
       - MITA_SOCKET=/var/run/mita/mita.sock
+      - MITA_LOG_FILE=/var/log/mita/mita.log
       - PANEL_ADMIN_USER=${PANEL_ADMIN_USER:-admin}
       - PANEL_ADMIN_PASS=${PANEL_ADMIN_PASS:-admin}
       - PANEL_SERVER_IP=${PANEL_SERVER_IP:-}
@@ -48,4 +70,5 @@ services:
 volumes:
   mita_data:
   mita_run:
+  mita_logs:
   panel_data:

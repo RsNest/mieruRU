@@ -44,6 +44,7 @@ export const zh = {
   stat_server_status: '服务器状态',
   server_running: '运行中',
   server_idle: '空闲',
+  server_offline: '离线',
   server_start: '启动',
   server_stop: '停止',
   server_section_title: 'mita 控制',
@@ -104,8 +105,10 @@ export const zh = {
   logs_filter_level: '级别',
   logs_filter_all: '全部',
   logs_mita_title: 'mita 日志',
-  logs_mita_hint: '相邻容器中 `mita logs -n 200` 的输出。为空说明 mita 仍在启动或未挂载 socket。',
-  logs_mita_unavailable: 'mita 不可用（CLI 失败或未挂载 socket）。',
+  logs_mita_hint:
+    '通过共享文件 /var/log/mita/mita.log 读取 mita 守护进程的标准输出，同样可以使用 `docker compose logs mita` 查看。',
+  logs_mita_unavailable:
+    '尚未生成 mita 日志文件。请等待 mita 容器启动，或运行 `docker compose logs mita` 查看。',
   logs_mita_refresh: '刷新',
   user_show_config: '查看 sing-box JSON',
   user_hide_config: '隐藏 JSON',

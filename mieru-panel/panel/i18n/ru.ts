@@ -42,6 +42,7 @@ export const ru = {
   stat_server_status: 'Состояние сервера',
   server_running: 'RUNNING',
   server_idle: 'IDLE',
+  server_offline: 'OFFLINE',
   server_start: 'Запустить',
   server_stop: 'Остановить',
   server_section_title: 'Управление mita',
@@ -105,8 +106,9 @@ export const ru = {
   logs_filter_all: 'все',
   logs_mita_title: 'Логи mita',
   logs_mita_hint:
-    'Вывод `mita logs -n 200` из соседнего контейнера. Если пусто — mita ещё не стартовал или нет доступа к сокету.',
-  logs_mita_unavailable: 'mita недоступен (CLI вернул ошибку или сокет не смонтирован).',
+    'Хвост stdout демона mita из общего лог-файла /var/log/mita/mita.log. Те же строки доступны через `docker compose logs mita`.',
+  logs_mita_unavailable:
+    'Лог-файл mita ещё не создан. Подожди, пока mita стартует, или проверь `docker compose logs mita`.',
   logs_mita_refresh: 'Обновить',
   user_show_config: 'Показать sing-box JSON',
   user_hide_config: 'Скрыть JSON',
