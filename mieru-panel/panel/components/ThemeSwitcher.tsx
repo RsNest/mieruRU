@@ -5,10 +5,13 @@ import { useSettingsStore } from '@/store/settings'
 import type { Theme } from '@/lib/types'
 
 const options: Array<{ value: Theme; icon: string; labelKey: string }> = [
+  { value: 'auto', icon: '⌁', labelKey: 'theme_auto' },
   { value: 'midnight', icon: '🌙', labelKey: 'theme_midnight' },
   { value: 'sakura', icon: '◐', labelKey: 'theme_sakura' },
   { value: 'ghost', icon: '☀', labelKey: 'theme_ghost' },
   { value: 'daylight', icon: '🔆', labelKey: 'theme_daylight' },
+  { value: 'solar', icon: '🜂', labelKey: 'theme_solar' },
+  { value: 'cyber', icon: '⌬', labelKey: 'theme_cyber' },
 ]
 
 export function ThemeSwitcher() {

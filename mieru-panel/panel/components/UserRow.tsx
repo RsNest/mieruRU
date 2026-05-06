@@ -13,13 +13,21 @@ interface UserRowProps {
   open: boolean
   subUrl: string
   newPassword: string | null
+  selected: boolean
+  onSelectToggle: () => void
   onToggleOpen: () => void
   onDelete: (name: string) => void
   onRegen: (name: string) => void
   onUpdate: (
     name: string,
-    payload: { quotaDayMB?: number; quotaMonthMB?: number; expiresAt?: number },
+    payload: {
+      quotaDayMB?: number
+      quotaMonthMB?: number
+      expiresAt?: number
+      maxDevices?: number
+    },
   ) => Promise<void>
+  onResetDevices: (name: string, fingerprint?: string) => Promise<void>
   onClearPassword: () => void
 }
 
@@ -48,10 +56,13 @@ export function UserRow({
   open,
   subUrl,
   newPassword,
+  selected,
+  onSelectToggle,
   onToggleOpen,
   onDelete,
   onRegen,
   onUpdate,
+  onResetDevices,
   onClearPassword,
 }: UserRowProps) {
   const { t } = useTranslation()
@@ -94,22 +105,47 @@ export function UserRow({
   const expired = !!user.expired
   const expiringSoon = !!(user.expiresAt && !expired && user.expiresAt - Date.now() / 1000 < 86400 * 3)
 
+  const devicesCount = user.devices?.length ?? 0
+  const maxDevices = user.maxDevices ?? 0
+
   return (
     <div className={`user-row-wrap ${expired ? 'is-expired' : ''}`}>
       <div className="user-row user-row-cells">
-        <button type="button" className="user-avatar" style={{ background: avatarColor }}>
-          {initial}
-        </button>
+        <span className="col-check">
+          <input
+            type="checkbox"
+            checked={selected}
+            onChange={onSelectToggle}
+            aria-label={t('users_select_one', { name: user.name })}
+          />
+        </span>
         <div className="user-name-cell">
-          <button
-            type="button"
-            className="name-btn user-name"
-            onClick={onToggleOpen}
-            onDoubleClick={() => void onNameDoubleClick()}
-            title={t('users_dblclick_regen_hint')}
-          >
-            {user.name}
-          </button>
+          <div className="user-name-row">
+            <span className="user-avatar" style={{ background: avatarColor }}>
+              {initial}
+            </span>
+            <button
+              type="button"
+              className="name-btn user-name"
+              onClick={onToggleOpen}
+              onDoubleClick={() => void onNameDoubleClick()}
+              title={t('users_dblclick_regen_hint')}
+            >
+              {user.name}
+            </button>
+            {maxDevices > 0 ? (
+              <span
+                className={`devices-pill ${devicesCount >= maxDevices ? 'full' : ''}`}
+                title={t('users_devices_pill_hint')}
+              >
+                {devicesCount}/{maxDevices}
+              </span>
+            ) : devicesCount > 0 ? (
+              <span className="devices-pill ghost" title={t('users_devices_pill_hint')}>
+                {devicesCount}
+              </span>
+            ) : null}
+          </div>
           {user.expiresAt ? (
             <button
               type="button"
@@ -180,8 +216,11 @@ export function UserRow({
         newPassword={newPassword}
         quotaDayMB={user.quotaDayMB}
         quotaMonMB={user.quotaMonMB}
+        maxDevices={maxDevices}
+        devices={user.devices ?? []}
         onClearPassword={onClearPassword}
         onUpdateQuotas={onUpdate}
+        onResetDevices={onResetDevices}
       />
     </div>
   )

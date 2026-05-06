@@ -22,7 +22,10 @@ import (
 	"mieru-panel/config"
 	"mieru-panel/handlers"
 	"mieru-panel/pkg/applog"
+	"mieru-panel/pkg/audit"
 	"mieru-panel/pkg/mita"
+	"mieru-panel/pkg/notify"
+	"mieru-panel/pkg/ratelimit"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -129,13 +132,30 @@ func main() {
 
 	mitaBinary := os.Getenv("MITA_BINARY")
 	mitaClient := mita.NewClient(mitaBinary)
+
+	auditPath := strings.TrimSpace(os.Getenv("PANEL_AUDIT_FILE"))
+	if auditPath == "" {
+		auditPath = filepath.Join(filepath.Dir(configPath), "audit.jsonl")
+	}
+	if err := audit.Init(auditPath); err != nil {
+		applog.Warnf("audit", "init %s: %v", auditPath, err)
+	} else {
+		applog.Infof("audit", "audit log -> %s", auditPath)
+	}
+	if notify.TelegramConfigured() {
+		applog.Infof("notify", "telegram notifications enabled")
+	}
+
 	app := &handlers.App{
-		Config:   store,
-		Mita:     &mitaAdapter{client: mitaClient},
-		MitaLogs: mitaClient.Logs,
+		Config:       store,
+		Mita:         &mitaAdapter{client: mitaClient},
+		MitaLogs:     mitaClient.Logs,
+		LoginLimiter: ratelimit.New(5, 1.0/12.0, 5*time.Minute),
+		SubLimiter:   ratelimit.New(20, 5.0, 5*time.Minute),
 	}
 
 	go bootstrapMitaLoop(app)
+	go monitorMitaState(app)
 
 	mux := http.NewServeMux()
 	frontendFS, err := fs.Sub(uiDist, "panel/out")
@@ -146,12 +166,15 @@ func main() {
 	mux.Handle("/", spaHandler(frontendFS))
 	mux.HandleFunc("/sub/", app.HandleSubscription)
 	mux.HandleFunc("/api/login", app.HandleLogin)
+	mux.HandleFunc("/api/healthz", app.HandleHealthz)
+	mux.HandleFunc("/metrics", app.HandleMetrics)
 
 	protected := http.NewServeMux()
 	protected.HandleFunc("/api/logout", app.HandleLogout)
 	protected.HandleFunc("/api/me", app.HandleMe)
 	protected.HandleFunc("/api/users", app.HandleUsers)
 	protected.HandleFunc("/api/users/", app.HandleUserActions)
+	protected.HandleFunc("/api/users/bulk-delete", app.HandleUsersBulk)
 	protected.HandleFunc("/api/stats", app.HandleStats)
 	protected.HandleFunc("/api/status", app.HandleStatus)
 	protected.HandleFunc("/api/mita/start", app.HandleStart)
@@ -165,6 +188,7 @@ func main() {
 	protected.HandleFunc("/api/config/restore", app.HandleConfigRestore)
 	protected.HandleFunc("/api/subscriptions/export", app.HandleSubscriptionsExport)
 	protected.HandleFunc("/api/logs", app.HandleLogs)
+	protected.HandleFunc("/api/audit", app.HandleAudit)
 	mux.Handle("/api/", app.RequireAuth(protected))
 
 	cfg := store.Snapshot()
@@ -173,10 +197,49 @@ func main() {
 		host = "0.0.0.0"
 	}
 	addr := host + ":" + itoa(cfg.PanelPort)
+
+	tlsCert := strings.TrimSpace(os.Getenv("PANEL_TLS_CERT"))
+	tlsKey := strings.TrimSpace(os.Getenv("PANEL_TLS_KEY"))
+	if tlsCert != "" && tlsKey != "" {
+		applog.Infof("panel", "mieru-panel listening on https://%s (TLS)", addr)
+		if err := http.ListenAndServeTLS(addr, tlsCert, tlsKey, mux); err != nil {
+			applog.Errorf("panel", "listen TLS: %v", err)
+			os.Exit(1)
+		}
+		return
+	}
 	applog.Infof("panel", "mieru-panel listening on %s", addr)
 	if err := http.ListenAndServe(addr, mux); err != nil {
 		applog.Errorf("panel", "listen: %v", err)
 		os.Exit(1)
+	}
+}
+
+// monitorMitaState pings mita every 30 seconds and emits a Telegram
+// notification on RUNNING <-> IDLE/OFFLINE transitions. We intentionally
+// only fire the alert on a *transition*, not while mita stays down, to
+// avoid flooding the chat.
+func monitorMitaState(app *handlers.App) {
+	last := ""
+	t := time.NewTicker(30 * time.Second)
+	defer t.Stop()
+	for range t.C {
+		status, err := app.Mita.GetStatus()
+		state := "OFFLINE"
+		if err == nil && strings.Contains(strings.ToUpper(status), "RUN") {
+			state = "RUNNING"
+		} else if err == nil {
+			state = "IDLE"
+		}
+		if last == "" {
+			last = state
+			continue
+		}
+		if state != last {
+			notify.Send("mieru-panel: mita state <b>" + last + " -> " + state + "</b>")
+			audit.Log(audit.Entry{Action: "mita.state", Result: state, Fields: map[string]any{"prev": last}})
+			last = state
+		}
 	}
 }
 

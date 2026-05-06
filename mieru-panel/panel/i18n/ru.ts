@@ -180,4 +180,38 @@ export const ru = {
   saving: 'Сохранение…',
   sub_quota_edit_title: 'Изменить квоты',
   sub_quota_save: 'Применить квоты',
+  // themes
+  theme_solar: 'Solar',
+  theme_cyber: 'Cyber',
+  theme_auto: 'Auto',
+  // device limit
+  modal_device_limit: 'Лимит устройств',
+  modal_device_limit_hint:
+    'Сервер запоминает уникальные User-Agent при заходе по подписке. Если устройств больше — клиенту 403.',
+  device_preset_unlimited: 'Без лимита',
+  device_preset_one: '1 устройство',
+  device_preset_two: '2 устройства',
+  device_preset_three: '3 устройства',
+  device_preset_five: '5 устройств',
+  users_devices_pill_hint: 'Количество запомненных устройств / лимит',
+  sub_devices_title: 'Привязанные устройства',
+  sub_devices_empty: 'Пока никто не загружал подписку.',
+  sub_devices_unknown_ua: 'Неизвестный клиент',
+  sub_devices_remove: 'Отвязать',
+  sub_devices_reset_all: 'Сбросить все',
+  sub_devices_reset_confirm: 'Отвязать все устройства? Они смогут заново забрать подписку.',
+  sub_devices_reset_ok: 'Список устройств очищен',
+  sub_devices_remove_ok: 'Устройство отвязано',
+  // bulk
+  users_select_all: 'Выбрать всех',
+  users_select_one: 'Выбрать {name}',
+  users_bulk_selected: 'Выбрано: {count}',
+  users_bulk_delete: 'Удалить выбранных',
+  users_bulk_confirm: 'Удалить {count} пользователей?',
+  users_bulk_deleted: 'Удалено пользователей: {count}',
+  // audit
+  audit_title: 'Аудит-журнал',
+  audit_hint:
+    'Все security-significant события: входы, CRUD пользователей, выдача подписок, смена настроек. Файл append-only.',
+  audit_empty: 'Аудит-журнал пока пуст.',
 } as const

@@ -5,6 +5,10 @@ const THEME_BROWSER_COLOR: Record<Theme, string> = {
   sakura: '#140f0c',
   ghost: '#f6f8fa',
   daylight: '#fbfcfe',
+  solar: '#1f150a',
+  cyber: '#02030a',
+  // Auto follows the system; pick the dark default for the browser chrome.
+  auto: '#0a1628',
 }
 
 /** Updates <meta name="theme-color"> for mobile/browser chrome (SharX-style). */

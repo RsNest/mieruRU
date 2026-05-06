@@ -64,6 +64,14 @@ services:
       - PANEL_SERVER_IP=${PANEL_SERVER_IP:-}
       - PANEL_DEFAULT_PORT=${PANEL_DEFAULT_PORT:-2015}
       - PANEL_PORT_RANGE=${PANEL_PORT_RANGE:-2012-2022}
+      # Optional: send Telegram notifications on user create/delete,
+      # bulk-delete, device-limit hits and mita state transitions.
+      - PANEL_TG_BOT_TOKEN=${PANEL_TG_BOT_TOKEN:-}
+      - PANEL_TG_CHAT_ID=${PANEL_TG_CHAT_ID:-}
+      # Optional: serve the panel over HTTPS. Mount certificate files into
+      # the container and point these vars at them.
+      - PANEL_TLS_CERT=${PANEL_TLS_CERT:-}
+      - PANEL_TLS_KEY=${PANEL_TLS_KEY:-}
     depends_on:
       - mita
 

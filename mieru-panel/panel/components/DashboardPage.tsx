@@ -18,6 +18,7 @@ import type { ServerStatus as ServerStatusValue, User } from '@/lib/types'
 import { AddUserModal } from './AddUserModal'
 import { AdminCredentialsPanel } from './AdminCredentialsPanel'
 import { AdvancedSettingsPanel } from './AdvancedSettingsPanel'
+import { AuditPanel } from './AuditPanel'
 import { ConfigBackupPanel } from './ConfigBackupPanel'
 import { ConfirmModal } from './ConfirmModal'
 import { ConnectionsPanel } from './ConnectionsPanel'
@@ -144,6 +145,7 @@ export function DashboardPage() {
     quotaDayMB: number
     quotaMonthMB: number
     expiresAt: number
+    maxDevices: number
   }) => {
     const res = await api.addUser(payload)
     success(t('toast_user_added'))
@@ -171,10 +173,25 @@ export function DashboardPage() {
 
   const onUpdateUser = async (
     name: string,
-    payload: { quotaDayMB?: number; quotaMonthMB?: number; expiresAt?: number },
+    payload: {
+      quotaDayMB?: number
+      quotaMonthMB?: number
+      expiresAt?: number
+      maxDevices?: number
+    },
   ) => {
     await api.updateUser(name, payload)
     success(t('toast_user_updated'))
+    await fetchData(false)
+  }
+
+  const onResetDevices = async (name: string, fingerprint?: string) => {
+    await api.resetDevices(name, fingerprint)
+    await fetchData(false)
+  }
+
+  const onBulkDelete = async (names: string[]) => {
+    await api.bulkDeleteUsers(names)
     await fetchData(false)
   }
 
@@ -306,6 +323,8 @@ export function DashboardPage() {
               onDelete={(name) => setDeleteName(name)}
               onRegen={onRegenUser}
               onUpdate={onUpdateUser}
+              onResetDevices={onResetDevices}
+              onBulkDelete={onBulkDelete}
               onAdd={() => setShowAdd(true)}
             />
           </div>
@@ -325,6 +344,7 @@ export function DashboardPage() {
 
       <div className={`tab-pane ${tab === 'logs' ? 'active' : 'inactive'}`}>
         <LogsPanel />
+        <AuditPanel />
       </div>
       </div>
 

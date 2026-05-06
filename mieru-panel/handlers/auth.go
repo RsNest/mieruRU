@@ -14,6 +14,8 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	"mieru-panel/config"
 	"mieru-panel/pkg/applog"
+	"mieru-panel/pkg/audit"
+	"mieru-panel/pkg/ratelimit"
 )
 
 const sessionCookieName = "mieru_panel_session"
@@ -25,6 +27,13 @@ type App struct {
 	// (collected from the shared log file written by docker-compose's tee
 	// wrapper). May be nil.
 	MitaLogs func(lines int) (string, error)
+
+	// LoginLimiter throttles failed admin logins per IP.
+	LoginLimiter *ratelimit.Limiter
+	// SubLimiter throttles subscription fetches per token+ip combo,
+	// which both rate-limits credential probing and prevents a single
+	// runaway client from exhausting the panel.
+	SubLimiter *ratelimit.Limiter
 }
 
 // MitaApplyOptions mirrors mita.ApplyOptions through the handlers/mita
@@ -79,6 +88,13 @@ func (a *App) HandleLogin(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusMethodNotAllowed, apiError{Error: "method not allowed"})
 		return
 	}
+	ip := clientIP(r)
+	if a.LoginLimiter != nil && !a.LoginLimiter.Allow(ip) {
+		applog.Warnf("auth", "login throttled ip=%s", ip)
+		audit.Log(audit.Entry{Action: "login.throttled", IP: ip, Result: "denied"})
+		writeJSON(w, http.StatusTooManyRequests, apiError{Error: "too many attempts, try again later"})
+		return
+	}
 	var req struct {
 		Username string `json:"username"`
 		Password string `json:"password"`
@@ -94,12 +110,14 @@ func (a *App) HandleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if req.Username != cfg.AdminUsername {
-		applog.Warnf("auth", "login failed (unknown user) ip=%s username=%q", clientIP(r), req.Username)
+		applog.Warnf("auth", "login failed (unknown user) ip=%s username=%q", ip, req.Username)
+		audit.Log(audit.Entry{Action: "login.failed", IP: ip, Actor: req.Username, Result: "denied", Fields: map[string]any{"reason": "unknown_user"}})
 		writeJSON(w, http.StatusUnauthorized, apiError{Error: "invalid credentials"})
 		return
 	}
 	if err := bcrypt.CompareHashAndPassword([]byte(cfg.AdminPasswordHash), []byte(req.Password)); err != nil {
-		applog.Warnf("auth", "login failed (bad password) ip=%s username=%q", clientIP(r), req.Username)
+		applog.Warnf("auth", "login failed (bad password) ip=%s username=%q", ip, req.Username)
+		audit.Log(audit.Entry{Action: "login.failed", IP: ip, Actor: req.Username, Result: "denied", Fields: map[string]any{"reason": "bad_password"}})
 		writeJSON(w, http.StatusUnauthorized, apiError{Error: "invalid credentials"})
 		return
 	}
@@ -108,7 +126,8 @@ func (a *App) HandleLogin(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusInternalServerError, apiError{Error: "failed to create session"})
 		return
 	}
-	applog.Infof("auth", "login ok ip=%s username=%q", clientIP(r), req.Username)
+	applog.Infof("auth", "login ok ip=%s username=%q", ip, req.Username)
+	audit.Log(audit.Entry{Action: "login.ok", IP: ip, Actor: req.Username, Result: "ok"})
 	writeJSON(w, http.StatusOK, map[string]any{"ok": true})
 }
 

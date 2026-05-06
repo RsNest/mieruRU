@@ -22,6 +22,14 @@ type Quotas struct {
 	MonthMB int `json:"monthMB"`
 }
 
+type DeviceFingerprint struct {
+	Hash      string `json:"hash"`
+	UserAgent string `json:"userAgent,omitempty"`
+	IP        string `json:"ip,omitempty"`
+	FirstSeen int64  `json:"firstSeen"`
+	LastSeen  int64  `json:"lastSeen"`
+}
+
 type User struct {
 	Name     string `json:"name"`
 	Password string `json:"password"`
@@ -30,6 +38,12 @@ type User struct {
 	// ExpiresAt is the Unix-seconds timestamp after which the user can no
 	// longer fetch the subscription. Zero means "never expires".
 	ExpiresAt int64 `json:"expiresAt,omitempty"`
+
+	// MaxDevices caps how many distinct UA fingerprints can fetch the
+	// subscription. Zero means "no limit". Devices is the rolling list
+	// of fingerprints that have already fetched the sub.
+	MaxDevices int                 `json:"maxDevices,omitempty"`
+	Devices    []DeviceFingerprint `json:"devices,omitempty"`
 }
 
 type Config struct {

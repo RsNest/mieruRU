@@ -1,5 +1,6 @@
 import type {
   AdvancedSettings,
+  AuditEntry,
   ConnectionInfo,
   LogEntry,
   ServerConfig,
@@ -59,6 +60,7 @@ export const api = {
     quotaDayMB: number
     quotaMonthMB: number
     expiresAt?: number
+    maxDevices?: number
   }) {
     return request<{ ok: boolean; autoStarted?: boolean }>('/api/users', {
       method: 'POST',
@@ -67,7 +69,12 @@ export const api = {
   },
   updateUser(
     name: string,
-    payload: { quotaDayMB?: number; quotaMonthMB?: number; expiresAt?: number },
+    payload: {
+      quotaDayMB?: number
+      quotaMonthMB?: number
+      expiresAt?: number
+      maxDevices?: number
+    },
   ) {
     return request<{ ok: boolean }>(`/api/users/${encodeURIComponent(name)}`, {
       method: 'PATCH',
@@ -78,6 +85,21 @@ export const api = {
     return request<{ ok: boolean }>(`/api/users/${encodeURIComponent(name)}`, {
       method: 'DELETE',
     })
+  },
+  bulkDeleteUsers(names: string[]) {
+    return request<{ ok: boolean; removed: number }>(`/api/users/bulk-delete`, {
+      method: 'POST',
+      body: JSON.stringify({ names }),
+    })
+  },
+  resetDevices(name: string, fingerprint?: string) {
+    const path = fingerprint
+      ? `/api/users/${encodeURIComponent(name)}/devices/${encodeURIComponent(fingerprint)}`
+      : `/api/users/${encodeURIComponent(name)}/devices`
+    return request<{ ok: boolean }>(path, { method: 'DELETE' })
+  },
+  getAudit(n = 200) {
+    return request<{ entries: AuditEntry[] }>(`/api/audit?n=${n}`)
   },
   regenUser(name: string) {
     return request<RegenResponse>(`/api/users/${encodeURIComponent(name)}/regenerate`, {

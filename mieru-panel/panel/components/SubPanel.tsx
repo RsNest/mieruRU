@@ -14,11 +14,20 @@ interface SubPanelProps {
   newPassword: string | null
   quotaDayMB: number
   quotaMonMB: number
+  maxDevices: number
+  devices: Array<{
+    hash: string
+    userAgent?: string
+    ip?: string
+    firstSeen: number
+    lastSeen: number
+  }>
   onClearPassword: () => void
   onUpdateQuotas: (
     name: string,
-    payload: { quotaDayMB?: number; quotaMonthMB?: number },
+    payload: { quotaDayMB?: number; quotaMonthMB?: number; maxDevices?: number },
   ) => Promise<void>
+  onResetDevices: (name: string, fingerprint?: string) => Promise<void>
 }
 
 export function SubPanel({
@@ -28,8 +37,11 @@ export function SubPanel({
   newPassword,
   quotaDayMB,
   quotaMonMB,
+  maxDevices,
+  devices,
   onClearPassword,
   onUpdateQuotas,
+  onResetDevices,
 }: SubPanelProps) {
   const { t } = useTranslation()
   const { success, error } = useToast()
@@ -40,12 +52,14 @@ export function SubPanel({
   const [configLoading, setConfigLoading] = useState(false)
   const [draftDay, setDraftDay] = useState(String(quotaDayMB))
   const [draftMonth, setDraftMonth] = useState(String(quotaMonMB))
+  const [draftMaxDevices, setDraftMaxDevices] = useState(String(maxDevices))
   const [savingQuota, setSavingQuota] = useState(false)
 
   useEffect(() => {
     setDraftDay(String(quotaDayMB))
     setDraftMonth(String(quotaMonMB))
-  }, [quotaDayMB, quotaMonMB, open])
+    setDraftMaxDevices(String(maxDevices))
+  }, [quotaDayMB, quotaMonMB, maxDevices, open])
 
   useEffect(() => {
     const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()
@@ -78,14 +92,34 @@ export function SubPanel({
   const saveQuotas = async () => {
     const day = Math.max(0, Number(draftDay) || 0)
     const month = Math.max(0, Number(draftMonth) || 0)
-    if (day === quotaDayMB && month === quotaMonMB) return
+    const md = Math.max(0, Number(draftMaxDevices) || 0)
+    if (day === quotaDayMB && month === quotaMonMB && md === maxDevices) return
     setSavingQuota(true)
     try {
-      await onUpdateQuotas(userName, { quotaDayMB: day, quotaMonthMB: month })
+      await onUpdateQuotas(userName, { quotaDayMB: day, quotaMonthMB: month, maxDevices: md })
     } catch (err) {
       error((err as Error).message || t('toast_error'))
     } finally {
       setSavingQuota(false)
+    }
+  }
+
+  const resetAllDevices = async () => {
+    if (!confirm(t('sub_devices_reset_confirm'))) return
+    try {
+      await onResetDevices(userName)
+      success(t('sub_devices_reset_ok'))
+    } catch (err) {
+      error((err as Error).message || t('toast_error'))
+    }
+  }
+
+  const removeDevice = async (hash: string) => {
+    try {
+      await onResetDevices(userName, hash)
+      success(t('sub_devices_remove_ok'))
+    } catch (err) {
+      error((err as Error).message || t('toast_error'))
     }
   }
 
@@ -181,6 +215,15 @@ export function SubPanel({
                       onChange={(ev) => setDraftMonth(ev.target.value)}
                     />
                   </label>
+                  <label className="field">
+                    {t('modal_device_limit')}
+                    <input
+                      type="number"
+                      min={0}
+                      value={draftMaxDevices}
+                      onChange={(ev) => setDraftMaxDevices(ev.target.value)}
+                    />
+                  </label>
                 </div>
                 <div className="inline-actions">
                   <button
@@ -192,6 +235,51 @@ export function SubPanel({
                     {savingQuota ? t('saving') : t('sub_quota_save')}
                   </button>
                 </div>
+              </div>
+
+              <div className="devices-block">
+                <div className="section-head" style={{ marginTop: 12 }}>
+                  <strong className="quota-editor-title">{t('sub_devices_title')}</strong>
+                  {devices.length > 0 ? (
+                    <button
+                      type="button"
+                      className="btn-secondary"
+                      onClick={() => void resetAllDevices()}
+                    >
+                      ↺ {t('sub_devices_reset_all')}
+                    </button>
+                  ) : null}
+                </div>
+                {devices.length === 0 ? (
+                  <p className="muted" style={{ margin: '6px 0 0', fontSize: 12 }}>
+                    {t('sub_devices_empty')}
+                  </p>
+                ) : (
+                  <ul className="devices-list">
+                    {devices.map((d) => (
+                      <li key={d.hash} className="device-item">
+                        <div className="device-item-meta">
+                          <span className="device-item-ua" title={d.userAgent}>
+                            {d.userAgent || t('sub_devices_unknown_ua')}
+                          </span>
+                          <span className="device-item-sub">
+                            {d.ip ? `${d.ip} · ` : ''}
+                            {new Date(d.lastSeen * 1000).toLocaleString()}
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          className="action-btn icon-only danger"
+                          onClick={() => void removeDevice(d.hash)}
+                          aria-label={t('sub_devices_remove')}
+                          title={t('sub_devices_remove')}
+                        >
+                          ✕
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
 
               {passwordBlock}

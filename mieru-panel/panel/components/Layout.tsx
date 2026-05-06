@@ -30,8 +30,19 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const logout = useAuthStore((state) => state.logout)
 
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme)
-    syncThemeColorMeta(theme)
+    const apply = (effective: typeof theme) => {
+      document.documentElement.setAttribute('data-theme', effective)
+      syncThemeColorMeta(effective)
+    }
+    if (theme !== 'auto') {
+      apply(theme)
+      return
+    }
+    const mq = window.matchMedia('(prefers-color-scheme: dark)')
+    const reflect = () => apply(mq.matches ? 'midnight' : 'daylight')
+    reflect()
+    mq.addEventListener('change', reflect)
+    return () => mq.removeEventListener('change', reflect)
   }, [theme])
 
   useEffect(() => {

@@ -5,12 +5,15 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
 
 	"mieru-panel/config"
 	"mieru-panel/pkg/applog"
+	"mieru-panel/pkg/audit"
+	"mieru-panel/pkg/notify"
 )
 
 func nowUnix() int64 { return time.Now().Unix() }
@@ -50,6 +53,14 @@ func (a *App) HandleUserActions(w http.ResponseWriter, r *http.Request) {
 		a.HandleUserConfig(w, r)
 		return
 	}
+	if len(parts) == 2 && parts[1] == "devices" && r.Method == http.MethodDelete {
+		a.resetDevices(w, r, name, "")
+		return
+	}
+	if len(parts) == 3 && parts[1] == "devices" && r.Method == http.MethodDelete {
+		a.resetDevices(w, r, name, parts[2])
+		return
+	}
 	writeJSON(w, http.StatusMethodNotAllowed, apiError{Error: "method not allowed"})
 }
 
@@ -58,6 +69,7 @@ func (a *App) updateUser(w http.ResponseWriter, r *http.Request, name string) {
 		QuotaDay   *int   `json:"quotaDayMB,omitempty"`
 		QuotaMonth *int   `json:"quotaMonthMB,omitempty"`
 		ExpiresAt  *int64 `json:"expiresAt,omitempty"`
+		MaxDevices *int   `json:"maxDevices,omitempty"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		writeJSON(w, http.StatusBadRequest, apiError{Error: "invalid json"})
@@ -77,6 +89,13 @@ func (a *App) updateUser(w http.ResponseWriter, r *http.Request, name string) {
 			if req.ExpiresAt != nil {
 				cfg.Users[i].ExpiresAt = *req.ExpiresAt
 			}
+			if req.MaxDevices != nil {
+				if *req.MaxDevices < 0 {
+					cfg.Users[i].MaxDevices = 0
+				} else {
+					cfg.Users[i].MaxDevices = *req.MaxDevices
+				}
+			}
 			return nil
 		}
 		return errors.New("user not found")
@@ -90,7 +109,89 @@ func (a *App) updateUser(w http.ResponseWriter, r *http.Request, name string) {
 		return
 	}
 	applog.Infof("users", "user %q updated", name)
+	audit.Log(audit.Entry{Action: "user.update", Target: name, IP: clientIP(r), Result: "ok"})
 	writeJSON(w, http.StatusOK, map[string]any{"ok": true})
+}
+
+// resetDevices clears the saved fingerprint list. When fp != "", removes
+// only that fingerprint; otherwise empties the whole list (so the user
+// can re-import the subscription on every device).
+func (a *App) resetDevices(w http.ResponseWriter, r *http.Request, name, fp string) {
+	err := a.Config.Update(func(cfg *config.Config) error {
+		for i := range cfg.Users {
+			if cfg.Users[i].Name != name {
+				continue
+			}
+			if fp == "" {
+				cfg.Users[i].Devices = nil
+				return nil
+			}
+			next := cfg.Users[i].Devices[:0]
+			for _, d := range cfg.Users[i].Devices {
+				if d.Hash != fp {
+					next = append(next, d)
+				}
+			}
+			cfg.Users[i].Devices = next
+			return nil
+		}
+		return errors.New("user not found")
+	})
+	if err != nil {
+		writeJSON(w, http.StatusNotFound, apiError{Error: err.Error()})
+		return
+	}
+	applog.Infof("users", "devices reset for user=%q fp=%q", name, fp)
+	audit.Log(audit.Entry{Action: "user.devices_reset", Target: name, IP: clientIP(r), Result: "ok", Fields: map[string]any{"fp": fp}})
+	writeJSON(w, http.StatusOK, map[string]any{"ok": true})
+}
+
+// HandleUsersBulk handles POST /api/users/bulk-delete with body
+// {"names":["alice","bob"]} and removes every user listed.
+func (a *App) HandleUsersBulk(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		writeJSON(w, http.StatusMethodNotAllowed, apiError{Error: "method not allowed"})
+		return
+	}
+	var req struct {
+		Names []string `json:"names"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeJSON(w, http.StatusBadRequest, apiError{Error: "invalid json"})
+		return
+	}
+	if len(req.Names) == 0 {
+		writeJSON(w, http.StatusBadRequest, apiError{Error: "no users specified"})
+		return
+	}
+	want := map[string]bool{}
+	for _, n := range req.Names {
+		want[strings.TrimSpace(n)] = true
+	}
+	removed := 0
+	if err := a.Config.Update(func(cfg *config.Config) error {
+		next := make([]config.User, 0, len(cfg.Users))
+		for _, u := range cfg.Users {
+			if want[u.Name] {
+				removed++
+				continue
+			}
+			next = append(next, u)
+		}
+		cfg.Users = next
+		return nil
+	}); err != nil {
+		writeJSON(w, http.StatusInternalServerError, apiError{Error: err.Error()})
+		return
+	}
+	if err := a.syncMitaUsers(); err != nil {
+		writeMita502(w, "syncMitaUsers bulkDelete", err)
+		return
+	}
+	applog.Infof("users", "bulk delete removed=%d names=%v", removed, req.Names)
+	audit.Log(audit.Entry{Action: "user.bulk_delete", IP: clientIP(r), Result: "ok", Fields: map[string]any{"removed": removed, "names": req.Names}})
+	notify.Send(fmt.Sprintf("mieru-panel: <b>%d users removed</b> via bulk delete", removed))
+	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "removed": removed})
 }
 
 func (a *App) listUsers(w http.ResponseWriter) {
@@ -119,6 +220,8 @@ func (a *App) listUsers(w http.ResponseWriter) {
 			"lastActive": stat.RawRecord,
 			"expiresAt":  u.ExpiresAt,
 			"expired":    expired,
+			"maxDevices": u.MaxDevices,
+			"devices":    u.Devices,
 		})
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"users": items})
@@ -131,6 +234,7 @@ func (a *App) createUser(w http.ResponseWriter, r *http.Request) {
 		QuotaDay   int    `json:"quotaDayMB"`
 		QuotaMonth int    `json:"quotaMonthMB"`
 		ExpiresAt  int64  `json:"expiresAt"`
+		MaxDevices int    `json:"maxDevices"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		writeJSON(w, http.StatusBadRequest, apiError{Error: "invalid json"})
@@ -153,12 +257,16 @@ func (a *App) createUser(w http.ResponseWriter, r *http.Request) {
 				return errors.New("user already exists")
 			}
 		}
+		if req.MaxDevices < 0 {
+			req.MaxDevices = 0
+		}
 		cfg.Users = append(cfg.Users, config.User{
-			Name:      req.Name,
-			Password:  req.Password,
-			SubToken:  token,
-			Quotas:    config.Quotas{DayMB: req.QuotaDay, MonthMB: req.QuotaMonth},
-			ExpiresAt: req.ExpiresAt,
+			Name:       req.Name,
+			Password:   req.Password,
+			SubToken:   token,
+			Quotas:     config.Quotas{DayMB: req.QuotaDay, MonthMB: req.QuotaMonth},
+			ExpiresAt:  req.ExpiresAt,
+			MaxDevices: req.MaxDevices,
 		})
 		return nil
 	})
@@ -171,6 +279,8 @@ func (a *App) createUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	applog.Infof("users", "user %q created", req.Name)
+	audit.Log(audit.Entry{Action: "user.create", Target: req.Name, IP: clientIP(r), Result: "ok"})
+	notify.Send(fmt.Sprintf("mieru-panel: <b>user created</b> <code>%s</code>", req.Name))
 
 	// First-user onboarding: if mita is currently IDLE, kick it into
 	// RUNNING so the freshly minted user can connect right away. Failures
@@ -214,6 +324,8 @@ func (a *App) deleteUser(w http.ResponseWriter, name string) {
 		return
 	}
 	applog.Infof("users", "user %q deleted", name)
+	audit.Log(audit.Entry{Action: "user.delete", Target: name, Result: "ok"})
+	notify.Send(fmt.Sprintf("mieru-panel: <b>user deleted</b> <code>%s</code>", name))
 	writeJSON(w, http.StatusOK, map[string]any{"ok": true})
 }
 

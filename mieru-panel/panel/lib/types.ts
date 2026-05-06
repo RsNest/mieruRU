@@ -1,5 +1,13 @@
-export type Theme = 'midnight' | 'sakura' | 'ghost' | 'daylight'
+export type Theme = 'midnight' | 'sakura' | 'ghost' | 'daylight' | 'solar' | 'cyber' | 'auto'
 export type Lang = 'ru' | 'en' | 'zh'
+
+export type DeviceFingerprint = {
+  hash: string
+  userAgent?: string
+  ip?: string
+  firstSeen: number
+  lastSeen: number
+}
 
 export type User = {
   name: string
@@ -14,6 +22,20 @@ export type User = {
   /** Unix seconds; 0 means "never expires". */
   expiresAt?: number
   expired?: boolean
+  /** Maximum allowed concurrent devices; 0 means unlimited. */
+  maxDevices?: number
+  /** List of devices that have already fetched the subscription. */
+  devices?: DeviceFingerprint[]
+}
+
+export type AuditEntry = {
+  time: string
+  action: string
+  actor?: string
+  target?: string
+  ip?: string
+  result?: string
+  fields?: Record<string, unknown>
 }
 
 export type ServerStatus = 'RUNNING' | 'IDLE' | string

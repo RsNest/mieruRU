@@ -16,8 +16,15 @@ interface UserTableProps {
   onRegen: (name: string) => Promise<string>
   onUpdate: (
     name: string,
-    payload: { quotaDayMB?: number; quotaMonthMB?: number; expiresAt?: number },
+    payload: {
+      quotaDayMB?: number
+      quotaMonthMB?: number
+      expiresAt?: number
+      maxDevices?: number
+    },
   ) => Promise<void>
+  onResetDevices: (name: string, fingerprint?: string) => Promise<void>
+  onBulkDelete: (names: string[]) => Promise<void>
   onAdd: () => void
 }
 
@@ -29,12 +36,15 @@ export function UserTable({
   onDelete,
   onRegen,
   onUpdate,
+  onResetDevices,
+  onBulkDelete,
   onAdd,
 }: UserTableProps) {
   const { t } = useTranslation()
   const { success, error: toastError } = useToast()
   const [openName, setOpenName] = useState<string | null>(null)
   const [newPasswords, setNewPasswords] = useState<Record<string, string>>({})
+  const [selected, setSelected] = useState<Set<string>>(new Set())
 
   if (loading) {
     return (
@@ -85,10 +95,58 @@ export function UserTable({
     }
   }
 
+  const allSelected = users.length > 0 && users.every((u) => selected.has(u.name))
+  const toggleAll = () => {
+    setSelected((prev) => {
+      if (allSelected) return new Set()
+      const next = new Set(prev)
+      users.forEach((u) => next.add(u.name))
+      return next
+    })
+  }
+  const toggleOne = (name: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev)
+      if (next.has(name)) next.delete(name)
+      else next.add(name)
+      return next
+    })
+  }
+
+  const runBulkDelete = async () => {
+    if (selected.size === 0) return
+    if (!confirm(t('users_bulk_confirm', { count: selected.size }))) return
+    try {
+      await onBulkDelete(Array.from(selected))
+      setSelected(new Set())
+      success(t('users_bulk_deleted', { count: selected.size }))
+    } catch (e) {
+      toastError((e as Error).message || t('toast_error'))
+    }
+  }
+
   return (
     <div className="user-table">
+      {selected.size > 0 ? (
+        <div className="bulk-bar">
+          <span>{t('users_bulk_selected', { count: selected.size })}</span>
+          <button type="button" className="btn-secondary" onClick={() => setSelected(new Set())}>
+            {t('confirm_no')}
+          </button>
+          <button type="button" className="btn-secondary danger" onClick={() => void runBulkDelete()}>
+            ✕ {t('users_bulk_delete')}
+          </button>
+        </div>
+      ) : null}
       <div className="user-table-head">
-        <span aria-hidden="true" />
+        <span aria-hidden="true" className="col-check">
+          <input
+            type="checkbox"
+            checked={allSelected}
+            onChange={toggleAll}
+            aria-label={t('users_select_all')}
+          />
+        </span>
         <span>{t('users_col_name')}</span>
         <span>{t('users_col_quota_day')}</span>
         <span>{t('users_col_quota_month')}</span>
@@ -119,10 +177,13 @@ export function UserTable({
                 open={openName === user.name}
                 subUrl={`${window.location.origin}/sub/${user.subToken}`}
                 newPassword={newPasswords[user.name] ?? null}
+                selected={selected.has(user.name)}
+                onSelectToggle={() => toggleOne(user.name)}
                 onToggleOpen={() => setOpenName((current) => (current === user.name ? null : user.name))}
                 onDelete={onDelete}
                 onRegen={handleRegen}
                 onUpdate={onUpdate}
+                onResetDevices={onResetDevices}
                 onClearPassword={() =>
                   setNewPasswords((prev) => {
                     const next = { ...prev }

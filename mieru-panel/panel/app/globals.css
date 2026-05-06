@@ -695,7 +695,7 @@ h3,
 
 .user-table-head {
   display: grid;
-  grid-template-columns: 36px minmax(160px, 1.2fr) 1fr 1fr 120px 220px;
+  grid-template-columns: 32px minmax(180px, 1.2fr) 1fr 1fr 120px 220px;
   gap: 8px;
 }
 
@@ -717,12 +717,202 @@ h3,
 
 .user-row {
   display: grid;
-  grid-template-columns: 36px minmax(160px, 1.2fr) 1fr 1fr 120px 220px;
+  grid-template-columns: 32px minmax(180px, 1.2fr) 1fr 1fr 120px 220px;
   align-items: center;
   gap: 8px;
   border-bottom: 1px solid var(--border);
   cursor: pointer;
   padding: 14px 16px;
+}
+
+.col-check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.col-check input[type='checkbox'] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.user-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.user-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #0a0a0a;
+  font-weight: 700;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.devices-pill {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.3px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+}
+
+.devices-pill.full {
+  border-color: #dc2626;
+  color: #dc2626;
+}
+
+.devices-pill.ghost {
+  opacity: 0.6;
+}
+
+.bulk-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border: 1px solid color-mix(in oklab, var(--accent) 40%, var(--border));
+  border-radius: 10px;
+  background: color-mix(in oklab, var(--accent) 10%, var(--bg-elevated));
+  margin-bottom: 12px;
+  font-size: 13px;
+}
+
+.devices-block {
+  margin-top: 14px;
+}
+
+.devices-list {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.device-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: color-mix(in oklab, var(--bg-elevated) 70%, transparent);
+}
+
+.device-item-meta {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.device-item-ua {
+  font-size: 12.5px;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.device-item-sub {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--text-muted);
+}
+
+.audit-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  max-height: 460px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.audit-row {
+  display: grid;
+  grid-template-columns: 170px 1fr auto auto auto;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: color-mix(in oklab, var(--bg-elevated) 60%, transparent);
+  border-left: 3px solid var(--border);
+  align-items: center;
+}
+
+.audit-row.ok {
+  border-left-color: #16a34a;
+}
+.audit-row.denied {
+  border-left-color: #dc2626;
+}
+.audit-row.warn {
+  border-left-color: #f59e0b;
+}
+.audit-row.info {
+  border-left-color: var(--accent);
+}
+
+.audit-time {
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.audit-action {
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 11.5px;
+}
+
+.audit-actor,
+.audit-target,
+.audit-ip {
+  color: var(--text-secondary);
+  font-size: 11px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.audit-result {
+  text-transform: uppercase;
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: color-mix(in oklab, var(--accent) 15%, transparent);
+  color: var(--text-primary);
+}
+.audit-result.ok {
+  background: color-mix(in oklab, #16a34a 25%, transparent);
+}
+.audit-result.denied {
+  background: color-mix(in oklab, #dc2626 25%, transparent);
+}
+.audit-result.warn {
+  background: color-mix(in oklab, #f59e0b 25%, transparent);
+}
+
+@media (max-width: 768px) {
+  .audit-row {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
 }
 
 .user-row:hover .user-row-cells {
@@ -1976,5 +2166,77 @@ h3,
 
 [data-theme='daylight'] .chip.active {
   background: color-mix(in oklab, var(--accent) 16%, #ffffff);
+}
+
+/* === Solar theme: warm amber + plum on a dark espresso base === */
+[data-theme='solar'] {
+  --bg-base: #1f150a;
+  --bg-elevated: #2a1c0e;
+  --bg-hover: #382410;
+  --border: #4a341c;
+  --text-primary: #fde6c5;
+  --text-secondary: #c9a980;
+  --text-muted: #8a7350;
+  --accent: #f59e0b;
+  --accent-strong: #ea580c;
+  --accent-dim: rgba(245, 158, 11, 0.18);
+  --accent-ambient: #ea580c;
+  --danger: #ef4444;
+  --success: #84cc16;
+  --warning: #facc15;
+  --glyph-opacity: 0.07;
+  color-scheme: dark;
+}
+
+[data-theme='solar'] body {
+  background:
+    radial-gradient(circle at 12% 10%, rgba(245, 158, 11, 0.16), transparent 55%),
+    linear-gradient(180deg, #18100a 0%, #1f150a 100%);
+}
+
+/* === Cyber theme: neon green + magenta on near-black === */
+[data-theme='cyber'] {
+  --bg-base: #02030a;
+  --bg-elevated: #07091a;
+  --bg-hover: #0c1130;
+  --border: #1c2148;
+  --text-primary: #d4ffe7;
+  --text-secondary: #88ffc4;
+  --text-muted: #5a8c75;
+  --accent: #00ffa3;
+  --accent-strong: #00d488;
+  --accent-dim: rgba(0, 255, 163, 0.18);
+  --accent-ambient: #ff2bd6;
+  --danger: #ff2bd6;
+  --success: #00ffa3;
+  --warning: #ffd700;
+  --glyph-opacity: 0.05;
+  color-scheme: dark;
+}
+
+[data-theme='cyber'] body {
+  background:
+    repeating-linear-gradient(
+      0deg,
+      rgba(0, 255, 163, 0.04) 0px,
+      rgba(0, 255, 163, 0.04) 1px,
+      transparent 1px,
+      transparent 4px
+    ),
+    radial-gradient(circle at 80% 0%, rgba(255, 43, 214, 0.16), transparent 55%),
+    #02030a;
+}
+
+[data-theme='cyber'] .nav,
+[data-theme='cyber'] .dashboard-card,
+[data-theme='cyber'] .user-row-wrap {
+  border-color: color-mix(in oklab, var(--accent) 30%, var(--border));
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--accent) 8%, transparent),
+    0 0 24px color-mix(in oklab, var(--accent-ambient) 8%, transparent);
+}
+
+[data-theme='cyber'] .btn-primary,
+[data-theme='cyber'] .primary-btn {
+  color: #00170e !important;
 }
 

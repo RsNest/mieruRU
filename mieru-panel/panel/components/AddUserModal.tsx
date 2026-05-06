@@ -14,8 +14,19 @@ interface AddUserModalProps {
     quotaDayMB: number
     quotaMonthMB: number
     expiresAt: number
+    maxDevices: number
   }) => Promise<void>
 }
+
+type DevicePreset = { id: string; labelKey: string; value: number }
+
+const DEVICE_PRESETS: DevicePreset[] = [
+  { id: 'd-unlim', labelKey: 'device_preset_unlimited', value: 0 },
+  { id: 'd1', labelKey: 'device_preset_one', value: 1 },
+  { id: 'd2', labelKey: 'device_preset_two', value: 2 },
+  { id: 'd3', labelKey: 'device_preset_three', value: 3 },
+  { id: 'd5', labelKey: 'device_preset_five', value: 5 },
+]
 
 const namePattern = /^[a-z0-9_-]{2,32}$/
 
@@ -65,6 +76,7 @@ export function AddUserModal({ open, onClose, onSubmit }: AddUserModalProps) {
   const [quotaDay, setQuotaDay] = useState('0')
   const [quotaMonth, setQuotaMonth] = useState('0')
   const [expiryPresetId, setExpiryPresetId] = useState('never')
+  const [devicePresetId, setDevicePresetId] = useState('d-unlim')
   const [error, setError] = useState('')
   const [nameTouched, setNameTouched] = useState(false)
 
@@ -92,6 +104,7 @@ export function AddUserModal({ open, onClose, onSubmit }: AddUserModalProps) {
     setQuotaDay('0')
     setQuotaMonth('0')
     setExpiryPresetId('never')
+    setDevicePresetId('d-unlim')
     setError('')
     setNameTouched(false)
     setShowPassword(false)
@@ -119,6 +132,7 @@ export function AddUserModal({ open, onClose, onSubmit }: AddUserModalProps) {
     const finalPassword = password || randomPassword()
     const expiry = EXPIRY_PRESETS.find((p) => p.id === expiryPresetId) ?? EXPIRY_PRESETS[0]!
     const expiresAt = expiry.days === 0 ? 0 : Math.floor(Date.now() / 1000) + expiry.days * 86400
+    const dp = DEVICE_PRESETS.find((p) => p.id === devicePresetId) ?? DEVICE_PRESETS[0]!
     try {
       await onSubmit({
         name,
@@ -126,6 +140,7 @@ export function AddUserModal({ open, onClose, onSubmit }: AddUserModalProps) {
         quotaDayMB: Math.max(0, Number(quotaDay) || 0),
         quotaMonthMB: Math.max(0, Number(quotaMonth) || 0),
         expiresAt,
+        maxDevices: dp.value,
       })
       handleClose()
     } catch (err) {
@@ -257,6 +272,25 @@ export function AddUserModal({ open, onClose, onSubmit }: AddUserModalProps) {
                     </button>
                   ))}
                 </div>
+              </fieldset>
+
+              <fieldset className="preset-row">
+                <legend>{t('modal_device_limit')}</legend>
+                <div className="preset-chips">
+                  {DEVICE_PRESETS.map((preset) => (
+                    <button
+                      key={preset.id}
+                      type="button"
+                      className={`chip ${devicePresetId === preset.id ? 'active' : ''}`}
+                      onClick={() => setDevicePresetId(preset.id)}
+                    >
+                      {t(preset.labelKey)}
+                    </button>
+                  ))}
+                </div>
+                <p className="muted" style={{ margin: '4px 0 0', fontSize: 11 }}>
+                  {t('modal_device_limit_hint')}
+                </p>
               </fieldset>
 
               {nameInvalid ? <p className="field-error">{t('modal_name_error')}</p> : null}
