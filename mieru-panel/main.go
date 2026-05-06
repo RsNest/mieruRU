@@ -48,12 +48,16 @@ func (m *mitaAdapter) GetUsers() ([]handlers.UserStats, error) {
 	return out, nil
 }
 
-func (m *mitaAdapter) ApplyUsers(users []handlers.MitaUser) error {
+func (m *mitaAdapter) ApplyUsers(users []handlers.MitaUser, serverPortRange string) error {
 	out := make([]mita.User, 0, len(users))
 	for _, u := range users {
 		out = append(out, mita.User{Name: u.Name, Password: u.Password})
 	}
-	return m.client.ApplyUsers(out)
+	return m.client.ApplyUsers(out, serverPortRange)
+}
+
+func (m *mitaAdapter) EnsurePortBindings(serverPortRange string) error {
+	return m.client.EnsurePortBindings(serverPortRange)
 }
 
 func (m *mitaAdapter) GetStatus() (string, error) { return m.client.GetStatus() }

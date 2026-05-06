@@ -10,6 +10,9 @@ import (
 	"strings"
 )
 
+// DefaultPortRange is used when the panel config omits ServerPortRange.
+const DefaultPortRange = "2012-2022"
+
 type Client struct {
 	binary string
 }
@@ -19,8 +22,24 @@ type User struct {
 	Password string `json:"password"`
 }
 
-type MitaConfig struct {
-	Users []User `json:"users"`
+// PortBinding is a subset of server config used for unmarshaling describe output.
+type PortBinding struct {
+	PortRange *string `json:"portRange,omitempty"`
+	Port      *int    `json:"port,omitempty"`
+	Protocol  string  `json:"protocol,omitempty"`
+}
+
+// DescribeConfigUser mirrors mita server config JSON for each user entry.
+type DescribeConfigUser struct {
+	Name           string `json:"name,omitempty"`
+	HashedPassword string `json:"hashedPassword,omitempty"`
+	Password       string `json:"password,omitempty"`
+}
+
+// describeConfigEnvelope matches `mita describe config` JSON (partial).
+type describeConfigEnvelope struct {
+	PortBindings []PortBinding        `json:"portBindings,omitempty"`
+	Users        []DescribeConfigUser `json:"users,omitempty"`
 }
 
 type UserStats struct {
@@ -31,6 +50,18 @@ type UserStats struct {
 	RawRecord string `json:"rawRecord"`
 }
 
+// RunError is returned when a mita subprocess fails; Stdout and Stderr are captured for logs.
+type RunError struct {
+	Op     string
+	Reason string
+	Stdout string
+	Stderr string
+}
+
+func (e *RunError) Error() string {
+	return fmt.Sprintf("mita %s failed: %s", e.Op, e.Reason)
+}
+
 func NewClient(binary string) *Client {
 	if strings.TrimSpace(binary) == "" {
 		binary = "mita"
@@ -38,36 +69,89 @@ func NewClient(binary string) *Client {
 	return &Client{binary: binary}
 }
 
-func (c *Client) GetConfig() (*MitaConfig, error) {
-	out, err := c.run("describe", "config")
+func (c *Client) GetConfig() (*describeConfigEnvelope, error) {
+	out, _, err := c.run("describe", "config")
 	if err != nil {
 		return nil, err
 	}
-	var cfg MitaConfig
+	if out == "" {
+		return nil, errors.New("empty mita describe config output")
+	}
+	var cfg describeConfigEnvelope
 	if err := json.Unmarshal([]byte(out), &cfg); err != nil {
 		return nil, fmt.Errorf("parse mita config: %w", err)
 	}
 	return &cfg, nil
 }
 
+// GetUsers reads users from `mita describe config` (there is no `describe users`).
+// Traffic fields are cleared; the panel does not have per-user CLI metrics.
 func (c *Client) GetUsers() ([]UserStats, error) {
-	out, err := c.run("describe", "users")
+	env, err := c.GetConfig()
 	if err != nil {
 		return nil, err
 	}
-	return parseUsersOutput(out), nil
+	stats := make([]UserStats, 0, len(env.Users))
+	for _, u := range env.Users {
+		name := strings.TrimSpace(u.Name)
+		if name == "" {
+			continue
+		}
+		stats = append(stats, UserStats{
+			Name:      name,
+			TodayRaw:  "",
+			MonthRaw:  "",
+			TotalRaw:  "",
+			RawRecord: "",
+		})
+	}
+	return stats, nil
 }
 
-func (c *Client) ApplyUsers(users []User) error {
-	payload := map[string]any{
-		"users": users,
+func effectivePortRange(portRange string) string {
+	if strings.TrimSpace(portRange) == "" {
+		return DefaultPortRange
 	}
+	return strings.TrimSpace(portRange)
+}
+
+func (c *Client) ApplyUsers(users []User, portRange string) error {
+	pr := effectivePortRange(portRange)
+	payload := map[string]any{
+		"portBindings": []map[string]any{
+			{"portRange": pr, "protocol": "TCP"},
+		},
+		"users":        users,
+		"loggingLevel": "INFO",
+		"mtu":          1400,
+	}
+	return c.applyConfigPayload(payload)
+}
+
+// EnsurePortBindings applies portBindings (+ logging defaults) when mita has none set.
+func (c *Client) EnsurePortBindings(portRange string) error {
+	pr := effectivePortRange(portRange)
+	env, err := c.GetConfig()
+	if err == nil && len(env.PortBindings) > 0 {
+		return nil
+	}
+	payload := map[string]any{
+		"portBindings": []map[string]any{
+			{"portRange": pr, "protocol": "TCP"},
+		},
+		"loggingLevel": "INFO",
+		"mtu":          1400,
+	}
+	return c.applyConfigPayload(payload)
+}
+
+func (c *Client) applyConfigPayload(payload map[string]any) error {
 	tmp, err := os.CreateTemp("", "mieru_panel_update_*.json")
 	if err != nil {
 		return err
 	}
 	tmpPath := tmp.Name()
-	defer os.Remove(tmpPath)
+	defer func() { _ = os.Remove(tmpPath) }()
 
 	encoder := json.NewEncoder(tmp)
 	encoder.SetIndent("", "  ")
@@ -79,15 +163,15 @@ func (c *Client) ApplyUsers(users []User) error {
 		return err
 	}
 
-	if _, err := c.run("apply", "config", tmpPath); err != nil {
+	if _, _, err := c.run("apply", "config", tmpPath); err != nil {
 		return err
 	}
-	_, err = c.run("reload")
+	_, _, err = c.run("reload")
 	return err
 }
 
 func (c *Client) GetStatus() (string, error) {
-	out, err := c.run("status")
+	out, _, err := c.run("status")
 	if err != nil {
 		return "", err
 	}
@@ -103,68 +187,33 @@ func (c *Client) GetStatus() (string, error) {
 }
 
 func (c *Client) Start() error {
-	_, err := c.run("start")
+	_, _, err := c.run("start")
 	return err
 }
 
 func (c *Client) Stop() error {
-	_, err := c.run("stop")
+	_, _, err := c.run("stop")
 	return err
 }
 
-func (c *Client) run(args ...string) (string, error) {
+func (c *Client) run(args ...string) (stdout, stderr string, err error) {
 	cmd := exec.Command(c.binary, args...)
-	var stdout bytes.Buffer
-	var stderr bytes.Buffer
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
+	var stdoutB, stderrB bytes.Buffer
+	cmd.Stdout = &stdoutB
+	cmd.Stderr = &stderrB
+
+	op := strings.Join(args, " ")
 	if err := cmd.Run(); err != nil {
-		msg := strings.TrimSpace(stderr.String())
+		so := strings.TrimSpace(stdoutB.String())
+		se := strings.TrimSpace(stderrB.String())
+		msg := se
 		if msg == "" {
-			msg = strings.TrimSpace(stdout.String())
+			msg = so
 		}
 		if msg == "" {
 			msg = err.Error()
 		}
-		return "", fmt.Errorf("mita %s failed: %s", strings.Join(args, " "), msg)
+		return so, se, &RunError{Op: op, Reason: msg, Stdout: so, Stderr: se}
 	}
-	result := strings.TrimSpace(stdout.String())
-	if result == "" {
-		return "", errors.New("empty mita response")
-	}
-	return result, nil
-}
-
-func parseUsersOutput(out string) []UserStats {
-	lines := strings.Split(out, "\n")
-	stats := make([]UserStats, 0, len(lines))
-	for _, line := range lines {
-		line = strings.TrimSpace(line)
-		if line == "" {
-			continue
-		}
-		lower := strings.ToLower(line)
-		if strings.HasPrefix(lower, "name") || strings.HasPrefix(lower, "user") {
-			continue
-		}
-		parts := strings.Fields(line)
-		if len(parts) == 0 {
-			continue
-		}
-		item := UserStats{
-			Name:      parts[0],
-			RawRecord: line,
-		}
-		if len(parts) > 1 {
-			item.TodayRaw = parts[1]
-		}
-		if len(parts) > 2 {
-			item.MonthRaw = parts[2]
-		}
-		if len(parts) > 3 {
-			item.TotalRaw = parts[3]
-		}
-		stats = append(stats, item)
-	}
-	return stats
+	return strings.TrimSpace(stdoutB.String()), strings.TrimSpace(stderrB.String()), nil
 }

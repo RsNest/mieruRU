@@ -24,7 +24,8 @@ type App struct {
 
 type MitaClient interface {
 	GetUsers() ([]UserStats, error)
-	ApplyUsers(users []MitaUser) error
+	ApplyUsers(users []MitaUser, serverPortRange string) error
+	EnsurePortBindings(serverPortRange string) error
 	GetStatus() (string, error)
 	Start() error
 	Stop() error

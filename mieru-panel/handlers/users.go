@@ -44,7 +44,9 @@ func (a *App) HandleUserActions(w http.ResponseWriter, r *http.Request) {
 func (a *App) listUsers(w http.ResponseWriter) {
 	cfg := a.Config.Snapshot()
 	statsByName := map[string]UserStats{}
-	if stats, err := a.Mita.GetUsers(); err == nil {
+	if stats, err := a.Mita.GetUsers(); err != nil {
+		logMitaCLI("listUsers GetUsers", err)
+	} else {
 		for _, s := range stats {
 			statsByName[s.Name] = s
 		}
@@ -106,7 +108,7 @@ func (a *App) createUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := a.syncMitaUsers(); err != nil {
-		writeJSON(w, http.StatusBadGateway, apiError{Error: err.Error()})
+		writeMita502(w, "syncMitaUsers createUser", err)
 		return
 	}
 	writeJSON(w, http.StatusCreated, map[string]any{"ok": true})
@@ -134,7 +136,7 @@ func (a *App) deleteUser(w http.ResponseWriter, name string) {
 		return
 	}
 	if err := a.syncMitaUsers(); err != nil {
-		writeJSON(w, http.StatusBadGateway, apiError{Error: err.Error()})
+		writeMita502(w, "syncMitaUsers deleteUser", err)
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"ok": true})
@@ -160,7 +162,7 @@ func (a *App) regeneratePassword(w http.ResponseWriter, name string) {
 		return
 	}
 	if err := a.syncMitaUsers(); err != nil {
-		writeJSON(w, http.StatusBadGateway, apiError{Error: err.Error()})
+		writeMita502(w, "syncMitaUsers regeneratePassword", err)
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "password": newPass})
@@ -172,7 +174,8 @@ func (a *App) syncMitaUsers() error {
 	for _, u := range cfg.Users {
 		users = append(users, MitaUser{Name: u.Name, Password: u.Password})
 	}
-	return a.Mita.ApplyUsers(users)
+	portRange := strings.TrimSpace(cfg.ServerPortRange)
+	return a.Mita.ApplyUsers(users, portRange)
 }
 
 func randomHex(bytesLen int) (string, error) {
