@@ -4,6 +4,7 @@ const THEME_BROWSER_COLOR: Record<Theme, string> = {
   midnight: '#0a1628',
   sakura: '#140f0c',
   ghost: '#f6f8fa',
+  daylight: '#fbfcfe',
 }
 
 /** Updates <meta name="theme-color"> for mobile/browser chrome (SharX-style). */

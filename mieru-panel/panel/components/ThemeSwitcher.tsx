@@ -8,6 +8,7 @@ const options: Array<{ value: Theme; icon: string; labelKey: string }> = [
   { value: 'midnight', icon: '🌙', labelKey: 'theme_midnight' },
   { value: 'sakura', icon: '◐', labelKey: 'theme_sakura' },
   { value: 'ghost', icon: '☀', labelKey: 'theme_ghost' },
+  { value: 'daylight', icon: '🔆', labelKey: 'theme_daylight' },
 ]
 
 export function ThemeSwitcher() {

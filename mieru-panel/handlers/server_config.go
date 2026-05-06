@@ -85,7 +85,12 @@ func (a *App) HandleServerConfig(w http.ResponseWriter, r *http.Request) {
 func (a *App) BootstrapMita() error {
 	cfg := a.Config.Snapshot()
 	portRange := strings.TrimSpace(cfg.ServerPortRange)
-	if err := a.Mita.EnsurePortBindings(portRange); err != nil {
+	opts := MitaApplyOptions{
+		LoggingLevel: cfg.LoggingLevel,
+		MTU:          cfg.MTU,
+		Multiplexing: cfg.Multiplexing,
+	}
+	if err := a.Mita.EnsurePortBindings(portRange, opts); err != nil {
 		return fmt.Errorf("ensure port bindings: %w", err)
 	}
 	if len(cfg.Users) > 0 {

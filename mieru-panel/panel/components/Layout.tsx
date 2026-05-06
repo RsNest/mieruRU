@@ -9,6 +9,7 @@ import { dashboardHref, parseDashboardTab } from '@/lib/dashboardTab'
 import { syncThemeColorMeta } from '@/lib/syncThemeMeta'
 import { useAuthStore } from '@/store/auth'
 import { useSettingsStore } from '@/store/settings'
+import { HeaderStatusBadge } from './HeaderStatusBadge'
 import { LangSwitcher } from './LangSwitcher'
 import { ThemeSwitcher } from './ThemeSwitcher'
 
@@ -77,13 +78,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </button>
           <button
             type="button"
-            className={`nav-tab ${dashTab === 'stats' ? 'active' : ''}`}
-            onClick={() => goTab('stats')}
-          >
-            {t('nav_stats')}
-          </button>
-          <button
-            type="button"
             className={`nav-tab ${dashTab === 'server' ? 'active' : ''}`}
             onClick={() => goTab('server')}
           >
@@ -98,6 +92,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </button>
         </nav>
         <div className="nav-controls">
+          <HeaderStatusBadge />
           <LangSwitcher />
           <ThemeSwitcher />
           <button type="button" className="btn-secondary" onClick={() => void onLogout()}>
@@ -128,14 +123,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
         >
           <span className="mobile-tab-icon">👤</span>
           <span>{t('nav_users')}</span>
-        </button>
-        <button
-          type="button"
-          className={`mobile-tab ${dashTab === 'stats' ? 'active' : ''}`}
-          onClick={() => goTab('stats')}
-        >
-          <span className="mobile-tab-icon">📊</span>
-          <span>{t('nav_stats')}</span>
         </button>
         <button
           type="button"

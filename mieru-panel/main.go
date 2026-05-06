@@ -52,21 +52,51 @@ func (m *mitaAdapter) GetUsers() ([]handlers.UserStats, error) {
 	return out, nil
 }
 
-func (m *mitaAdapter) ApplyUsers(users []handlers.MitaUser, serverPortRange string) error {
+func (m *mitaAdapter) ApplyUsers(users []handlers.MitaUser, serverPortRange string, opts handlers.MitaApplyOptions) error {
 	out := make([]mita.User, 0, len(users))
 	for _, u := range users {
 		out = append(out, mita.User{Name: u.Name, Password: u.Password})
 	}
-	return m.client.ApplyUsers(out, serverPortRange)
+	return m.client.ApplyUsers(out, serverPortRange, mita.ApplyOptions{
+		LoggingLevel: opts.LoggingLevel,
+		MTU:          opts.MTU,
+		Multiplexing: opts.Multiplexing,
+	})
 }
 
-func (m *mitaAdapter) EnsurePortBindings(serverPortRange string) error {
-	return m.client.EnsurePortBindings(serverPortRange)
+func (m *mitaAdapter) EnsurePortBindings(serverPortRange string, opts handlers.MitaApplyOptions) error {
+	return m.client.EnsurePortBindings(serverPortRange, mita.ApplyOptions{
+		LoggingLevel: opts.LoggingLevel,
+		MTU:          opts.MTU,
+		Multiplexing: opts.Multiplexing,
+	})
 }
 
 func (m *mitaAdapter) GetStatus() (string, error) { return m.client.GetStatus() }
 func (m *mitaAdapter) Start() error               { return m.client.Start() }
 func (m *mitaAdapter) Stop() error                { return m.client.Stop() }
+
+func (m *mitaAdapter) GetConnections() ([]handlers.MitaConnection, error) {
+	rows, err := m.client.GetConnections()
+	if err != nil {
+		return nil, err
+	}
+	out := make([]handlers.MitaConnection, 0, len(rows))
+	for _, r := range rows {
+		out = append(out, handlers.MitaConnection{
+			SessionID: r.SessionID,
+			Protocol:  r.Protocol,
+			Local:     r.Local,
+			Remote:    r.Remote,
+			State:     r.State,
+			RecvQ:     r.RecvQ,
+			SendQ:     r.SendQ,
+			LastRecv:  r.LastRecv,
+			LastSend:  r.LastSend,
+		})
+	}
+	return out, nil
+}
 
 func main() {
 	// Pipe everything `log.Print*` does into applog so existing 3rd-party
@@ -127,8 +157,13 @@ func main() {
 	protected.HandleFunc("/api/mita/start", app.HandleStart)
 	protected.HandleFunc("/api/mita/stop", app.HandleStop)
 	protected.HandleFunc("/api/mita/logs", app.HandleMitaLogs)
+	protected.HandleFunc("/api/connections", app.HandleConnections)
 	protected.HandleFunc("/api/admin/credentials", app.HandleAdminCredentials)
 	protected.HandleFunc("/api/server-config", app.HandleServerConfig)
+	protected.HandleFunc("/api/advanced", app.HandleAdvancedSettings)
+	protected.HandleFunc("/api/config/backup", app.HandleConfigBackup)
+	protected.HandleFunc("/api/config/restore", app.HandleConfigRestore)
+	protected.HandleFunc("/api/subscriptions/export", app.HandleSubscriptionsExport)
 	protected.HandleFunc("/api/logs", app.HandleLogs)
 	mux.Handle("/api/", app.RequireAuth(protected))
 

@@ -24,9 +24,15 @@ func (a *App) HandleSubscription(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	cfg := a.Config.Snapshot()
+	now := nowUnix()
 	for _, u := range cfg.Users {
 		if u.SubToken != token {
 			continue
+		}
+		if u.ExpiresAt > 0 && u.ExpiresAt < now {
+			applog.Warnf("sub", "expired profile requested for user=%q ip=%s", u.Name, clientIP(r))
+			writeJSON(w, http.StatusGone, apiError{Error: "subscription expired"})
+			return
 		}
 		profile := buildSingBoxProfile(cfg, u)
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
@@ -41,6 +47,10 @@ func (a *App) HandleSubscription(w http.ResponseWriter, r *http.Request) {
 // buildSingBoxProfile produces the exact shape Karing/sing-box expects.
 // Keep this stable: clients import it once and re-fetch on subscription update.
 func buildSingBoxProfile(cfg config.Config, u config.User) map[string]any {
+	multiplexing := strings.TrimSpace(cfg.Multiplexing)
+	if multiplexing == "" {
+		multiplexing = "MULTIPLEXING_HIGH"
+	}
 	return map[string]any{
 		"log": map[string]any{"level": "info"},
 		"dns": map[string]any{
@@ -58,7 +68,7 @@ func buildSingBoxProfile(cfg config.Config, u config.User) map[string]any {
 				"transport":    "TCP",
 				"username":     u.Name,
 				"password":     u.Password,
-				"multiplexing": "MULTIPLEXING_HIGH",
+				"multiplexing": multiplexing,
 			},
 			{"type": "direct", "tag": "direct"},
 		},

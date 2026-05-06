@@ -17,7 +17,10 @@ import { dashboardHref, parseDashboardTab } from '@/lib/dashboardTab'
 import type { ServerStatus as ServerStatusValue, User } from '@/lib/types'
 import { AddUserModal } from './AddUserModal'
 import { AdminCredentialsPanel } from './AdminCredentialsPanel'
+import { AdvancedSettingsPanel } from './AdvancedSettingsPanel'
+import { ConfigBackupPanel } from './ConfigBackupPanel'
 import { ConfirmModal } from './ConfirmModal'
+import { ConnectionsPanel } from './ConnectionsPanel'
 import { LogsPanel } from './LogsPanel'
 import { ServerConfigPanel } from './ServerConfigPanel'
 import { ServerStatus } from './ServerStatus'
@@ -27,9 +30,8 @@ import { UserTable } from './UserTable'
 import { useToast } from './useToast'
 
 // parseTraffic returns the cumulative number of MiB encoded in a "↓ 5.6 MiB
-// / ↑ 2.3 MiB" style string (or any subset). Tokens with KiB/MiB/GiB or
-// the legacy KB/MB/GB suffixes are summed; anything we cannot parse just
-// contributes 0 instead of throwing.
+// / ↑ 2.3 MiB" style string. Tokens with KiB/MiB/GiB or the legacy KB/MB/GB
+// suffixes are summed; tokens we cannot parse contribute 0.
 function parseTraffic(raw?: string): number {
   if (!raw) return 0
   const tokens = raw.match(/[\d.,]+\s*[KMG]i?B/gi)
@@ -66,6 +68,7 @@ export function DashboardPage() {
   const [showAdd, setShowAdd] = useState(false)
   const [deleteName, setDeleteName] = useState<string | null>(null)
   const [accentColor, setAccentColor] = useState('var(--accent)')
+  const [search, setSearch] = useState('')
 
   const fetchData = async (initial = false) => {
     if (initial) setLoading(true)
@@ -106,6 +109,12 @@ export function DashboardPage() {
     [users],
   )
 
+  const filteredUsers = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    if (!q) return users
+    return users.filter((u) => u.name.toLowerCase().includes(q))
+  }, [users, search])
+
   const barData: BarRow[] = useMemo(() => {
     return [...users]
       .map((u) => ({
@@ -122,19 +131,19 @@ export function DashboardPage() {
     totalTrafficTodayMB >= 1024
       ? `${(totalTrafficTodayMB / 1024).toFixed(2)} ${t('unit_gb')}`
       : `${totalTrafficTodayMB.toFixed(1)} ${t('unit_mb')}`
-  const statusLabel = String(status).toUpperCase().includes('RUN')
+  const upperStatus = String(status).toUpperCase()
+  const statusLabel = upperStatus.includes('RUN')
     ? t('server_running')
-    : t('server_idle')
-
-  const goTab = (next: Parameters<typeof dashboardHref>[0]) => {
-    router.replace(dashboardHref(next))
-  }
+    : upperStatus.includes('OFFLINE') || upperStatus.includes('UNAVAILABLE')
+      ? t('server_offline')
+      : t('server_idle')
 
   const onAddUser = async (payload: {
     name: string
     password: string
     quotaDayMB: number
     quotaMonthMB: number
+    expiresAt: number
   }) => {
     const res = await api.addUser(payload)
     success(t('toast_user_added'))
@@ -160,39 +169,26 @@ export function DashboardPage() {
     return response.password
   }
 
+  const onUpdateUser = async (
+    name: string,
+    payload: { quotaDayMB?: number; quotaMonthMB?: number; expiresAt?: number },
+  ) => {
+    await api.updateUser(name, payload)
+    success(t('toast_user_updated'))
+    await fetchData(false)
+  }
+
+  const downloadSubscriptions = () => {
+    window.location.href = api.exportSubscriptionsUrl()
+  }
+
+  // Avoid unused lint warnings while we keep `router` available for tab
+  // navigation triggered elsewhere on the page.
+  void router
+
   return (
     <section className="dashboard-stack">
       <Toasts />
-      <div className="tabs-row">
-        <button
-          type="button"
-          className={`tab-btn ${tab === 'users' ? 'active' : ''}`}
-          onClick={() => goTab('users')}
-        >
-          {t('tab_users')}
-        </button>
-        <button
-          type="button"
-          className={`tab-btn ${tab === 'stats' ? 'active' : ''}`}
-          onClick={() => goTab('stats')}
-        >
-          {t('tab_stats')}
-        </button>
-        <button
-          type="button"
-          className={`tab-btn ${tab === 'server' ? 'active' : ''}`}
-          onClick={() => goTab('server')}
-        >
-          {t('tab_server')}
-        </button>
-        <button
-          type="button"
-          className={`tab-btn ${tab === 'logs' ? 'active' : ''}`}
-          onClick={() => goTab('logs')}
-        >
-          {t('tab_logs')}
-        </button>
-      </div>
 
       <div className="stats-grid">
         <StatCard label={t('stat_total_users')} value={users.length} accent />
@@ -211,97 +207,107 @@ export function DashboardPage() {
               </button>
             </div>
           ) : null}
+
+          {users.length > 0 ? (
+            <div className="dashboard-card">
+              <div className="section-head">
+                <div>
+                  <h2>{t('stats_chart_title')}</h2>
+                  <p className="muted" style={{ margin: 0 }}>
+                    {t('stats_chart_hint')}
+                  </p>
+                </div>
+                <button type="button" className="btn-secondary" onClick={downloadSubscriptions}>
+                  ⤓ {t('users_export_subs')}
+                </button>
+              </div>
+              {barData.length === 0 || barData.every((row) => row.trafficMB === 0) ? (
+                <p className="muted" style={{ marginBottom: 0 }}>{t('stats_chart_empty')}</p>
+              ) : (
+                <div className="chart-wrap">
+                  <ResponsiveContainer width="100%" height={240}>
+                    <BarChart data={barData} margin={{ top: 10, right: 8, left: -10, bottom: 4 }}>
+                      <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
+                      <XAxis
+                        dataKey="name"
+                        stroke="var(--text-secondary)"
+                        tick={{ fontSize: 11 }}
+                        interval={0}
+                        angle={-28}
+                        textAnchor="end"
+                        height={64}
+                      />
+                      <YAxis
+                        stroke="var(--text-secondary)"
+                        tick={{ fontSize: 11 }}
+                        label={{
+                          value: t('stats_chart_axis_mb'),
+                          angle: -90,
+                          position: 'insideLeft',
+                          fill: 'var(--text-secondary)',
+                          fontSize: 11,
+                        }}
+                      />
+                      <Tooltip
+                        cursor={{ fill: 'color-mix(in oklab, var(--accent) 8%, transparent)' }}
+                        formatter={(value: number) => [
+                          `${value} ${t('unit_mb').toUpperCase()}`,
+                          t('stats_day'),
+                        ]}
+                        labelFormatter={(label, payload) => {
+                          const full = payload?.[0]?.payload as BarRow | undefined
+                          return full?.fullName ?? String(label)
+                        }}
+                        contentStyle={{
+                          background: 'var(--bg-elevated)',
+                          border: '1px solid var(--border)',
+                          borderRadius: 8,
+                          fontFamily: 'var(--font-mono)',
+                          color: 'var(--text-primary)',
+                        }}
+                      />
+                      <Bar
+                        dataKey="trafficMB"
+                        fill={accentColor}
+                        name={t('stats_day')}
+                        radius={[6, 6, 0, 0]}
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+            </div>
+          ) : null}
+
           <div className="dashboard-card">
             <div className="section-head">
               <h2>{t('nav_users')}</h2>
-              <button type="button" className="btn-primary" onClick={() => setShowAdd(true)}>
-                + {t('users_add')}
-              </button>
+              <div className="inline-actions">
+                <input
+                  type="search"
+                  className="search-input"
+                  placeholder={t('users_search_placeholder')}
+                  value={search}
+                  onChange={(ev) => setSearch(ev.target.value)}
+                  aria-label={t('users_search_placeholder')}
+                />
+                <button type="button" className="btn-primary" onClick={() => setShowAdd(true)}>
+                  + {t('users_add')}
+                </button>
+              </div>
             </div>
             <UserTable
-              users={users}
+              users={filteredUsers}
               loading={loading}
               error={hasError}
               onRetry={() => void fetchData(true)}
               onDelete={(name) => setDeleteName(name)}
               onRegen={onRegenUser}
+              onUpdate={onUpdateUser}
               onAdd={() => setShowAdd(true)}
             />
           </div>
         </>
-      ) : null}
-
-      {tab === 'stats' ? (
-        <div className="dashboard-card">
-          <h2>{t('stats_chart_title')}</h2>
-          <p className="muted">{t('stats_chart_hint')}</p>
-          {barData.length === 0 ? (
-            <p className="muted">{t('stats_chart_empty')}</p>
-          ) : (
-            <div className="chart-wrap">
-              <ResponsiveContainer width="100%" height={280}>
-                <BarChart data={barData} margin={{ top: 10, right: 8, left: -10, bottom: 4 }}>
-                  <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
-                  <XAxis
-                    dataKey="name"
-                    stroke="var(--text-secondary)"
-                    tick={{ fontSize: 11 }}
-                    interval={0}
-                    angle={-28}
-                    textAnchor="end"
-                    height={72}
-                  />
-                  <YAxis
-                    stroke="var(--text-secondary)"
-                    tick={{ fontSize: 11 }}
-                    label={{
-                      value: t('stats_chart_axis_mb'),
-                      angle: -90,
-                      position: 'insideLeft',
-                      fill: 'var(--text-secondary)',
-                      fontSize: 11,
-                    }}
-                  />
-                  <Tooltip
-                    cursor={{ fill: 'color-mix(in oklab, var(--accent) 8%, transparent)' }}
-                    formatter={(value: number) => [`${value} ${t('unit_mb').toUpperCase()}`, t('stats_day')]}
-                    labelFormatter={(label, payload) => {
-                      const full = payload?.[0]?.payload as BarRow | undefined
-                      return full?.fullName ?? String(label)
-                    }}
-                    contentStyle={{
-                      background: 'var(--bg-elevated)',
-                      border: '1px solid var(--border)',
-                      borderRadius: 8,
-                      fontFamily: 'var(--font-mono)',
-                      color: 'var(--text-primary)',
-                    }}
-                  />
-                  <Bar dataKey="trafficMB" fill={accentColor} name={t('stats_day')} radius={[6, 6, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          )}
-          <h3>{t('stats_table_title')}</h3>
-          <table className="simple-table">
-            <thead>
-              <tr>
-                <th>{t('users_col_name')}</th>
-                <th>{t('stats_day')}</th>
-                <th>{t('stats_month')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.map((user) => (
-                <tr key={user.name}>
-                  <td>{user.name}</td>
-                  <td>{user.trafficDay || '-'}</td>
-                  <td>{user.trafficMon || '-'}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
       ) : null}
 
       {tab === 'server' ? (
@@ -309,7 +315,10 @@ export function DashboardPage() {
           <div className="dashboard-card">
             <ServerStatus initialStatus={status} onStatusChange={setStatus} />
           </div>
+          <ConnectionsPanel />
           <ServerConfigPanel />
+          <AdvancedSettingsPanel />
+          <ConfigBackupPanel onRestored={() => void fetchData(false)} />
           <AdminCredentialsPanel />
         </>
       ) : null}
@@ -330,3 +339,8 @@ export function DashboardPage() {
     </section>
   )
 }
+
+// Re-export so other components can deep-link to a tab. dashboardHref is
+// already exported from the lib but referenced here via `parseDashboardTab`
+// to keep the import surface stable.
+export { dashboardHref }

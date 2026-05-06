@@ -27,6 +27,9 @@ type User struct {
 	Password string `json:"password"`
 	SubToken string `json:"subToken"`
 	Quotas   Quotas `json:"quotas"`
+	// ExpiresAt is the Unix-seconds timestamp after which the user can no
+	// longer fetch the subscription. Zero means "never expires".
+	ExpiresAt int64 `json:"expiresAt,omitempty"`
 }
 
 type Config struct {
@@ -39,6 +42,12 @@ type Config struct {
 	BindAddr          string `json:"bindAddr"`
 	SessionSecret     string `json:"sessionSecret"`
 	Users             []User `json:"users"`
+
+	// Advanced mita server knobs surfaced through the Server > Advanced
+	// section of the panel UI.
+	LoggingLevel string `json:"loggingLevel,omitempty"` // INFO / DEBUG / WARN / ERROR
+	MTU          int    `json:"mtu,omitempty"`          // 1280..1500, default 1400
+	Multiplexing string `json:"multiplexing,omitempty"` // OFF/LOW/MIDDLE/HIGH (mita MULTIPLEXING_*)
 }
 
 type Store struct {
@@ -124,6 +133,9 @@ func defaultConfig() (Config, error) {
 		BindAddr:          defaultBindAddr,
 		SessionSecret:     sessionSecret,
 		Users:             []User{},
+		LoggingLevel:      "INFO",
+		MTU:               1400,
+		Multiplexing:      "MULTIPLEXING_HIGH",
 	}, nil
 }
 
@@ -136,6 +148,15 @@ func normalizeDefaults(cfg *Config) {
 	}
 	if cfg.BindAddr == "" {
 		cfg.BindAddr = defaultBindAddr
+	}
+	if cfg.LoggingLevel == "" {
+		cfg.LoggingLevel = "INFO"
+	}
+	if cfg.MTU == 0 {
+		cfg.MTU = 1400
+	}
+	if cfg.Multiplexing == "" {
+		cfg.Multiplexing = "MULTIPLEXING_HIGH"
 	}
 }
 

@@ -27,11 +27,32 @@ type App struct {
 	MitaLogs func(lines int) (string, error)
 }
 
+// MitaApplyOptions mirrors mita.ApplyOptions through the handlers/mita
+// boundary so the handler package does not have to import pkg/mita.
+type MitaApplyOptions struct {
+	LoggingLevel string
+	MTU          int
+	Multiplexing string
+}
+
+type MitaConnection struct {
+	SessionID string `json:"sessionId"`
+	Protocol  string `json:"protocol"`
+	Local     string `json:"local"`
+	Remote    string `json:"remote"`
+	State     string `json:"state"`
+	RecvQ     string `json:"recvQ"`
+	SendQ     string `json:"sendQ"`
+	LastRecv  string `json:"lastRecv"`
+	LastSend  string `json:"lastSend"`
+}
+
 type MitaClient interface {
 	GetUsers() ([]UserStats, error)
-	ApplyUsers(users []MitaUser, serverPortRange string) error
-	EnsurePortBindings(serverPortRange string) error
+	ApplyUsers(users []MitaUser, serverPortRange string, opts MitaApplyOptions) error
+	EnsurePortBindings(serverPortRange string, opts MitaApplyOptions) error
 	GetStatus() (string, error)
+	GetConnections() ([]MitaConnection, error)
 	Start() error
 	Stop() error
 }

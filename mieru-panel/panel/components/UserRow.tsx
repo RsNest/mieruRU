@@ -2,7 +2,9 @@
 
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useSettingsStore } from '@/store/settings'
 import type { User } from '@/lib/types'
+import { formatExpiry, formatRelative } from '@/lib/relativeTime'
 import { QuotaBar } from './QuotaBar'
 import { SubPanel } from './SubPanel'
 
@@ -14,6 +16,10 @@ interface UserRowProps {
   onToggleOpen: () => void
   onDelete: (name: string) => void
   onRegen: (name: string) => void
+  onUpdate: (
+    name: string,
+    payload: { quotaDayMB?: number; quotaMonthMB?: number; expiresAt?: number },
+  ) => Promise<void>
   onClearPassword: () => void
 }
 
@@ -45,27 +51,97 @@ export function UserRow({
   onToggleOpen,
   onDelete,
   onRegen,
+  onUpdate,
   onClearPassword,
 }: UserRowProps) {
   const { t } = useTranslation()
+  const lang = useSettingsStore((state) => state.lang)
   const initial = user.name.slice(0, 1).toUpperCase()
   const avatarIndex = user.name.charCodeAt(0) % avatarVars.length
   const avatarColor = `var(${avatarVars[avatarIndex]})`
   const usedDay = useMemo(() => parseTrafficToBytes(user.trafficDay), [user.trafficDay])
   const usedMonth = useMemo(() => parseTrafficToBytes(user.trafficMon), [user.trafficMon])
 
+  const lastActiveRelative = useMemo(
+    () => (user.lastActive ? formatRelative(user.lastActive, lang) : ''),
+    [user.lastActive, lang],
+  )
+  const expiresLabel = useMemo(
+    () => (user.expiresAt ? formatExpiry(user.expiresAt, lang) : ''),
+    [user.expiresAt, lang],
+  )
+
+  const onNameDoubleClick = async () => {
+    if (!confirm(t('users_dblclick_regen_confirm', { name: user.name }))) return
+    onRegen(user.name)
+  }
+
+  const editExpiry = async () => {
+    const current = user.expiresAt
+      ? new Date(user.expiresAt * 1000).toISOString().slice(0, 10)
+      : ''
+    const raw = prompt(t('users_edit_expiry_prompt'), current)
+    if (raw === null) return
+    if (raw.trim() === '') {
+      await onUpdate(user.name, { expiresAt: 0 })
+      return
+    }
+    const parsed = Date.parse(raw)
+    if (Number.isNaN(parsed)) return
+    await onUpdate(user.name, { expiresAt: Math.floor(parsed / 1000) })
+  }
+
+  const expired = !!user.expired
+  const expiringSoon = !!(user.expiresAt && !expired && user.expiresAt - Date.now() / 1000 < 86400 * 3)
+
   return (
-    <div className="user-row-wrap">
+    <div className={`user-row-wrap ${expired ? 'is-expired' : ''}`}>
       <div className="user-row user-row-cells">
         <button type="button" className="user-avatar" style={{ background: avatarColor }}>
           {initial}
         </button>
-        <button type="button" className="name-btn user-name" onClick={onToggleOpen}>
-          {user.name}
-        </button>
+        <div className="user-name-cell">
+          <button
+            type="button"
+            className="name-btn user-name"
+            onClick={onToggleOpen}
+            onDoubleClick={() => void onNameDoubleClick()}
+            title={t('users_dblclick_regen_hint')}
+          >
+            {user.name}
+          </button>
+          {user.expiresAt ? (
+            <button
+              type="button"
+              className={`expiry-pill ${expired ? 'expired' : expiringSoon ? 'soon' : ''}`}
+              onClick={() => void editExpiry()}
+              title={t('users_edit_expiry_hint')}
+            >
+              {expired ? t('users_expired') : expiresLabel}
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="expiry-pill ghost"
+              onClick={() => void editExpiry()}
+              title={t('users_edit_expiry_hint')}
+            >
+              ∞
+            </button>
+          )}
+        </div>
         <QuotaBar usedBytes={usedDay} quotaMB={user.quotaDayMB} />
         <div className="col-month">
           <QuotaBar usedBytes={usedMonth} quotaMB={user.quotaMonMB} />
+        </div>
+        <div className="col-lastactive">
+          {lastActiveRelative ? (
+            <span className="muted-mono" title={user.lastActive}>
+              {lastActiveRelative}
+            </span>
+          ) : (
+            <span className="muted-mono">—</span>
+          )}
         </div>
         <div className="row-actions">
           <button type="button" className="action-btn" onClick={onToggleOpen}>

@@ -13,10 +13,39 @@ interface AddUserModalProps {
     password: string
     quotaDayMB: number
     quotaMonthMB: number
+    expiresAt: number
   }) => Promise<void>
 }
 
 const namePattern = /^[a-z0-9_-]{2,32}$/
+
+type QuotaPreset = {
+  id: string
+  labelKey: string
+  dayMB: number
+  monthMB: number
+}
+
+const QUOTA_PRESETS: QuotaPreset[] = [
+  { id: 'unlimited', labelKey: 'quota_preset_unlimited', dayMB: 0, monthMB: 0 },
+  { id: 'home', labelKey: 'quota_preset_1gb_day', dayMB: 1024, monthMB: 30 * 1024 },
+  { id: 'travel', labelKey: 'quota_preset_30gb_month', dayMB: 0, monthMB: 30 * 1024 },
+  { id: 'tight', labelKey: 'quota_preset_500mb_day', dayMB: 512, monthMB: 10 * 1024 },
+]
+
+type ExpiryPreset = {
+  id: string
+  labelKey: string
+  days: number // 0 = never
+}
+
+const EXPIRY_PRESETS: ExpiryPreset[] = [
+  { id: 'never', labelKey: 'expiry_never', days: 0 },
+  { id: 'd7', labelKey: 'expiry_7d', days: 7 },
+  { id: 'd30', labelKey: 'expiry_30d', days: 30 },
+  { id: 'd90', labelKey: 'expiry_90d', days: 90 },
+  { id: 'y1', labelKey: 'expiry_365d', days: 365 },
+]
 
 function randomPassword(): string {
   const bytes = new Uint8Array(24)
@@ -32,8 +61,10 @@ export function AddUserModal({ open, onClose, onSubmit }: AddUserModalProps) {
   const [name, setName] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
+  const [quotaPresetId, setQuotaPresetId] = useState('unlimited')
   const [quotaDay, setQuotaDay] = useState('0')
   const [quotaMonth, setQuotaMonth] = useState('0')
+  const [expiryPresetId, setExpiryPresetId] = useState('never')
   const [error, setError] = useState('')
   const [nameTouched, setNameTouched] = useState(false)
 
@@ -49,20 +80,6 @@ export function AddUserModal({ open, onClose, onSubmit }: AddUserModalProps) {
     if (!open) return
     const onKey = (event: KeyboardEvent) => {
       if (event.key === 'Escape') onClose()
-      if (event.key === 'Tab' && rootRef.current) {
-        const selectors = 'input,button'
-        const nodes = rootRef.current.querySelectorAll<HTMLElement>(selectors)
-        if (!nodes.length) return
-        const first = nodes[0]
-        const last = nodes[nodes.length - 1]
-        if (event.shiftKey && document.activeElement === first) {
-          event.preventDefault()
-          last.focus()
-        } else if (!event.shiftKey && document.activeElement === last) {
-          event.preventDefault()
-          first.focus()
-        }
-      }
     }
     document.addEventListener('keydown', onKey)
     return () => document.removeEventListener('keydown', onKey)
@@ -71,8 +88,10 @@ export function AddUserModal({ open, onClose, onSubmit }: AddUserModalProps) {
   const reset = () => {
     setName('')
     setPassword('')
+    setQuotaPresetId('unlimited')
     setQuotaDay('0')
     setQuotaMonth('0')
+    setExpiryPresetId('never')
     setError('')
     setNameTouched(false)
     setShowPassword(false)
@@ -81,6 +100,12 @@ export function AddUserModal({ open, onClose, onSubmit }: AddUserModalProps) {
   const handleClose = () => {
     reset()
     onClose()
+  }
+
+  const applyQuotaPreset = (preset: QuotaPreset) => {
+    setQuotaPresetId(preset.id)
+    setQuotaDay(String(preset.dayMB))
+    setQuotaMonth(String(preset.monthMB))
   }
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
@@ -92,12 +117,15 @@ export function AddUserModal({ open, onClose, onSubmit }: AddUserModalProps) {
       return
     }
     const finalPassword = password || randomPassword()
+    const expiry = EXPIRY_PRESETS.find((p) => p.id === expiryPresetId) ?? EXPIRY_PRESETS[0]!
+    const expiresAt = expiry.days === 0 ? 0 : Math.floor(Date.now() / 1000) + expiry.days * 86400
     try {
       await onSubmit({
         name,
         password: finalPassword,
         quotaDayMB: Math.max(0, Number(quotaDay) || 0),
         quotaMonthMB: Math.max(0, Number(quotaMonth) || 0),
+        expiresAt,
       })
       handleClose()
     } catch (err) {
@@ -153,34 +181,84 @@ export function AddUserModal({ open, onClose, onSubmit }: AddUserModalProps) {
                     value={password}
                     onChange={(event) => setPassword(event.target.value)}
                   />
-                  <button type="button" className="btn-secondary" onClick={() => setShowPassword((v) => !v)}>
+                  <button
+                    type="button"
+                    className="btn-secondary"
+                    onClick={() => setShowPassword((v) => !v)}
+                  >
                     👁
                   </button>
-                  <button type="button" className="btn-secondary" onClick={() => setPassword(randomPassword())}>
+                  <button
+                    type="button"
+                    className="btn-secondary"
+                    onClick={() => setPassword(randomPassword())}
+                  >
                     🎲
                   </button>
                 </div>
               </label>
-              <label className="field">
-                {t('modal_quota_day')}
-                <input
-                  type="number"
-                  min={0}
-                  placeholder="0"
-                  value={quotaDay}
-                  onChange={(event) => setQuotaDay(event.target.value)}
-                />
-              </label>
-              <label className="field">
-                {t('modal_quota_month')}
-                <input
-                  type="number"
-                  min={0}
-                  placeholder="0"
-                  value={quotaMonth}
-                  onChange={(event) => setQuotaMonth(event.target.value)}
-                />
-              </label>
+
+              <fieldset className="preset-row">
+                <legend>{t('modal_quota_preset')}</legend>
+                <div className="preset-chips">
+                  {QUOTA_PRESETS.map((preset) => (
+                    <button
+                      key={preset.id}
+                      type="button"
+                      className={`chip ${quotaPresetId === preset.id ? 'active' : ''}`}
+                      onClick={() => applyQuotaPreset(preset)}
+                    >
+                      {t(preset.labelKey)}
+                    </button>
+                  ))}
+                </div>
+              </fieldset>
+
+              <div className="field-grid">
+                <label className="field">
+                  {t('modal_quota_day')}
+                  <input
+                    type="number"
+                    min={0}
+                    placeholder="0"
+                    value={quotaDay}
+                    onChange={(event) => {
+                      setQuotaDay(event.target.value)
+                      setQuotaPresetId('')
+                    }}
+                  />
+                </label>
+                <label className="field">
+                  {t('modal_quota_month')}
+                  <input
+                    type="number"
+                    min={0}
+                    placeholder="0"
+                    value={quotaMonth}
+                    onChange={(event) => {
+                      setQuotaMonth(event.target.value)
+                      setQuotaPresetId('')
+                    }}
+                  />
+                </label>
+              </div>
+
+              <fieldset className="preset-row">
+                <legend>{t('modal_expiry')}</legend>
+                <div className="preset-chips">
+                  {EXPIRY_PRESETS.map((preset) => (
+                    <button
+                      key={preset.id}
+                      type="button"
+                      className={`chip ${expiryPresetId === preset.id ? 'active' : ''}`}
+                      onClick={() => setExpiryPresetId(preset.id)}
+                    >
+                      {t(preset.labelKey)}
+                    </button>
+                  ))}
+                </div>
+              </fieldset>
+
               {nameInvalid ? <p className="field-error">{t('modal_name_error')}</p> : null}
               {error ? <p className="field-error">{error}</p> : null}
               <div className="modal-actions">

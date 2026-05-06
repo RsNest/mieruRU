@@ -1,4 +1,11 @@
-import type { LogEntry, ServerConfig, ServerStatus, User } from '@/lib/types'
+import type {
+  AdvancedSettings,
+  ConnectionInfo,
+  LogEntry,
+  ServerConfig,
+  ServerStatus,
+  User,
+} from '@/lib/types'
 
 type LoginResponse = { ok: boolean }
 type MeResponse = { authenticated: boolean; username?: string }
@@ -7,6 +14,7 @@ type StatusResponse = { status: ServerStatus }
 type RegenResponse = { ok: boolean; password: string }
 type LogsResponse = { entries: LogEntry[] }
 type MitaLogsResponse = { output: string; available: boolean; error?: string }
+type ConnectionsResponse = { items: ConnectionInfo[]; available: boolean; error?: string }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(path, {
@@ -50,9 +58,19 @@ export const api = {
     password: string
     quotaDayMB: number
     quotaMonthMB: number
+    expiresAt?: number
   }) {
     return request<{ ok: boolean; autoStarted?: boolean }>('/api/users', {
       method: 'POST',
+      body: JSON.stringify(payload),
+    })
+  },
+  updateUser(
+    name: string,
+    payload: { quotaDayMB?: number; quotaMonthMB?: number; expiresAt?: number },
+  ) {
+    return request<{ ok: boolean }>(`/api/users/${encodeURIComponent(name)}`, {
+      method: 'PATCH',
       body: JSON.stringify(payload),
     })
   },
@@ -103,5 +121,43 @@ export const api = {
   },
   getUserConfig(name: string) {
     return request<Record<string, unknown>>(`/api/users/${encodeURIComponent(name)}/config`)
+  },
+  getConnections() {
+    return request<ConnectionsResponse>('/api/connections')
+  },
+  getAdvancedSettings() {
+    return request<AdvancedSettings>('/api/advanced')
+  },
+  updateAdvancedSettings(payload: AdvancedSettings) {
+    return request<{ ok: boolean; warning?: string }>('/api/advanced', {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    })
+  },
+  exportSubscriptionsUrl(): string {
+    return '/api/subscriptions/export'
+  },
+  configBackupUrl(): string {
+    return '/api/config/backup'
+  },
+  async restoreConfig(file: File) {
+    const text = await file.text()
+    const response = await fetch('/api/config/restore', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: text,
+    })
+    if (!response.ok) {
+      let message = response.statusText
+      try {
+        const payload = (await response.json()) as { error?: string }
+        if (payload.error) message = payload.error
+      } catch {
+        // ignore parse errors
+      }
+      throw new Error(message)
+    }
+    return (await response.json()) as { ok: boolean; warning?: string }
   },
 }

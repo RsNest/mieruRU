@@ -14,7 +14,7 @@ type SettingsState = {
 function loadTheme(): Theme {
   if (typeof window === 'undefined') return 'midnight'
   const raw = localStorage.getItem(THEME_KEY)
-  if (raw === 'midnight' || raw === 'sakura' || raw === 'ghost') {
+  if (raw === 'midnight' || raw === 'sakura' || raw === 'ghost' || raw === 'daylight') {
     return raw
   }
   return 'midnight'

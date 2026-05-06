@@ -117,4 +117,65 @@ export const ru = {
   user_show_config: 'Показать sing-box JSON',
   user_hide_config: 'Скрыть JSON',
   user_copy_config: 'Скопировать JSON',
+  // header
+  header_status_aria: 'Статус mita-прокси',
+  // theme
+  theme_daylight: 'Daylight',
+  // user table
+  users_col_lastactive: 'Активность',
+  users_search_placeholder: 'Поиск пользователя…',
+  users_export_subs: 'Экспорт всех подписок',
+  users_dblclick_regen_confirm: 'Перевыпустить пароль для {name}?',
+  users_dblclick_regen_hint: 'Двойной клик — перевыпустить пароль',
+  users_edit_expiry_prompt: 'Введите дату истечения (YYYY-MM-DD) или оставьте пустым для безлимита.',
+  users_edit_expiry_hint: 'Изменить срок действия',
+  users_expired: 'просрочен',
+  toast_user_updated: 'Пользователь обновлён',
+  // quota presets
+  modal_quota_preset: 'Пресет квоты',
+  quota_preset_unlimited: 'Без лимита',
+  quota_preset_1gb_day: '1 ГБ/день · 30 ГБ/мес',
+  quota_preset_30gb_month: '30 ГБ/мес',
+  quota_preset_500mb_day: '500 МБ/день · 10 ГБ/мес',
+  // expiry presets
+  modal_expiry: 'Срок действия',
+  expiry_never: 'Бессрочно',
+  expiry_7d: '7 дней',
+  expiry_30d: '30 дней',
+  expiry_90d: '90 дней',
+  expiry_365d: '1 год',
+  // connections panel
+  connections_title: 'Активные подключения',
+  connections_hint:
+    'Сессии, которые сейчас обрабатывает mita. Обновляется каждые 10 секунд.',
+  connections_count_suffix: 'сессий',
+  connections_empty: 'Активных подключений нет.',
+  connections_unavailable: 'Подключения недоступны: mita ещё не запущен.',
+  connections_col_remote: 'Клиент',
+  connections_col_protocol: 'Протокол',
+  connections_col_state: 'Состояние',
+  connections_col_recvq: 'Recv Q+Buf',
+  connections_col_sendq: 'Send Q+Buf',
+  connections_col_lastrecv: 'Последний приём',
+  // advanced settings
+  advanced_title: 'Дополнительные параметры mita',
+  advanced_hint:
+    'Уровень логирования, MTU и режим мультиплексирования. Применяются на лету через apply config + reload.',
+  advanced_log_level: 'Уровень логов',
+  advanced_mtu: 'MTU (1280–1500)',
+  advanced_multiplexing: 'Мультиплексирование',
+  advanced_saved: 'Параметры применены',
+  advanced_mtu_error: 'MTU должен быть в диапазоне 1280–1500',
+  // backup
+  backup_title: 'Резервная копия',
+  backup_hint:
+    'Скачай текущий config.json или восстанови панель из ранее сделанной копии. Порт и сессионный ключ остаются текущими, чтобы не разлогинило.',
+  backup_download: 'Скачать backup.json',
+  backup_restore: 'Загрузить backup',
+  backup_restore_confirm:
+    'Восстановить конфиг из файла? Текущие пользователи и параметры будут заменены.',
+  backup_restore_ok: 'Конфиг восстановлен, mita пересинхронизирован.',
+  // misc
+  loading: 'Загрузка…',
+  saving: 'Сохранение…',
 } as const

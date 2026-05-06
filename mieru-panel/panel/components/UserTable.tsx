@@ -14,10 +14,23 @@ interface UserTableProps {
   onRetry: () => void
   onDelete: (name: string) => void
   onRegen: (name: string) => Promise<string>
+  onUpdate: (
+    name: string,
+    payload: { quotaDayMB?: number; quotaMonthMB?: number; expiresAt?: number },
+  ) => Promise<void>
   onAdd: () => void
 }
 
-export function UserTable({ users, loading, error, onRetry, onDelete, onRegen, onAdd }: UserTableProps) {
+export function UserTable({
+  users,
+  loading,
+  error,
+  onRetry,
+  onDelete,
+  onRegen,
+  onUpdate,
+  onAdd,
+}: UserTableProps) {
   const { t } = useTranslation()
   const { success, error: toastError } = useToast()
   const [openName, setOpenName] = useState<string | null>(null)
@@ -78,6 +91,7 @@ export function UserTable({ users, loading, error, onRetry, onDelete, onRegen, o
         <span>{t('users_col_name')}</span>
         <span>{t('users_col_quota_day')}</span>
         <span>{t('users_col_quota_month')}</span>
+        <span>{t('users_col_lastactive')}</span>
         <span>{t('users_col_actions')}</span>
       </div>
       <AnimatePresence mode="popLayout">
@@ -107,6 +121,7 @@ export function UserTable({ users, loading, error, onRetry, onDelete, onRegen, o
                 onToggleOpen={() => setOpenName((current) => (current === user.name ? null : user.name))}
                 onDelete={onDelete}
                 onRegen={handleRegen}
+                onUpdate={onUpdate}
                 onClearPassword={() =>
                   setNewPasswords((prev) => {
                     const next = { ...prev }

@@ -7,10 +7,13 @@ import (
 	"errors"
 	"net/http"
 	"strings"
+	"time"
 
 	"mieru-panel/config"
 	"mieru-panel/pkg/applog"
 )
+
+func nowUnix() int64 { return time.Now().Unix() }
 
 func (a *App) HandleUsers(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
@@ -35,6 +38,10 @@ func (a *App) HandleUserActions(w http.ResponseWriter, r *http.Request) {
 		a.deleteUser(w, name)
 		return
 	}
+	if len(parts) == 1 && (r.Method == http.MethodPatch || r.Method == http.MethodPut) {
+		a.updateUser(w, r, name)
+		return
+	}
 	if len(parts) == 2 && parts[1] == "regenerate" && r.Method == http.MethodPost {
 		a.regeneratePassword(w, name)
 		return
@@ -44,6 +51,46 @@ func (a *App) HandleUserActions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusMethodNotAllowed, apiError{Error: "method not allowed"})
+}
+
+func (a *App) updateUser(w http.ResponseWriter, r *http.Request, name string) {
+	var req struct {
+		QuotaDay   *int   `json:"quotaDayMB,omitempty"`
+		QuotaMonth *int   `json:"quotaMonthMB,omitempty"`
+		ExpiresAt  *int64 `json:"expiresAt,omitempty"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeJSON(w, http.StatusBadRequest, apiError{Error: "invalid json"})
+		return
+	}
+	err := a.Config.Update(func(cfg *config.Config) error {
+		for i := range cfg.Users {
+			if cfg.Users[i].Name != name {
+				continue
+			}
+			if req.QuotaDay != nil {
+				cfg.Users[i].Quotas.DayMB = *req.QuotaDay
+			}
+			if req.QuotaMonth != nil {
+				cfg.Users[i].Quotas.MonthMB = *req.QuotaMonth
+			}
+			if req.ExpiresAt != nil {
+				cfg.Users[i].ExpiresAt = *req.ExpiresAt
+			}
+			return nil
+		}
+		return errors.New("user not found")
+	})
+	if err != nil {
+		writeJSON(w, http.StatusNotFound, apiError{Error: err.Error()})
+		return
+	}
+	if err := a.syncMitaUsers(); err != nil {
+		writeMita502(w, "syncMitaUsers updateUser", err)
+		return
+	}
+	applog.Infof("users", "user %q updated", name)
+	writeJSON(w, http.StatusOK, map[string]any{"ok": true})
 }
 
 func (a *App) listUsers(w http.ResponseWriter) {
@@ -56,9 +103,11 @@ func (a *App) listUsers(w http.ResponseWriter) {
 			statsByName[s.Name] = s
 		}
 	}
+	now := nowUnix()
 	items := make([]map[string]any, 0, len(cfg.Users))
 	for _, u := range cfg.Users {
 		stat := statsByName[u.Name]
+		expired := u.ExpiresAt > 0 && u.ExpiresAt < now
 		items = append(items, map[string]any{
 			"name":       u.Name,
 			"password":   u.Password,
@@ -67,6 +116,9 @@ func (a *App) listUsers(w http.ResponseWriter) {
 			"quotaMonMB": u.Quotas.MonthMB,
 			"trafficDay": stat.TodayRaw,
 			"trafficMon": stat.MonthRaw,
+			"lastActive": stat.RawRecord,
+			"expiresAt":  u.ExpiresAt,
+			"expired":    expired,
 		})
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"users": items})
@@ -78,6 +130,7 @@ func (a *App) createUser(w http.ResponseWriter, r *http.Request) {
 		Password   string `json:"password"`
 		QuotaDay   int    `json:"quotaDayMB"`
 		QuotaMonth int    `json:"quotaMonthMB"`
+		ExpiresAt  int64  `json:"expiresAt"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		writeJSON(w, http.StatusBadRequest, apiError{Error: "invalid json"})
@@ -101,10 +154,11 @@ func (a *App) createUser(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		cfg.Users = append(cfg.Users, config.User{
-			Name:     req.Name,
-			Password: req.Password,
-			SubToken: token,
-			Quotas:   config.Quotas{DayMB: req.QuotaDay, MonthMB: req.QuotaMonth},
+			Name:      req.Name,
+			Password:  req.Password,
+			SubToken:  token,
+			Quotas:    config.Quotas{DayMB: req.QuotaDay, MonthMB: req.QuotaMonth},
+			ExpiresAt: req.ExpiresAt,
 		})
 		return nil
 	})
@@ -192,12 +246,22 @@ func (a *App) regeneratePassword(w http.ResponseWriter, name string) {
 
 func (a *App) syncMitaUsers() error {
 	cfg := a.Config.Snapshot()
+	now := nowUnix()
 	users := make([]MitaUser, 0, len(cfg.Users))
 	for _, u := range cfg.Users {
+		// Skip expired users — the proxy refuses their auth and the
+		// subscription endpoint hides them; no need to ship them to mita.
+		if u.ExpiresAt > 0 && u.ExpiresAt < now {
+			continue
+		}
 		users = append(users, MitaUser{Name: u.Name, Password: u.Password})
 	}
 	portRange := strings.TrimSpace(cfg.ServerPortRange)
-	return a.Mita.ApplyUsers(users, portRange)
+	return a.Mita.ApplyUsers(users, portRange, MitaApplyOptions{
+		LoggingLevel: cfg.LoggingLevel,
+		MTU:          cfg.MTU,
+		Multiplexing: cfg.Multiplexing,
+	})
 }
 
 func randomHex(bytesLen int) (string, error) {

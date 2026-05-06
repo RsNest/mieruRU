@@ -257,21 +257,44 @@ func effectivePortRange(portRange string) string {
 	return strings.TrimSpace(portRange)
 }
 
-func (c *Client) ApplyUsers(users []User, portRange string) error {
+// ApplyOptions controls advanced fields of the mita config payload.
+// Empty / zero values fall back to sensible defaults (INFO / 1400 / HIGH).
+type ApplyOptions struct {
+	LoggingLevel string
+	MTU          int
+	Multiplexing string
+}
+
+func (o ApplyOptions) normalize() ApplyOptions {
+	if strings.TrimSpace(o.LoggingLevel) == "" {
+		o.LoggingLevel = "INFO"
+	}
+	if o.MTU <= 0 {
+		o.MTU = 1400
+	}
+	if strings.TrimSpace(o.Multiplexing) == "" {
+		o.Multiplexing = "MULTIPLEXING_HIGH"
+	}
+	return o
+}
+
+func (c *Client) ApplyUsers(users []User, portRange string, opts ApplyOptions) error {
+	o := opts.normalize()
 	pr := effectivePortRange(portRange)
 	payload := map[string]any{
 		"portBindings": []map[string]any{
 			{"portRange": pr, "protocol": "TCP"},
 		},
 		"users":        users,
-		"loggingLevel": "INFO",
-		"mtu":          1400,
+		"loggingLevel": o.LoggingLevel,
+		"mtu":          o.MTU,
 	}
 	return c.applyConfigPayload(payload)
 }
 
 // EnsurePortBindings applies portBindings (+ logging defaults) when mita has none set.
-func (c *Client) EnsurePortBindings(portRange string) error {
+func (c *Client) EnsurePortBindings(portRange string, opts ApplyOptions) error {
+	o := opts.normalize()
 	pr := effectivePortRange(portRange)
 	env, err := c.GetConfig()
 	if err == nil && len(env.PortBindings) > 0 {
@@ -281,8 +304,8 @@ func (c *Client) EnsurePortBindings(portRange string) error {
 		"portBindings": []map[string]any{
 			{"portRange": pr, "protocol": "TCP"},
 		},
-		"loggingLevel": "INFO",
-		"mtu":          1400,
+		"loggingLevel": o.LoggingLevel,
+		"mtu":          o.MTU,
 	}
 	return c.applyConfigPayload(payload)
 }
@@ -336,6 +359,74 @@ func (c *Client) Start() error {
 func (c *Client) Stop() error {
 	_, _, err := c.run("stop")
 	return err
+}
+
+// ConnectionInfo describes one row of `mita get connections`.
+type ConnectionInfo struct {
+	SessionID string `json:"sessionId"`
+	Protocol  string `json:"protocol"`
+	Local     string `json:"local"`
+	Remote    string `json:"remote"`
+	State     string `json:"state"`
+	RecvQ     string `json:"recvQ"`
+	SendQ     string `json:"sendQ"`
+	LastRecv  string `json:"lastRecv"`
+	LastSend  string `json:"lastSend"`
+}
+
+// GetConnections runs `mita get connections` and parses the table.
+// Errors are best-effort (returns empty slice when proxy is IDLE).
+func (c *Client) GetConnections() ([]ConnectionInfo, error) {
+	out, _, err := c.run("get", "connections")
+	if err != nil {
+		return []ConnectionInfo{}, nil
+	}
+	return parseConnectionsTable(out), nil
+}
+
+func parseConnectionsTable(out string) []ConnectionInfo {
+	result := []ConnectionInfo{}
+	if strings.TrimSpace(out) == "" {
+		return result
+	}
+	sep := regexp.MustCompile(`\s{2,}`)
+	var headerCols []string
+	for _, raw := range strings.Split(out, "\n") {
+		line := strings.TrimRight(raw, " \t\r")
+		if strings.TrimSpace(line) == "" {
+			continue
+		}
+		cols := sep.Split(strings.TrimLeft(line, " "), -1)
+		if headerCols == nil {
+			if !strings.HasPrefix(strings.TrimSpace(line), "SessionID") {
+				continue
+			}
+			headerCols = cols
+			continue
+		}
+		colByName := map[string]string{}
+		for i, h := range headerCols {
+			if i < len(cols) {
+				colByName[h] = strings.TrimSpace(cols[i])
+			}
+		}
+		row := ConnectionInfo{
+			SessionID: colByName["SessionID"],
+			Protocol:  colByName["Protocol"],
+			Local:     colByName["Local"],
+			Remote:    colByName["Remote"],
+			State:     colByName["State"],
+			RecvQ:     colByName["RecvQ+Buf"],
+			SendQ:     colByName["SendQ+Buf"],
+			LastRecv:  colByName["LastRecv"],
+			LastSend:  colByName["LastSend"],
+		}
+		if row.SessionID == "" {
+			continue
+		}
+		result = append(result, row)
+	}
+	return result
 }
 
 func (c *Client) run(args ...string) (stdout, stderr string, err error) {
