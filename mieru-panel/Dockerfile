@@ -16,7 +16,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o mieru-panel .
 FROM alpine:3.21
 RUN apk add --no-cache ca-certificates tzdata
 WORKDIR /app
-COPY --from=enfein/mita:latest /usr/bin/mita /usr/bin/mita
+COPY --from=enfein/mita:latest /usr/local/bin/mita /usr/bin/mita
 COPY --from=builder /app/mieru-panel .
 COPY --from=builder /app/init.sh ./init.sh
 RUN chmod +x /app/init.sh
