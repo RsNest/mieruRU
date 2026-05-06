@@ -41,3 +41,6 @@ __pycache__/
 
 # AI tools
 /.codex
+
+# Local reference only (separate clone); do not commit
+/sharx-code/
