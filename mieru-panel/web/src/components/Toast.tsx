@@ -3,17 +3,27 @@ import { useToastItems } from './useToast'
 
 export function Toasts() {
   const toasts = useToastItems()
+  const toastVariants = {
+    initial: { opacity: 0, x: 40, scale: 0.95 },
+    animate: {
+      opacity: 1,
+      x: 0,
+      scale: 1,
+      transition: { type: 'spring' as const, damping: 22, stiffness: 300 },
+    },
+    exit: { opacity: 0, x: 20, scale: 0.95, transition: { duration: 0.15 } },
+  }
   return (
     <div className="toast-container" aria-live="polite">
       <AnimatePresence>
         {toasts.map((toast) => (
           <motion.div
             key={toast.id}
-            className={`toast-item toast-${toast.kind}`}
-            initial={{ opacity: 0, x: 40 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 40 }}
-            transition={{ duration: 0.2 }}
+            className={`toast ${toast.kind}`}
+            variants={toastVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
           >
             {toast.message}
           </motion.div>

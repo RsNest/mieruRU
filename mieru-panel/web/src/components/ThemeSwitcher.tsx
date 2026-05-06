@@ -14,12 +14,12 @@ export function ThemeSwitcher() {
   const setTheme = useSettingsStore((state) => state.setTheme)
 
   return (
-    <div className="control-pill" role="group" aria-label="theme switcher">
+    <div className="theme-switcher" role="group" aria-label="theme switcher">
       {options.map((option) => (
         <button
           key={option.value}
           type="button"
-          className={`control-segment ${theme === option.value ? 'is-active' : ''}`}
+          className={`theme-btn ${theme === option.value ? 'active' : ''}`}
           onClick={() => setTheme(option.value)}
           title={t(option.labelKey)}
         >

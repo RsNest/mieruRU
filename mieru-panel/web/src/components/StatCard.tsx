@@ -16,11 +16,12 @@ export function StatCard({ label, value, unit, accent, onClick }: StatCardProps)
   useEffect(() => {
     if (!isNumber) return
     const start = performance.now()
-    const duration = 500
+    const duration = 800
     let raf = 0
     const tick = (now: number) => {
       const progress = Math.min((now - start) / duration, 1)
-      setAnimated(Math.round(target * progress))
+      const eased = 1 - (1 - progress) ** 3
+      setAnimated(Math.round(target * eased))
       if (progress < 1) {
         raf = window.requestAnimationFrame(tick)
       }
@@ -32,7 +33,7 @@ export function StatCard({ label, value, unit, accent, onClick }: StatCardProps)
   return (
     <button type="button" className={`stat-card ${accent ? 'stat-accent' : ''}`} onClick={onClick}>
       <div className="stat-label">{label}</div>
-      <div className="stat-value">
+      <div className="stat-value data-value">
         {isNumber ? animated : value}
         {unit ? <span className="stat-unit"> {unit}</span> : null}
       </div>

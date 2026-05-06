@@ -19,12 +19,12 @@ export function LangSwitcher() {
   }
 
   return (
-    <div className="control-pill" role="group" aria-label="language switcher">
+    <div className="lang-switcher" role="group" aria-label="language switcher">
       {options.map((option) => (
         <button
           key={option.value}
           type="button"
-          className={`control-segment ${lang === option.value ? 'is-active' : ''}`}
+          className={`lang-btn ${lang === option.value ? 'active' : ''}`}
           onClick={() => onChange(option.value)}
         >
           {option.label}

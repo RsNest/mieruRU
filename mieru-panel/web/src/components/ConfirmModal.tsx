@@ -49,27 +49,37 @@ export function ConfirmModal({
       {open ? (
         <motion.div
           className="modal-backdrop"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
+          variants={{ hidden: { opacity: 0 }, visible: { opacity: 1 } }}
+          initial="hidden"
+          animate="visible"
+          exit="hidden"
           onClick={onCancel}
         >
           <motion.div
-            className="modal-card"
-            initial={{ opacity: 0, y: -40 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -40 }}
-            transition={{ duration: 0.2 }}
+            className="modal"
+            variants={{
+              hidden: { opacity: 0, y: -32, scale: 0.97 },
+              visible: {
+                opacity: 1,
+                y: 0,
+                scale: 1,
+                transition: { type: 'spring', damping: 28, stiffness: 380 },
+              },
+              exit: { opacity: 0, y: -16, scale: 0.98, transition: { duration: 0.18 } },
+            }}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
             ref={rootRef}
             onClick={(event) => event.stopPropagation()}
           >
-            <h3>{title}</h3>
+            <h3 className="modal-title">{title}</h3>
             <p>{message}</p>
             <div className="modal-actions">
-              <button type="button" className="ghost-btn" onClick={onCancel}>
+              <button type="button" className="btn-secondary" onClick={onCancel}>
                 {cancelLabel}
               </button>
-              <button type="button" className="danger-btn" onClick={onConfirm}>
+              <button type="button" className="btn-danger" onClick={onConfirm}>
                 {confirmLabel}
               </button>
             </div>

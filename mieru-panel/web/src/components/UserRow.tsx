@@ -47,23 +47,25 @@ export function UserRow({
 
   return (
     <div className="user-row-wrap">
-      <div className="user-row">
-        <button type="button" className="avatar-badge" style={{ background: avatarColor }}>
+      <div className="user-row user-row-cells">
+        <button type="button" className="user-avatar" style={{ background: avatarColor }}>
           {initial}
         </button>
-        <button type="button" className="name-btn" onClick={onToggleOpen}>
+        <button type="button" className="name-btn user-name" onClick={onToggleOpen}>
           {user.name}
         </button>
         <QuotaBar usedBytes={usedDay} quotaMB={user.quotaDayMB} />
-        <QuotaBar usedBytes={usedMonth} quotaMB={user.quotaMonMB} />
+        <div className="col-month">
+          <QuotaBar usedBytes={usedMonth} quotaMB={user.quotaMonMB} />
+        </div>
         <div className="row-actions">
-          <button type="button" className="ghost-btn" onClick={onToggleOpen}>
+          <button type="button" className="action-btn" onClick={onToggleOpen}>
             {t('users_action_sub')} {open ? '↑' : '↓'}
           </button>
-          <button type="button" className="ghost-btn" onClick={() => onRegen(user.name)}>
+          <button type="button" className="action-btn" onClick={() => onRegen(user.name)}>
             ↺
           </button>
-          <button type="button" className="danger-btn" onClick={() => onDelete(user.name)}>
+          <button type="button" className="action-btn danger" onClick={() => onDelete(user.name)}>
             ✕
           </button>
         </div>

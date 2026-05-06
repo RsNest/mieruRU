@@ -26,20 +26,45 @@ export function Layout() {
 
   return (
     <div className="app-shell">
-      <div className="bg-glyph" aria-hidden="true">
+      <div
+        aria-hidden="true"
+        style={{
+          position: 'fixed',
+          bottom: '-4%',
+          right: '-1%',
+          fontSize: 'clamp(260px, 38vw, 520px)',
+          color: 'var(--accent)',
+          opacity: 'var(--glyph-opacity)',
+          fontFamily: '"Noto Sans JP", serif',
+          fontWeight: 300,
+          lineHeight: 1,
+          pointerEvents: 'none',
+          userSelect: 'none',
+          zIndex: 0,
+        }}
+      >
         見
       </div>
-      <header className="topbar">
-        <div className="brand">見 {t('app_title')}</div>
+      <header className="nav">
+        <Link to="/" className="nav-logo">
+          <span className="nav-logo-glyph">見</span>
+          <span>{t('app_title')}</span>
+        </Link>
         <nav className="nav-tabs">
-          <Link to="/">{t('nav_users')}</Link>
-          <button type="button">{t('nav_stats')}</button>
-          <button type="button">{t('nav_server')}</button>
+          <button type="button" className="nav-tab active">
+            {t('nav_users')}
+          </button>
+          <button type="button" className="nav-tab">
+            {t('nav_stats')}
+          </button>
+          <button type="button" className="nav-tab">
+            {t('nav_server')}
+          </button>
         </nav>
-        <div className="topbar-controls">
+        <div className="nav-controls">
           <LangSwitcher />
           <ThemeSwitcher />
-          <button type="button" className="ghost-btn" onClick={() => void onLogout()}>
+          <button type="button" className="btn-secondary" onClick={() => void onLogout()}>
             {t('nav_logout')}
           </button>
         </div>
@@ -49,15 +74,30 @@ export function Layout() {
         <AnimatePresence mode="wait">
           <motion.div
             key={location.pathname}
-            initial={{ opacity: 0, y: 8 }}
+            initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.2, ease: 'easeOut' }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.18, ease: 'easeOut' }}
+            style={{ position: 'relative', zIndex: 1 }}
           >
             <Outlet />
           </motion.div>
         </AnimatePresence>
       </main>
+      <nav className="mobile-bottom-nav">
+        <button type="button" className="mobile-tab active">
+          <span className="mobile-tab-icon">👤</span>
+          <span>{t('nav_users')}</span>
+        </button>
+        <button type="button" className="mobile-tab">
+          <span className="mobile-tab-icon">📊</span>
+          <span>{t('nav_stats')}</span>
+        </button>
+        <button type="button" className="mobile-tab">
+          <span className="mobile-tab-icon">🖥</span>
+          <span>{t('nav_server')}</span>
+        </button>
+      </nav>
     </div>
   )
 }

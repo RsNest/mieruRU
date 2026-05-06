@@ -49,22 +49,36 @@ export function ServerStatus({ initialStatus, onStatusChange }: ServerStatusProp
 
   return (
     <div className="server-status-card">
-      <h3>{t('server_section_title')}</h3>
-      <div className="server-row">
-        <span className={running ? 'status-dot-running' : 'status-dot-idle'} />
-        <strong>{running ? t('server_running') : t('server_idle')}</strong>
+      <h3 className="modal-title">{t('server_section_title')}</h3>
+      <div style={{ textAlign: 'center', padding: '40px 0' }}>
+        <div
+          className={running ? 'status-dot-running' : 'status-dot-idle'}
+          style={{ width: 16, height: 16, margin: '0 auto 16px' }}
+        />
+        <div
+          className="mono"
+          style={{
+            fontSize: 32,
+            fontWeight: 500,
+            color: running ? 'var(--success)' : 'var(--text-muted)',
+            marginBottom: 8,
+          }}
+        >
+          {running ? t('server_running') : t('server_idle')}
+        </div>
+        <div style={{ color: 'var(--text-muted)', fontSize: 13, marginBottom: 32 }}>mita · 見た</div>
       </div>
       <div className="server-actions">
         <button
           type="button"
-          className="primary-btn"
+          className="btn-primary"
           onClick={() => void updateOptimistic('RUNNING', () => api.startServer())}
         >
           {t('server_start')}
         </button>
         <button
           type="button"
-          className="ghost-btn"
+          className="btn-secondary"
           onClick={() => void updateOptimistic('IDLE', () => api.stopServer())}
         >
           {t('server_stop')}

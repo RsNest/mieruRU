@@ -34,6 +34,7 @@ export function DashboardPage() {
   const [status, setStatus] = useState<ServerStatusValue>('IDLE')
   const [showAdd, setShowAdd] = useState(false)
   const [deleteName, setDeleteName] = useState<string | null>(null)
+  const [accentColor, setAccentColor] = useState('var(--accent)')
 
   const fetchData = async () => {
     setLoading(true)
@@ -51,6 +52,17 @@ export function DashboardPage() {
 
   useEffect(() => {
     void fetchData()
+  }, [])
+
+  useEffect(() => {
+    const readAccent = () => {
+      const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()
+      if (accent) setAccentColor(accent)
+    }
+    readAccent()
+    const observer = new MutationObserver(readAccent)
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] })
+    return () => observer.disconnect()
   }, [])
 
   const totalTrafficTodayMB = useMemo(
@@ -128,7 +140,7 @@ export function DashboardPage() {
         <div className="dashboard-card">
           <div className="section-head">
             <h2>{t('nav_users')}</h2>
-            <button type="button" className="primary-btn" onClick={() => setShowAdd(true)}>
+            <button type="button" className="btn-primary" onClick={() => setShowAdd(true)}>
               + {t('users_add')}
             </button>
           </div>
@@ -151,11 +163,30 @@ export function DashboardPage() {
           <div className="chart-wrap">
             <ResponsiveContainer width="100%" height={260}>
               <AreaChart data={chartData}>
+                <defs>
+                  <linearGradient id="traffic-grad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor={accentColor} stopOpacity={0.3} />
+                    <stop offset="95%" stopColor={accentColor} stopOpacity={0} />
+                  </linearGradient>
+                </defs>
                 <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" />
                 <XAxis dataKey="day" stroke="var(--text-secondary)" />
                 <YAxis stroke="var(--text-secondary)" />
-                <Tooltip />
-                <Area type="monotone" dataKey="traffic" stroke="var(--accent)" fill="var(--accent-dim)" />
+                <Tooltip
+                  contentStyle={{
+                    background: 'var(--bg-elevated)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 8,
+                    fontFamily: 'JetBrains Mono',
+                  }}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="traffic"
+                  stroke={accentColor}
+                  strokeWidth={2}
+                  fill="url(#traffic-grad)"
+                />
               </AreaChart>
             </ResponsiveContainer>
           </div>

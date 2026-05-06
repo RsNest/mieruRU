@@ -108,23 +108,33 @@ export function AddUserModal({ open, onClose, onSubmit }: AddUserModalProps) {
       {open ? (
         <motion.div
           className="modal-backdrop"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
+          variants={{ hidden: { opacity: 0 }, visible: { opacity: 1 } }}
+          initial="hidden"
+          animate="visible"
+          exit="hidden"
           onClick={handleClose}
         >
           <motion.div
-            className="modal-card"
-            initial={{ opacity: 0, y: -40 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -40 }}
-            transition={{ duration: 0.2 }}
+            className="modal"
+            variants={{
+              hidden: { opacity: 0, y: -32, scale: 0.97 },
+              visible: {
+                opacity: 1,
+                y: 0,
+                scale: 1,
+                transition: { type: 'spring', damping: 28, stiffness: 380 },
+              },
+              exit: { opacity: 0, y: -16, scale: 0.98, transition: { duration: 0.18 } },
+            }}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
             ref={rootRef}
             onClick={(event) => event.stopPropagation()}
           >
-            <h3>{t('modal_add_title')}</h3>
+            <h3 className="modal-title">{t('modal_add_title')}</h3>
             <form className="modal-form" onSubmit={submit}>
-              <label>
+              <label className="field">
                 {t('modal_name')}
                 <input
                   ref={nameRef}
@@ -133,7 +143,7 @@ export function AddUserModal({ open, onClose, onSubmit }: AddUserModalProps) {
                   onChange={(event) => setName(event.target.value)}
                 />
               </label>
-              <label>
+              <label className="field">
                 {t('modal_password')}
                 <div className="inline-input">
                   <input
@@ -141,15 +151,15 @@ export function AddUserModal({ open, onClose, onSubmit }: AddUserModalProps) {
                     value={password}
                     onChange={(event) => setPassword(event.target.value)}
                   />
-                  <button type="button" className="ghost-btn" onClick={() => setShowPassword((v) => !v)}>
+                  <button type="button" className="btn-secondary" onClick={() => setShowPassword((v) => !v)}>
                     👁
                   </button>
-                  <button type="button" className="ghost-btn" onClick={() => setPassword(randomPassword())}>
+                  <button type="button" className="btn-secondary" onClick={() => setPassword(randomPassword())}>
                     🎲
                   </button>
                 </div>
               </label>
-              <label>
+              <label className="field">
                 {t('modal_quota_day')}
                 <input
                   type="number"
@@ -159,7 +169,7 @@ export function AddUserModal({ open, onClose, onSubmit }: AddUserModalProps) {
                   onChange={(event) => setQuotaDay(event.target.value)}
                 />
               </label>
-              <label>
+              <label className="field">
                 {t('modal_quota_month')}
                 <input
                   type="number"
@@ -169,13 +179,13 @@ export function AddUserModal({ open, onClose, onSubmit }: AddUserModalProps) {
                   onChange={(event) => setQuotaMonth(event.target.value)}
                 />
               </label>
-              {nameInvalid ? <p className="error-text">{t('modal_name_error')}</p> : null}
-              {error ? <p className="error-text">{error}</p> : null}
+              {nameInvalid ? <p className="field-error">{t('modal_name_error')}</p> : null}
+              {error ? <p className="field-error">{error}</p> : null}
               <div className="modal-actions">
-                <button type="button" className="ghost-btn" onClick={handleClose}>
+                <button type="button" className="btn-secondary" onClick={handleClose}>
                   {t('modal_cancel')}
                 </button>
-                <button type="submit" className="primary-btn">
+                <button type="submit" className="btn-primary">
                   {t('modal_save')}
                 </button>
               </div>

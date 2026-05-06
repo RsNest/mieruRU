@@ -41,16 +41,16 @@ export function SubPanel({ open, subUrl, newPassword, onClearPassword }: SubPane
   const passwordBlock = useMemo(() => {
     if (!newPassword) return null
     return (
-      <div className="sub-password-box">
+      <div className="new-password-box">
         <strong>{t('sub_new_password')}</strong>
-        <code>{newPassword}</code>
+        <code className="new-password-value">{newPassword}</code>
         <div className="inline-actions">
-          <button type="button" className="ghost-btn" onClick={() => void copy(newPassword)}>
+          <button type="button" className="action-btn" onClick={() => void copy(newPassword)}>
             {t('sub_copy')}
           </button>
           <button
             type="button"
-            className="ghost-btn"
+            className="action-btn"
             onClick={() => {
               if (timerId) {
                 window.clearTimeout(timerId)
@@ -73,17 +73,19 @@ export function SubPanel({ open, subUrl, newPassword, onClearPassword }: SubPane
           initial={{ height: 0, opacity: 0 }}
           animate={{ height: 'auto', opacity: 1 }}
           exit={{ height: 0, opacity: 0 }}
-          transition={{ duration: 0.25, ease: 'easeOut' }}
+          transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
+          style={{ overflow: 'hidden' }}
         >
-          <div className="sub-grid">
+          <div className="sub-panel-grid">
             <div>
-              <label>{t('sub_url_label')}</label>
-              <div className="inline-input">
-                <input readOnly value={subUrl} />
-                <button type="button" className="ghost-btn" onClick={() => void copy(subUrl)}>
+              <label className="field">{t('sub_url_label')}</label>
+              <div className="sub-url-field">
+                <input className="sub-url-input" readOnly value={subUrl} />
+                <button type="button" className="action-btn" onClick={() => void copy(subUrl)}>
                   {t('sub_copy')}
                 </button>
               </div>
+              <p className="sub-hint">{t('sub_qr_hint')}</p>
               {passwordBlock}
             </div>
             <div className="sub-qr">

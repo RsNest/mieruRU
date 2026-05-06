@@ -82,21 +82,20 @@ export function UserTable({ users, loading, error, onRetry, onDelete, onRegen, o
         <motion.div
           key="users-list"
           variants={{
-            hidden: {},
-            visible: { transition: { staggerChildren: 0.05 } },
+            initial: {},
+            animate: { transition: { staggerChildren: 0.04, delayChildren: 0.05 } },
           }}
-          initial="hidden"
-          animate="visible"
+          initial="initial"
+          animate="animate"
         >
           {users.map((user) => (
             <motion.div
               key={user.name}
               variants={{
-                hidden: { opacity: 0, x: -10 },
-                visible: { opacity: 1, x: 0 },
+                initial: { opacity: 0, x: -12 },
+                animate: { opacity: 1, x: 0, transition: { duration: 0.2 } },
               }}
               exit={{ opacity: 0, x: 10 }}
-              transition={{ duration: 0.15 }}
             >
               <UserRow
                 user={user}
