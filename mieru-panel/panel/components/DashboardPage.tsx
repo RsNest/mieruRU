@@ -299,36 +299,44 @@ export function DashboardPage() {
             </div>
           ) : null}
 
-          <div className="dashboard-card">
-            <div className="section-head">
-              <h2>{t('nav_users')}</h2>
-              <div className="inline-actions">
-                <input
-                  type="search"
-                  className="search-input"
-                  placeholder={t('users_search_placeholder')}
-                  value={search}
-                  onChange={(ev) => setSearch(ev.target.value)}
-                  aria-label={t('users_search_placeholder')}
-                />
-                <button type="button" className="btn-primary" onClick={() => setShowAdd(true)}>
-                  + {t('users_add')}
-                </button>
+          {users.length > 0 ? (
+            <div className="dashboard-card">
+              <div className="section-head">
+                <h2>{t('nav_users')}</h2>
+                <div className="inline-actions">
+                  <input
+                    type="search"
+                    className="search-input"
+                    placeholder={t('users_search_placeholder')}
+                    value={search}
+                    onChange={(ev) => setSearch(ev.target.value)}
+                    aria-label={t('users_search_placeholder')}
+                  />
+                  <button
+                    type="button"
+                    className="btn-primary"
+                    onClick={() => setShowAdd(true)}
+                  >
+                    + {t('users_add')}
+                  </button>
+                </div>
               </div>
+              <UserTable
+                users={filteredUsers}
+                loading={loading}
+                error={hasError}
+                searchActive={search.trim().length > 0}
+                onClearSearch={() => setSearch('')}
+                onRetry={() => void fetchData(true)}
+                onDelete={(name) => setDeleteName(name)}
+                onRegen={onRegenUser}
+                onUpdate={onUpdateUser}
+                onResetDevices={onResetDevices}
+                onBulkDelete={onBulkDelete}
+                onAdd={() => setShowAdd(true)}
+              />
             </div>
-            <UserTable
-              users={filteredUsers}
-              loading={loading}
-              error={hasError}
-              onRetry={() => void fetchData(true)}
-              onDelete={(name) => setDeleteName(name)}
-              onRegen={onRegenUser}
-              onUpdate={onUpdateUser}
-              onResetDevices={onResetDevices}
-              onBulkDelete={onBulkDelete}
-              onAdd={() => setShowAdd(true)}
-            />
-          </div>
+          ) : null}
         </>
       </div>
 

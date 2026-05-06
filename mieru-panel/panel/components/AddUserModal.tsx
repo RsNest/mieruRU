@@ -28,7 +28,7 @@ const DEVICE_PRESETS: DevicePreset[] = [
   { id: 'd5', labelKey: 'device_preset_five', value: 5 },
 ]
 
-const namePattern = /^[a-z0-9_-]{2,32}$/
+const namePattern = /^[a-zA-Z0-9_-]{2,32}$/
 
 type QuotaPreset = {
   id: string
@@ -293,8 +293,11 @@ export function AddUserModal({ open, onClose, onSubmit }: AddUserModalProps) {
                 </p>
               </fieldset>
 
-              {nameInvalid ? <p className="field-error">{t('modal_name_error')}</p> : null}
-              {error ? <p className="field-error">{error}</p> : null}
+              {error ? (
+                <p className="field-error">{error}</p>
+              ) : nameInvalid ? (
+                <p className="field-error">{t('modal_name_error')}</p>
+              ) : null}
               <div className="modal-actions">
                 <button type="button" className="btn-secondary" onClick={handleClose}>
                   {t('modal_cancel')}

@@ -11,6 +11,9 @@ interface UserTableProps {
   users: User[]
   loading: boolean
   error: boolean
+  /** True when an active search filter is hiding rows. */
+  searchActive?: boolean
+  onClearSearch?: () => void
   onRetry: () => void
   onDelete: (name: string) => void
   onRegen: (name: string) => Promise<string>
@@ -32,6 +35,8 @@ export function UserTable({
   users,
   loading,
   error,
+  searchActive,
+  onClearSearch,
   onRetry,
   onDelete,
   onRegen,
@@ -74,12 +79,21 @@ export function UserTable({
   }
 
   if (users.length === 0) {
+    if (searchActive) {
+      return (
+        <div className="table-state">
+          <p>{t('users_search_no_match')}</p>
+          {onClearSearch ? (
+            <button type="button" className="ghost-btn" onClick={onClearSearch}>
+              {t('users_search_clear')}
+            </button>
+          ) : null}
+        </div>
+      )
+    }
     return (
       <div className="table-state">
         <p>{t('users_empty')}</p>
-        <button type="button" className="primary-btn" onClick={onAdd}>
-          + {t('users_add')}
-        </button>
       </div>
     )
   }
