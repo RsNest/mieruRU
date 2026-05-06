@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   mita:
     image: enfein/mita:latest
