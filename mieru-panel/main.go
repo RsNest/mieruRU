@@ -2,13 +2,16 @@ package main
 
 import (
 	"crypto/rand"
+	"embed"
 	"encoding/json"
 	"encoding/hex"
 	"errors"
 	"flag"
+	"io/fs"
 	"log"
 	"net/http"
 	"os"
+	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -19,6 +22,9 @@ import (
 
 	"golang.org/x/crypto/bcrypt"
 )
+
+//go:embed web/dist web/dist/*
+var webDist embed.FS
 
 type mitaAdapter struct {
 	client *mita.Client
@@ -78,8 +84,11 @@ func main() {
 	}
 
 	mux := http.NewServeMux()
-	fs := http.FileServer(http.Dir("templates"))
-	mux.Handle("/", fs)
+	frontendFS, err := fs.Sub(webDist, "web/dist")
+	if err != nil {
+		log.Fatal(err)
+	}
+	mux.Handle("/", spaHandler(frontendFS))
 	mux.HandleFunc("/sub/", app.HandleSubscription)
 	mux.HandleFunc("/api/login", app.HandleLogin)
 
@@ -161,6 +170,34 @@ func runInit(args []string) error {
 		return err
 	}
 	return os.WriteFile(*configPath, body, 0o600)
+}
+
+func spaHandler(static fs.FS) http.Handler {
+	fileServer := http.FileServer(http.FS(static))
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		p := path.Clean(r.URL.Path)
+		if p == "." {
+			p = "/"
+		}
+		target := strings.TrimPrefix(p, "/")
+		if target == "" {
+			target = "index.html"
+		}
+		f, err := static.Open(target)
+		if err == nil {
+			_ = f.Close()
+			fileServer.ServeHTTP(w, r)
+			return
+		}
+		index, indexErr := static.Open("index.html")
+		if indexErr != nil {
+			http.Error(w, "frontend build not found", http.StatusServiceUnavailable)
+			return
+		}
+		_ = index.Close()
+		r.URL.Path = "/index.html"
+		fileServer.ServeHTTP(w, r)
+	})
 }
 
 func randomHex(size int) (string, error) {

@@ -1,8 +1,12 @@
 BIN := mieru-panel
 
-.PHONY: build install docker-build docker-up docker-down docker-logs docker-restart docker-shell
+.PHONY: web build install docker-build docker-up docker-down docker-logs docker-restart docker-shell
+
+web:
+	cd web && npm install && npm run build
 
 build:
+	$(MAKE) web
 	go build -o $(BIN) .
 
 install: build
