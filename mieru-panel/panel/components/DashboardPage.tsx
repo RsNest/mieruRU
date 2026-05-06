@@ -20,6 +20,7 @@ import { AdminCredentialsPanel } from './AdminCredentialsPanel'
 import { AdvancedSettingsPanel } from './AdvancedSettingsPanel'
 import { AuditPanel } from './AuditPanel'
 import { ConfigBackupPanel } from './ConfigBackupPanel'
+import { SubSecurityPanel } from './SubSecurityPanel'
 import { ConfirmModal } from './ConfirmModal'
 import { ConnectionsPanel } from './ConnectionsPanel'
 import { LogsPanel } from './LogsPanel'
@@ -338,6 +339,7 @@ export function DashboardPage() {
         <ConnectionsPanel />
         <ServerConfigPanel />
         <AdvancedSettingsPanel />
+        <SubSecurityPanel />
         <ConfigBackupPanel onRestored={() => void fetchData(false)} />
         <AdminCredentialsPanel />
       </div>

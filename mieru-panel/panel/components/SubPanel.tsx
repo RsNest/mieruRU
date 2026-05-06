@@ -17,6 +17,7 @@ interface SubPanelProps {
   maxDevices: number
   devices: Array<{
     hash: string
+    hwid?: string
     userAgent?: string
     ip?: string
     firstSeen: number
@@ -263,7 +264,13 @@ export function SubPanel({
                             {d.userAgent || t('sub_devices_unknown_ua')}
                           </span>
                           <span className="device-item-sub">
-                            {d.ip ? `${d.ip} · ` : ''}
+                            {d.hwid ? (
+                              <span className="device-hwid" title={t('sub_devices_hwid')}>
+                                HWID:{d.hwid.slice(0, 12)}…
+                              </span>
+                            ) : null}
+                            {d.ip ? ` · ${d.ip}` : ''}
+                            {' · '}
                             {new Date(d.lastSeen * 1000).toLocaleString()}
                           </span>
                         </div>

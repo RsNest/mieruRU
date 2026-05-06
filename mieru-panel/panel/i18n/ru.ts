@@ -214,4 +214,21 @@ export const ru = {
   audit_hint:
     'Все security-significant события: входы, CRUD пользователей, выдача подписок, смена настроек. Файл append-only.',
   audit_empty: 'Аудит-журнал пока пуст.',
+  // sub security
+  sub_security_title: 'Защита подписки',
+  sub_security_hint:
+    'Привязка /sub/<token> к конкретным клиентам. Так невозможно скачать профиль через curl, а смена User-Agent в настройках клиента не помогает обойти лимит устройств — фингерпринт берётся из X-HWID.',
+  sub_security_allowed_label: 'Разрешённые клиенты (User-Agent, по одному на строку):',
+  sub_security_allowed_placeholder: 'Karing\nsing-box\nmihomo',
+  sub_security_allowed_help:
+    'Подстроки сравниваются без регистра. Пустой список = принимать любой клиент.',
+  sub_security_preset_official: 'Только официальные клиенты',
+  sub_security_preset_karing: 'Только Karing',
+  sub_security_preset_any: 'Любой клиент',
+  sub_security_require_hwid: 'Требовать заголовок X-HWID',
+  sub_security_require_hwid_hint:
+    'Karing/sing-box шлют X-HWID автоматически. Включение блокирует «голые» парсеры и форки без HWID.',
+  sub_devices_hwid: 'Hardware ID клиента',
+  saved: 'Сохранено',
+  save: 'Сохранить',
 } as const

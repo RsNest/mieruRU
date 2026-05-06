@@ -3,10 +3,17 @@ export type Lang = 'ru' | 'en' | 'zh'
 
 export type DeviceFingerprint = {
   hash: string
+  hwid?: string
   userAgent?: string
   ip?: string
   firstSeen: number
   lastSeen: number
+}
+
+export type SubSecurity = {
+  allowedUserAgents: string[]
+  requireHWID: boolean
+  defaultsList: string[]
 }
 
 export type User = {

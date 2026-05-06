@@ -34,6 +34,7 @@ func (a *App) HandleSubscription(w http.ResponseWriter, r *http.Request) {
 	}
 	ip := clientIP(r)
 	ua := r.Header.Get("User-Agent")
+	hwid := strings.TrimSpace(r.Header.Get("X-HWID"))
 	if a.SubLimiter != nil && !a.SubLimiter.Allow(token+"|"+ip) {
 		applog.Warnf("sub", "rate limited ip=%s token=%s", ip, token[:8])
 		writeJSON(w, http.StatusTooManyRequests, apiError{Error: "too many requests"})
@@ -53,11 +54,23 @@ func (a *App) HandleSubscription(w http.ResponseWriter, r *http.Request) {
 			writeJSON(w, http.StatusGone, apiError{Error: "subscription expired"})
 			return
 		}
-		fp := deviceFingerprint(ua)
-		allowed, reason := a.recordDevice(u.Name, fp, ua, ip)
+		if cfg.RequireHWID && hwid == "" {
+			applog.Warnf("sub", "missing X-HWID for user=%q ip=%s ua=%q", u.Name, ip, ua)
+			audit.Log(audit.Entry{Action: "sub.denied", Target: u.Name, IP: ip, Result: "missing_hwid", Fields: map[string]any{"ua": ua}})
+			writeJSON(w, http.StatusForbidden, apiError{Error: "client does not present X-HWID"})
+			return
+		}
+		if !uaAllowed(ua, cfg.AllowedUserAgents) {
+			applog.Warnf("sub", "blocked UA for user=%q ip=%s ua=%q", u.Name, ip, ua)
+			audit.Log(audit.Entry{Action: "sub.denied", Target: u.Name, IP: ip, Result: "ua_blocked", Fields: map[string]any{"ua": ua}})
+			writeJSON(w, http.StatusForbidden, apiError{Error: "this client is not permitted"})
+			return
+		}
+		fp := deviceFingerprint(hwid, ua)
+		allowed, reason := a.recordDevice(u.Name, fp, hwid, ua, ip)
 		if !allowed {
-			applog.Warnf("sub", "device limit hit user=%q ip=%s ua=%q", u.Name, ip, ua)
-			audit.Log(audit.Entry{Action: "sub.denied", Target: u.Name, IP: ip, Result: reason, Fields: map[string]any{"ua": ua}})
+			applog.Warnf("sub", "device limit hit user=%q ip=%s ua=%q hwid=%q", u.Name, ip, ua, hwid)
+			audit.Log(audit.Entry{Action: "sub.denied", Target: u.Name, IP: ip, Result: reason, Fields: map[string]any{"ua": ua, "hwid": hwid}})
 			notify.Send("mieru-panel: <b>device limit hit</b> for user <code>" + u.Name + "</code> from " + ip)
 			writeJSON(w, http.StatusForbidden, apiError{Error: "device limit reached for this subscription"})
 			return
@@ -65,8 +78,8 @@ func (a *App) HandleSubscription(w http.ResponseWriter, r *http.Request) {
 		profile := buildSingBoxProfile(cfg, u)
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		writeJSON(w, http.StatusOK, profile)
-		applog.Infof("sub", "profile served for user=%q ip=%s", u.Name, ip)
-		audit.Log(audit.Entry{Action: "sub.served", Target: u.Name, IP: ip, Result: "ok", Fields: map[string]any{"ua": ua, "fp": fp}})
+		applog.Infof("sub", "profile served for user=%q ip=%s ua=%q hwid=%q", u.Name, ip, ua, hwid)
+		audit.Log(audit.Entry{Action: "sub.served", Target: u.Name, IP: ip, Result: "ok", Fields: map[string]any{"ua": ua, "hwid": hwid, "fp": fp}})
 		return
 	}
 	applog.Warnf("sub", "invalid token from ip=%s", ip)
@@ -74,22 +87,49 @@ func (a *App) HandleSubscription(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusNotFound, apiError{Error: "invalid token"})
 }
 
-// deviceFingerprint hashes a User-Agent into a stable opaque identifier.
-// We intentionally do NOT include the source IP so that a phone roaming
-// between Wi-Fi and LTE counts as one device.
-func deviceFingerprint(ua string) string {
+// deviceFingerprint hashes (HWID, UA) into a stable opaque identifier.
+// HWID is preferred — clients like Karing emit it via X-HWID and it
+// survives UA changes, defeating the trivial "rotate the User-Agent
+// header" bypass. We intentionally do NOT include the source IP so
+// that a phone roaming between Wi-Fi and LTE counts as one device.
+func deviceFingerprint(hwid, ua string) string {
+	hwid = strings.TrimSpace(hwid)
+	if hwid != "" {
+		sum := sha256.Sum256([]byte("hwid:" + hwid))
+		return hex.EncodeToString(sum[:])[:16]
+	}
 	clean := strings.TrimSpace(ua)
 	if clean == "" {
 		clean = "unknown"
 	}
-	sum := sha256.Sum256([]byte(clean))
+	sum := sha256.Sum256([]byte("ua:" + clean))
 	return hex.EncodeToString(sum[:])[:16]
+}
+
+// uaAllowed reports whether `ua` matches any case-insensitive substring
+// in `allowed`. An empty allow-list disables the filter (legacy / "any
+// client" mode).
+func uaAllowed(ua string, allowed []string) bool {
+	if len(allowed) == 0 {
+		return true
+	}
+	low := strings.ToLower(ua)
+	for _, p := range allowed {
+		p = strings.TrimSpace(p)
+		if p == "" {
+			continue
+		}
+		if strings.Contains(low, strings.ToLower(p)) {
+			return true
+		}
+	}
+	return false
 }
 
 // recordDevice adds (or refreshes) a fingerprint on a user, enforcing
 // MaxDevices. Returns (allowed, denyReason). When MaxDevices == 0, the
 // limit is disabled and any new fingerprint is accepted.
-func (a *App) recordDevice(name, fp, ua, ip string) (bool, string) {
+func (a *App) recordDevice(name, fp, hwid, ua, ip string) (bool, string) {
 	allowed := true
 	reason := ""
 	now := nowUnix()
@@ -103,6 +143,12 @@ func (a *App) recordDevice(name, fp, ua, ip string) (bool, string) {
 				if u.Devices[j].Hash == fp {
 					u.Devices[j].LastSeen = now
 					u.Devices[j].IP = ip
+					if hwid != "" && u.Devices[j].HWID == "" {
+						u.Devices[j].HWID = hwid
+					}
+					if ua != "" {
+						u.Devices[j].UserAgent = ua
+					}
 					return nil
 				}
 			}
@@ -113,6 +159,7 @@ func (a *App) recordDevice(name, fp, ua, ip string) (bool, string) {
 			}
 			u.Devices = append(u.Devices, config.DeviceFingerprint{
 				Hash:      fp,
+				HWID:      hwid,
 				UserAgent: ua,
 				IP:        ip,
 				FirstSeen: now,

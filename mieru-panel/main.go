@@ -184,6 +184,7 @@ func main() {
 	protected.HandleFunc("/api/admin/credentials", app.HandleAdminCredentials)
 	protected.HandleFunc("/api/server-config", app.HandleServerConfig)
 	protected.HandleFunc("/api/advanced", app.HandleAdvancedSettings)
+	protected.HandleFunc("/api/security/subscription", app.HandleSubscriptionSecurity)
 	protected.HandleFunc("/api/config/backup", app.HandleConfigBackup)
 	protected.HandleFunc("/api/config/restore", app.HandleConfigRestore)
 	protected.HandleFunc("/api/subscriptions/export", app.HandleSubscriptionsExport)

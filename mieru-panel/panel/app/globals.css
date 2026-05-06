@@ -834,6 +834,15 @@ h3,
   color: var(--text-muted);
 }
 
+.device-hwid {
+  display: inline-block;
+  padding: 0 5px;
+  border-radius: 3px;
+  background: color-mix(in oklab, var(--accent) 18%, transparent);
+  color: var(--text-primary);
+  margin-right: 4px;
+}
+
 .audit-list {
   display: flex;
   flex-direction: column;

@@ -197,4 +197,19 @@ export const zh = {
   audit_title: '审计日志',
   audit_hint: '所有安全相关事件：登录、用户 CRUD、订阅获取、参数变更。文件为追加写入。',
   audit_empty: '暂无审计记录。',
+  sub_security_title: '订阅安全',
+  sub_security_hint:
+    '将 /sub/<token> 绑定到指定客户端。可阻挡 curl 抓取，并防止通过修改 User-Agent 绕过设备数限制——指纹来源于 X-HWID。',
+  sub_security_allowed_label: '允许的客户端（User-Agent 子串，每行一条）：',
+  sub_security_allowed_placeholder: 'Karing\nsing-box\nmihomo',
+  sub_security_allowed_help: '大小写不敏感。留空表示接受任何客户端。',
+  sub_security_preset_official: '仅官方客户端',
+  sub_security_preset_karing: '仅 Karing',
+  sub_security_preset_any: '任意客户端',
+  sub_security_require_hwid: '要求 X-HWID 头',
+  sub_security_require_hwid_hint:
+    'Karing/sing-box 默认会发送 X-HWID。启用后会拒绝缺少该头的脚本与分叉。',
+  sub_devices_hwid: '客户端硬件 ID',
+  saved: '已保存',
+  save: '保存',
 } satisfies Record<keyof typeof ru, string>

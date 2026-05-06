@@ -203,4 +203,20 @@ export const en = {
   audit_hint:
     'Every security-relevant event: logins, user CRUD, subscription fetches, settings changes. File is append-only.',
   audit_empty: 'No audit entries yet.',
+  sub_security_title: 'Subscription security',
+  sub_security_hint:
+    'Pin /sub/<token> to specific clients. Stops curl-based scrapers and prevents bypassing the device limit by rotating User-Agent — the device fingerprint uses X-HWID.',
+  sub_security_allowed_label: 'Allowed clients (User-Agent substrings, one per line):',
+  sub_security_allowed_placeholder: 'Karing\nsing-box\nmihomo',
+  sub_security_allowed_help:
+    'Case-insensitive substring match. Empty list = accept any client.',
+  sub_security_preset_official: 'Official clients only',
+  sub_security_preset_karing: 'Karing only',
+  sub_security_preset_any: 'Any client',
+  sub_security_require_hwid: 'Require X-HWID header',
+  sub_security_require_hwid_hint:
+    'Karing/sing-box send X-HWID by default. Enabling this blocks bare scrapers and forks that omit it.',
+  sub_devices_hwid: 'Client hardware ID',
+  saved: 'Saved',
+  save: 'Save',
 } satisfies Record<keyof typeof ru, string>

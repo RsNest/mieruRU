@@ -5,6 +5,7 @@ import type {
   LogEntry,
   ServerConfig,
   ServerStatus,
+  SubSecurity,
   User,
 } from '@/lib/types'
 
@@ -100,6 +101,15 @@ export const api = {
   },
   getAudit(n = 200) {
     return request<{ entries: AuditEntry[] }>(`/api/audit?n=${n}`)
+  },
+  getSubSecurity() {
+    return request<SubSecurity>('/api/security/subscription')
+  },
+  updateSubSecurity(payload: { allowedUserAgents: string[]; requireHWID: boolean }) {
+    return request<{ ok: boolean }>('/api/security/subscription', {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    })
   },
   regenUser(name: string) {
     return request<RegenResponse>(`/api/users/${encodeURIComponent(name)}/regenerate`, {

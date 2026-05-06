@@ -23,7 +23,12 @@ type Quotas struct {
 }
 
 type DeviceFingerprint struct {
+	// Hash is the stable identifier (hex(sha256("hwid:"+X-HWID)) or
+	// hex(sha256("ua:"+UserAgent))[:16]). HWID takes precedence — that
+	// way changing the User-Agent in the client does NOT spawn a new
+	// "device" slot for the same hardware.
 	Hash      string `json:"hash"`
+	HWID      string `json:"hwid,omitempty"`
 	UserAgent string `json:"userAgent,omitempty"`
 	IP        string `json:"ip,omitempty"`
 	FirstSeen int64  `json:"firstSeen"`
@@ -62,6 +67,29 @@ type Config struct {
 	LoggingLevel string `json:"loggingLevel,omitempty"` // INFO / DEBUG / WARN / ERROR
 	MTU          int    `json:"mtu,omitempty"`          // 1280..1500, default 1400
 	Multiplexing string `json:"multiplexing,omitempty"` // OFF/LOW/MIDDLE/HIGH (mita MULTIPLEXING_*)
+
+	// AllowedUserAgents are case-insensitive substrings; an incoming
+	// /sub fetch is allowed when its User-Agent contains at least one
+	// entry. Empty list = filter disabled (any UA accepted).
+	AllowedUserAgents []string `json:"allowedUserAgents,omitempty"`
+	// RequireHWID rejects subscription fetches that do not present the
+	// X-HWID header. Karing/sing-box clients ship one out of the box,
+	// so enabling this kills curl-based scrapers and "lite" forks.
+	RequireHWID bool `json:"requireHWID,omitempty"`
+}
+
+// DefaultAllowedUserAgents is the seed set the UI offers as "official
+// clients only". Substring match is case-insensitive.
+var DefaultAllowedUserAgents = []string{
+	"Karing",
+	"sing-box",
+	"mihomo",
+	"ClashMeta",
+	"clash-verge",
+	"NekoBox",
+	"HiddifyNext",
+	"v2ray",
+	"FLClash",
 }
 
 type Store struct {
