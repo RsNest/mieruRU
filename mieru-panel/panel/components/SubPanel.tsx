@@ -4,20 +4,25 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { QRCodeSVG } from 'qrcode.react'
+import { api } from '@/lib/api'
 import { useToast } from './useToast'
 
 interface SubPanelProps {
   open: boolean
+  userName: string
   subUrl: string
   newPassword: string | null
   onClearPassword: () => void
 }
 
-export function SubPanel({ open, subUrl, newPassword, onClearPassword }: SubPanelProps) {
+export function SubPanel({ open, userName, subUrl, newPassword, onClearPassword }: SubPanelProps) {
   const { t } = useTranslation()
   const { success, error } = useToast()
   const [fgColor, setFgColor] = useState('black')
   const [timerId, setTimerId] = useState<number | null>(null)
+  const [configOpen, setConfigOpen] = useState(false)
+  const [configJson, setConfigJson] = useState<string | null>(null)
+  const [configLoading, setConfigLoading] = useState(false)
 
   useEffect(() => {
     const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()
@@ -31,12 +36,40 @@ export function SubPanel({ open, subUrl, newPassword, onClearPassword }: SubPane
     return () => window.clearTimeout(id)
   }, [newPassword, onClearPassword])
 
+  useEffect(() => {
+    if (!open) {
+      setConfigOpen(false)
+      setConfigJson(null)
+    }
+  }, [open])
+
   const copy = async (value: string) => {
     try {
       await navigator.clipboard.writeText(value)
       success(t('toast_copied'))
     } catch {
       error(t('toast_error'))
+    }
+  }
+
+  const toggleConfig = async () => {
+    if (configOpen) {
+      setConfigOpen(false)
+      return
+    }
+    if (configJson) {
+      setConfigOpen(true)
+      return
+    }
+    setConfigLoading(true)
+    try {
+      const data = await api.getUserConfig(userName)
+      setConfigJson(JSON.stringify(data, null, 2))
+      setConfigOpen(true)
+    } catch (err) {
+      error((err as Error).message || t('toast_error'))
+    } finally {
+      setConfigLoading(false)
     }
   }
 
@@ -65,7 +98,8 @@ export function SubPanel({ open, subUrl, newPassword, onClearPassword }: SubPane
         </div>
       </div>
     )
-  }, [copy, newPassword, onClearPassword, t, timerId])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [newPassword, onClearPassword, t, timerId])
 
   return (
     <AnimatePresence initial={false}>
@@ -89,6 +123,28 @@ export function SubPanel({ open, subUrl, newPassword, onClearPassword }: SubPane
               </div>
               <p className="sub-hint">{t('sub_qr_hint')}</p>
               {passwordBlock}
+              <div className="inline-actions" style={{ marginTop: 12 }}>
+                <button
+                  type="button"
+                  className="action-btn"
+                  disabled={configLoading}
+                  onClick={() => void toggleConfig()}
+                >
+                  {configOpen ? t('user_hide_config') : t('user_show_config')}
+                </button>
+                {configJson ? (
+                  <button
+                    type="button"
+                    className="action-btn"
+                    onClick={() => void copy(configJson)}
+                  >
+                    {t('user_copy_config')}
+                  </button>
+                ) : null}
+              </div>
+              {configOpen && configJson ? (
+                <pre className="user-config-pre">{configJson}</pre>
+              ) : null}
             </div>
             <div className="sub-qr">
               <QRCodeSVG value={subUrl} size={160} fgColor={fgColor} bgColor="transparent" />

@@ -18,6 +18,8 @@ import type { ServerStatus as ServerStatusValue, User } from '@/lib/types'
 import { AddUserModal } from './AddUserModal'
 import { AdminCredentialsPanel } from './AdminCredentialsPanel'
 import { ConfirmModal } from './ConfirmModal'
+import { LogsPanel } from './LogsPanel'
+import { ServerConfigPanel } from './ServerConfigPanel'
 import { ServerStatus } from './ServerStatus'
 import { StatCard } from './StatCard'
 import { Toasts } from './Toast'
@@ -169,6 +171,13 @@ export function DashboardPage() {
         >
           {t('tab_server')}
         </button>
+        <button
+          type="button"
+          className={`tab-btn ${tab === 'logs' ? 'active' : ''}`}
+          onClick={() => goTab('logs')}
+        >
+          {t('tab_logs')}
+        </button>
       </div>
 
       <div className="stats-grid">
@@ -275,9 +284,12 @@ export function DashboardPage() {
           <div className="dashboard-card">
             <ServerStatus initialStatus={status} onStatusChange={setStatus} />
           </div>
+          <ServerConfigPanel />
           <AdminCredentialsPanel />
         </>
       ) : null}
+
+      {tab === 'logs' ? <LogsPanel /> : null}
 
       <AddUserModal open={showAdd} onClose={() => setShowAdd(false)} onSubmit={onAddUser} />
 

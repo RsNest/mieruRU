@@ -14,14 +14,22 @@ services:
     build: .
     container_name: mieru-panel
     restart: unless-stopped
-    ports:
-      - "127.0.0.1:8080:8080"
+    network_mode: host
     volumes:
       - panel_data:/app/data
       - mita_run:/var/run/mita
     environment:
+      # First-start defaults. Override before `docker compose up` or change later in the UI.
+      # The panel auto-creates config.json on first run; PANEL_ADMIN_PASS will reset
+      # the admin password on every restart, set it once and remove for safety.
       - PANEL_CONFIG=/app/data/config.json
+      - PANEL_HOST=0.0.0.0
       - MITA_SOCKET=/var/run/mita/mita.sock
+      - PANEL_ADMIN_USER=${PANEL_ADMIN_USER:-admin}
+      - PANEL_ADMIN_PASS=${PANEL_ADMIN_PASS:-admin}
+      - PANEL_SERVER_IP=${PANEL_SERVER_IP:-}
+      - PANEL_DEFAULT_PORT=${PANEL_DEFAULT_PORT:-2015}
+      - PANEL_PORT_RANGE=${PANEL_PORT_RANGE:-2012-2022}
     depends_on:
       - mita
 

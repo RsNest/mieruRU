@@ -13,6 +13,7 @@ import (
 
 	"golang.org/x/crypto/bcrypt"
 	"mieru-panel/config"
+	"mieru-panel/pkg/applog"
 )
 
 const sessionCookieName = "mieru_panel_session"
@@ -20,6 +21,8 @@ const sessionCookieName = "mieru_panel_session"
 type App struct {
 	Config *config.Store
 	Mita   MitaClient
+	// MitaLogs returns recent lines from `mita logs -n <lines>`. May be nil.
+	MitaLogs func(lines int) (string, error)
 }
 
 type MitaClient interface {
@@ -68,18 +71,36 @@ func (a *App) HandleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if req.Username != cfg.AdminUsername {
+		applog.Warnf("auth", "login failed (unknown user) ip=%s username=%q", clientIP(r), req.Username)
 		writeJSON(w, http.StatusUnauthorized, apiError{Error: "invalid credentials"})
 		return
 	}
 	if err := bcrypt.CompareHashAndPassword([]byte(cfg.AdminPasswordHash), []byte(req.Password)); err != nil {
+		applog.Warnf("auth", "login failed (bad password) ip=%s username=%q", clientIP(r), req.Username)
 		writeJSON(w, http.StatusUnauthorized, apiError{Error: "invalid credentials"})
 		return
 	}
 	if err := setSessionCookie(w, cfg.SessionSecret, req.Username); err != nil {
+		applog.Errorf("auth", "create session: %v", err)
 		writeJSON(w, http.StatusInternalServerError, apiError{Error: "failed to create session"})
 		return
 	}
+	applog.Infof("auth", "login ok ip=%s username=%q", clientIP(r), req.Username)
 	writeJSON(w, http.StatusOK, map[string]any{"ok": true})
+}
+
+func clientIP(r *http.Request) string {
+	if v := strings.TrimSpace(r.Header.Get("X-Forwarded-For")); v != "" {
+		if i := strings.IndexByte(v, ','); i >= 0 {
+			return strings.TrimSpace(v[:i])
+		}
+		return v
+	}
+	host := r.RemoteAddr
+	if i := strings.LastIndex(host, ":"); i >= 0 {
+		host = host[:i]
+	}
+	return host
 }
 
 func (a *App) HandleLogout(w http.ResponseWriter, r *http.Request) {
@@ -99,7 +120,11 @@ func (a *App) HandleLogout(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *App) HandleMe(w http.ResponseWriter, r *http.Request) {
-	writeJSON(w, http.StatusOK, map[string]any{"authenticated": true})
+	cfg := a.Config.Snapshot()
+	writeJSON(w, http.StatusOK, map[string]any{
+		"authenticated": true,
+		"username":      cfg.AdminUsername,
+	})
 }
 
 const minAdminPasswordLen = 5
@@ -153,6 +178,7 @@ func (a *App) HandleAdminCredentials(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	applog.Infof("auth", "admin credentials updated (new username=%q)", req.NewUsername)
 	writeJSON(w, http.StatusOK, map[string]any{"ok": true})
 }
 

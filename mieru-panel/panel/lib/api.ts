@@ -1,10 +1,12 @@
-import type { ServerStatus, User } from '@/lib/types'
+import type { LogEntry, ServerConfig, ServerStatus, User } from '@/lib/types'
 
 type LoginResponse = { ok: boolean }
-type MeResponse = { authenticated: boolean }
+type MeResponse = { authenticated: boolean; username?: string }
 type UsersResponse = { users: User[] }
 type StatusResponse = { status: ServerStatus }
 type RegenResponse = { ok: boolean; password: string }
+type LogsResponse = { entries: LogEntry[] }
+type MitaLogsResponse = { output: string; available: boolean; error?: string }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(path, {
@@ -82,5 +84,24 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(payload),
     })
+  },
+  getLogs(sinceSeq?: number) {
+    const qs = sinceSeq ? `?since=${sinceSeq}` : ''
+    return request<LogsResponse>(`/api/logs${qs}`)
+  },
+  getMitaLogs(lines = 200) {
+    return request<MitaLogsResponse>(`/api/mita/logs?lines=${lines}`)
+  },
+  getServerConfig() {
+    return request<ServerConfig>('/api/server-config')
+  },
+  updateServerConfig(payload: ServerConfig) {
+    return request<{ ok: boolean; warning?: string }>('/api/server-config', {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    })
+  },
+  getUserConfig(name: string) {
+    return request<Record<string, unknown>>(`/api/users/${encodeURIComponent(name)}/config`)
   },
 }

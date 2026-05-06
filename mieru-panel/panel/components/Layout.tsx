@@ -89,6 +89,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
           >
             {t('nav_server')}
           </button>
+          <button
+            type="button"
+            className={`nav-tab ${dashTab === 'logs' ? 'active' : ''}`}
+            onClick={() => goTab('logs')}
+          >
+            {t('nav_logs')}
+          </button>
         </nav>
         <div className="nav-controls">
           <LangSwitcher />
@@ -137,6 +144,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
         >
           <span className="mobile-tab-icon">🖥</span>
           <span>{t('nav_server')}</span>
+        </button>
+        <button
+          type="button"
+          className={`mobile-tab ${dashTab === 'logs' ? 'active' : ''}`}
+          onClick={() => goTab('logs')}
+        >
+          <span className="mobile-tab-icon">📜</span>
+          <span>{t('nav_logs')}</span>
         </button>
       </nav>
     </div>

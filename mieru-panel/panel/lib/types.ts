@@ -12,3 +12,19 @@ export type User = {
 }
 
 export type ServerStatus = 'RUNNING' | 'IDLE' | string
+
+export type LogLevel = 'DEBUG' | 'INFO' | 'WARN' | 'ERROR'
+
+export type LogEntry = {
+  seq: number
+  time: string
+  level: LogLevel
+  source?: string
+  message: string
+}
+
+export type ServerConfig = {
+  serverIP: string
+  defaultPort: number
+  serverPortRange: string
+}

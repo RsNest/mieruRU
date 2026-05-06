@@ -74,6 +74,7 @@ export function UserRow({
       </div>
       <SubPanel
         open={open}
+        userName={user.name}
         subUrl={subUrl}
         newPassword={newPassword}
         onClearPassword={onClearPassword}

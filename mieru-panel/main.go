@@ -15,9 +15,11 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"mieru-panel/config"
 	"mieru-panel/handlers"
+	"mieru-panel/pkg/applog"
 	"mieru-panel/pkg/mita"
 
 	"golang.org/x/crypto/bcrypt"
@@ -65,9 +67,16 @@ func (m *mitaAdapter) Start() error               { return m.client.Start() }
 func (m *mitaAdapter) Stop() error                { return m.client.Stop() }
 
 func main() {
+	// Pipe everything `log.Print*` does into applog so existing 3rd-party
+	// libraries (and any leftover log.Printf calls) end up in docker logs
+	// and the in-memory ring buffer.
+	log.SetFlags(0)
+	log.SetOutput(applog.StdlibSink{Source: "go"})
+
 	if len(os.Args) > 1 && os.Args[1] == "init" {
 		if err := runInit(os.Args[2:]); err != nil {
-			log.Fatal(err)
+			applog.Errorf("init", "%v", err)
+			os.Exit(1)
 		}
 		return
 	}
@@ -78,19 +87,29 @@ func main() {
 	}
 	store, err := config.NewStore(configPath)
 	if err != nil {
-		log.Fatal(err)
+		applog.Errorf("config", "load %s: %v", configPath, err)
+		os.Exit(1)
+	}
+
+	if err := applyEnvOverrides(store); err != nil {
+		applog.Errorf("config", "apply env overrides: %v", err)
 	}
 
 	mitaBinary := os.Getenv("MITA_BINARY")
+	mitaClient := mita.NewClient(mitaBinary)
 	app := &handlers.App{
-		Config: store,
-		Mita:   &mitaAdapter{client: mita.NewClient(mitaBinary)},
+		Config:   store,
+		Mita:     &mitaAdapter{client: mitaClient},
+		MitaLogs: mitaClient.Logs,
 	}
+
+	go bootstrapMitaLoop(app)
 
 	mux := http.NewServeMux()
 	frontendFS, err := fs.Sub(uiDist, "panel/out")
 	if err != nil {
-		log.Fatal(err)
+		applog.Errorf("ui", "embed fs.Sub: %v", err)
+		os.Exit(1)
 	}
 	mux.Handle("/", spaHandler(frontendFS))
 	mux.HandleFunc("/sub/", app.HandleSubscription)
@@ -105,7 +124,10 @@ func main() {
 	protected.HandleFunc("/api/status", app.HandleStatus)
 	protected.HandleFunc("/api/mita/start", app.HandleStart)
 	protected.HandleFunc("/api/mita/stop", app.HandleStop)
+	protected.HandleFunc("/api/mita/logs", app.HandleMitaLogs)
 	protected.HandleFunc("/api/admin/credentials", app.HandleAdminCredentials)
+	protected.HandleFunc("/api/server-config", app.HandleServerConfig)
+	protected.HandleFunc("/api/logs", app.HandleLogs)
 	mux.Handle("/api/", app.RequireAuth(protected))
 
 	cfg := store.Snapshot()
@@ -114,10 +136,78 @@ func main() {
 		host = "0.0.0.0"
 	}
 	addr := host + ":" + itoa(cfg.PanelPort)
-	log.Printf("mieru-panel listening on %s", addr)
+	applog.Infof("panel", "mieru-panel listening on %s", addr)
 	if err := http.ListenAndServe(addr, mux); err != nil {
-		log.Fatal(err)
+		applog.Errorf("panel", "listen: %v", err)
+		os.Exit(1)
 	}
+}
+
+// applyEnvOverrides lets `docker compose up` work without running init.sh.
+// It honours the env vars on every start (so `PANEL_ADMIN_PASS` can be used
+// to reset a forgotten password by simply restarting the container).
+func applyEnvOverrides(store *config.Store) error {
+	envAdminUser := strings.TrimSpace(os.Getenv("PANEL_ADMIN_USER"))
+	envAdminPass := os.Getenv("PANEL_ADMIN_PASS")
+	envServerIP := strings.TrimSpace(os.Getenv("PANEL_SERVER_IP"))
+	envDefaultPort := strings.TrimSpace(os.Getenv("PANEL_DEFAULT_PORT"))
+	envPortRange := strings.TrimSpace(os.Getenv("PANEL_PORT_RANGE"))
+
+	var hashedPass []byte
+	if envAdminPass != "" {
+		h, err := bcrypt.GenerateFromPassword([]byte(envAdminPass), bcrypt.DefaultCost)
+		if err != nil {
+			return err
+		}
+		hashedPass = h
+	}
+
+	return store.Update(func(cfg *config.Config) error {
+		if envAdminUser != "" && cfg.AdminUsername != envAdminUser {
+			cfg.AdminUsername = envAdminUser
+			applog.Infof("config", "admin username set from env to %q", envAdminUser)
+		}
+		if hashedPass != nil {
+			cfg.AdminPasswordHash = string(hashedPass)
+			applog.Infof("config", "admin password updated from PANEL_ADMIN_PASS")
+		}
+		if envServerIP != "" && cfg.ServerIP != envServerIP {
+			cfg.ServerIP = envServerIP
+			applog.Infof("config", "server IP set from env to %s", envServerIP)
+		}
+		if envDefaultPort != "" {
+			if n, err := strconv.Atoi(envDefaultPort); err == nil && n > 0 && n < 65536 {
+				if cfg.DefaultPort != n {
+					cfg.DefaultPort = n
+					applog.Infof("config", "default port set from env to %d", n)
+				}
+			}
+		}
+		if envPortRange != "" && cfg.ServerPortRange != envPortRange {
+			cfg.ServerPortRange = envPortRange
+			applog.Infof("config", "server port range set from env to %s", envPortRange)
+		}
+		return nil
+	})
+}
+
+// bootstrapMitaLoop applies portBindings + users to mita on startup,
+// retrying every 5s while mita is still warming up. It logs each attempt
+// and exits the loop once a sync succeeds.
+func bootstrapMitaLoop(app *handlers.App) {
+	delay := 2 * time.Second
+	for attempt := 1; attempt <= 30; attempt++ {
+		if err := app.BootstrapMita(); err != nil {
+			applog.Warnf("mita", "bootstrap attempt %d failed: %v", attempt, err)
+			time.Sleep(delay)
+			if delay < 30*time.Second {
+				delay += 2 * time.Second
+			}
+			continue
+		}
+		return
+	}
+	applog.Errorf("mita", "bootstrap gave up after 30 attempts; you can retry from the UI (Server → Apply)")
 }
 
 func runInit(args []string) error {

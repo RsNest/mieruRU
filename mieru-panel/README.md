@@ -1,33 +1,130 @@
 # mieru-panel
 
-Simple web admin panel for `mita` (mieru server), built with Go standard library and a single-page vanilla JS frontend.
+Web admin panel for **mita** (the [mieru](https://github.com/enfein/mieru) server daemon).
+Go backend + Next.js (App Router, static export) frontend, embedded into a single Go binary
+and shipped with mita inside Docker Compose. Drop-in: `docker compose up -d --build` and
+the rest of the work happens in the UI.
 
-## Security defaults
+## What you get
 
-- Binds to `127.0.0.1:8080` by default.
-- Admin password stored as bcrypt hash in `config.json`.
-- Session cookie is HMAC signed.
-- User subscription tokens are random 32-byte hex values.
-- User plaintext passwords are stored only in panel config (required for subscription generation and mita apply flow).
+- **Auth** – session-cookie login (admin user, bcrypt password). Default credentials are
+  `admin` / `admin` and can be overridden by env on first start (`PANEL_ADMIN_USER`,
+  `PANEL_ADMIN_PASS`) or changed later from the **Server → Administrator account** form.
+- **Users CRUD** – create/delete users, regenerate password. Each change writes to
+  `data/config.json` and is pushed into mita with `mita apply config && mita reload`,
+  so you do not edit config files on the server by hand.
+- **Per-user subscription** – every user has a unique `/sub/<token>` URL that returns a
+  sing-box / Karing-compatible JSON profile (see *Subscription format* below). The UI
+  shows the URL, a QR code for it, and a one-click *Show JSON* preview.
+- **Server settings** – `ServerIP`, `DefaultPort`, `ServerPortRange` are editable in
+  **Server → Server parameters**. On save the panel pushes the new port range into mita.
+- **Status & control** – Start / Stop mita, see `RUNNING` / `IDLE` polling, basic per-user
+  daily traffic chart from the panel data.
+- **Logs** – structured panel logs (INFO / WARN / ERROR) live-tailed in the UI and also
+  written to stdout (`docker logs mieru-panel`), plus an mita-side block that proxies
+  `mita logs -n 200`.
+- **i18n** – Russian / English / Chinese, three themes (Midnight / Sakura / Ghost).
 
-## Quick start with Docker
+## Quick start (Docker Compose)
 
 ```bash
-# 1. Clone
-git clone https://github.com/yourname/mieru-panel
-cd mieru-panel
+git clone https://github.com/RsNest/mieruRU
+cd mieruRU/mieru-panel
 
-# 2. Init config
-docker compose run --rm panel ./init.sh
+# minimum: tell the panel what your public IP is
+export PANEL_SERVER_IP=147.90.12.43
+# optional: override admin and ports
+export PANEL_ADMIN_USER=admin
+export PANEL_ADMIN_PASS=change-me
+export PANEL_DEFAULT_PORT=2015
+export PANEL_PORT_RANGE=2012-2022
 
-# 3. Start
-docker compose up -d
+docker compose up -d --build
+```
 
-# 4. Check logs
-docker compose logs -f
+The panel listens on port `8080`. With `network_mode: host` (default) it binds to
+`0.0.0.0:8080` on the host – put nginx in front if you expose it to the internet
+(see `docs/nginx.conf`). mita listens on the TCP port range `2012-2022` directly on
+the host (also host networking).
 
-# 5. Panel available at
-# http://127.0.0.1:8080 (or via nginx https)
+After the containers are up:
+
+1. Open `http://<host>:8080`, sign in.
+2. Go to **Server**, fill in *Server parameters* if `PANEL_SERVER_IP` was empty.
+3. Add a user in **Users → +**.
+4. Click the user row → copy the subscription URL, scan the QR with Karing, or copy the
+   sing-box JSON.
+
+`docker compose logs -f` shows everything: panel events (`auth`, `users`, `mita`,
+`config`, `sub`, `panel` sources) and the underlying mita CLI calls.
+
+## Environment variables
+
+| Name | Default | Effect |
+|---|---|---|
+| `PANEL_CONFIG` | `data/config.json` | Path to the panel config inside the container. |
+| `PANEL_HOST` | `0.0.0.0` | Listen address for the HTTP server. |
+| `PANEL_ADMIN_USER` | `admin` | Admin username. Synced on every start. |
+| `PANEL_ADMIN_PASS` | unset | If set, **resets** the admin password on every start (handy for forgotten passwords; clear after use). |
+| `PANEL_SERVER_IP` | unset | Public IP that lands inside the user subscription JSON. Editable later in the UI. |
+| `PANEL_DEFAULT_PORT` | `2015` | TCP port advertised in the subscription. |
+| `PANEL_PORT_RANGE` | `2012-2022` | Range applied to mita `portBindings`. |
+| `MITA_BINARY` | `mita` | Path to the mita CLI used by the panel to talk to the daemon socket. |
+
+## Subscription format
+
+The panel returns this JSON for `/sub/<token>` (and `/api/users/<name>/config` for
+authenticated admins). It is the canonical sing-box config recommended by the
+[install guide](docs/install-mieru.md):
+
+```json
+{
+  "log": { "level": "info" },
+  "dns": {
+    "strategy": "ipv4_only",
+    "servers": [
+      { "tag": "google", "address": "8.8.8.8" }
+    ]
+  },
+  "outbounds": [
+    {
+      "type": "mieru",
+      "tag": "mieru-out",
+      "server": "147.90.12.43",
+      "server_port": 2015,
+      "transport": "TCP",
+      "username": "myuser",
+      "password": "Bpt/GB0a+SBjqPyiqRyzRXcxJ4dkc/xu",
+      "multiplexing": "MULTIPLEXING_HIGH"
+    },
+    { "type": "direct", "tag": "direct" }
+  ],
+  "route": { "final": "mieru-out" }
+}
+```
+
+`server` / `server_port` come from **Server parameters**; `username` / `password` from
+the user record. `dns.strategy = ipv4_only` is set by default so iOS / Karing on
+mobile networks does not flap on AAAA lookups.
+
+## Logging
+
+Two streams converge in the UI **Logs** tab:
+
+1. **Panel logs** – everything the Go binary emits (`auth`, `users`, `mita`, `config`,
+   `sub`, `panel`, `init`, `ui`, `go`). Each entry is `INFO / WARN / ERROR / DEBUG`,
+   buffered in memory (last 1000 entries, queryable via `GET /api/logs?since=<seq>`),
+   and also written to stdout so `docker logs mieru-panel` is meaningful.
+2. **mita logs** – output of `mita logs -n 200` proxied via `GET /api/mita/logs`.
+
+If you scale the deployment, prefer collecting stdout via your normal Docker logging
+driver – the in-memory buffer is for live debugging from the UI, not for archival.
+
+## Local build
+
+```bash
+make web   # builds Next.js into mieru-panel/panel/out
+make build # then go build with the embedded UI
 ```
 
 ## Updating mita
@@ -46,27 +143,10 @@ docker run --rm \
   alpine tar czf /backup/panel-backup.tar.gz /data
 ```
 
-## Important note about mita image
+## Init command (legacy / manual)
 
-If `enfein/mita:latest` is unavailable on Docker Hub, build a local image from the upstream repository Dockerfile:
-
-- Source Dockerfile path: `deployments/docker/mita/` in [mieru upstream repo](https://github.com/enfein/mieru)
-- Build/tag it locally and update `docker-compose.yml` image reference.
-
-## Nginx reverse proxy with HTTPS
-
-Use `docs/nginx.conf` as a template and expose panel only through HTTPS.
-
-## Local build/install
-
-```bash
-make build
-sudo make install
-```
-
-## Init command
-
-`mieru-panel init` creates the first config file:
+If you do not want env-driven defaults, you can still bootstrap a config file by hand
+before starting the panel:
 
 ```bash
 ./mieru-panel init \

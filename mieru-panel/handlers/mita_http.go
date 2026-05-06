@@ -2,22 +2,22 @@ package handlers
 
 import (
 	"errors"
-	"log"
 	"net/http"
 
+	"mieru-panel/pkg/applog"
 	"mieru-panel/pkg/mita"
 )
 
-// logMitaCLI prints mita CLI failures to stderr (e.g. docker logs).
+// logMitaCLI sends mita CLI failures to applog (stdout + UI ring buffer).
 func logMitaCLI(operation string, err error) {
 	if err == nil {
 		return
 	}
 	var runErr *mita.RunError
 	if errors.As(err, &runErr) {
-		log.Printf("mita error [%s]: %v; stdout=%q stderr=%q", operation, err, runErr.Stdout, runErr.Stderr)
+		applog.Errorf("mita", "%s: %s (stderr=%q)", operation, runErr.Reason, runErr.Stderr)
 	} else {
-		log.Printf("mita error [%s]: %v", operation, err)
+		applog.Errorf("mita", "%s: %v", operation, err)
 	}
 }
 

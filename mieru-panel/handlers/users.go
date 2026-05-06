@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"mieru-panel/config"
+	"mieru-panel/pkg/applog"
 )
 
 func (a *App) HandleUsers(w http.ResponseWriter, r *http.Request) {
@@ -36,6 +37,10 @@ func (a *App) HandleUserActions(w http.ResponseWriter, r *http.Request) {
 	}
 	if len(parts) == 2 && parts[1] == "regenerate" && r.Method == http.MethodPost {
 		a.regeneratePassword(w, name)
+		return
+	}
+	if len(parts) == 2 && parts[1] == "config" && r.Method == http.MethodGet {
+		a.HandleUserConfig(w, r)
 		return
 	}
 	writeJSON(w, http.StatusMethodNotAllowed, apiError{Error: "method not allowed"})
@@ -69,10 +74,10 @@ func (a *App) listUsers(w http.ResponseWriter) {
 
 func (a *App) createUser(w http.ResponseWriter, r *http.Request) {
 	var req struct {
-		Name      string `json:"name"`
-		Password  string `json:"password"`
-		QuotaDay  int    `json:"quotaDayMB"`
-		QuotaMonth int   `json:"quotaMonthMB"`
+		Name       string `json:"name"`
+		Password   string `json:"password"`
+		QuotaDay   int    `json:"quotaDayMB"`
+		QuotaMonth int    `json:"quotaMonthMB"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		writeJSON(w, http.StatusBadRequest, apiError{Error: "invalid json"})
@@ -111,6 +116,7 @@ func (a *App) createUser(w http.ResponseWriter, r *http.Request) {
 		writeMita502(w, "syncMitaUsers createUser", err)
 		return
 	}
+	applog.Infof("users", "user %q created", req.Name)
 	writeJSON(w, http.StatusCreated, map[string]any{"ok": true})
 }
 
@@ -139,6 +145,7 @@ func (a *App) deleteUser(w http.ResponseWriter, name string) {
 		writeMita502(w, "syncMitaUsers deleteUser", err)
 		return
 	}
+	applog.Infof("users", "user %q deleted", name)
 	writeJSON(w, http.StatusOK, map[string]any{"ok": true})
 }
 
@@ -165,6 +172,7 @@ func (a *App) regeneratePassword(w http.ResponseWriter, name string) {
 		writeMita502(w, "syncMitaUsers regeneratePassword", err)
 		return
 	}
+	applog.Infof("users", "password regenerated for user %q", name)
 	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "password": newPass})
 }
 

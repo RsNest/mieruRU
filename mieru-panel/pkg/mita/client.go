@@ -8,6 +8,8 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+
+	"mieru-panel/pkg/applog"
 )
 
 // DefaultPortRange is used when the panel config omits ServerPortRange.
@@ -203,6 +205,7 @@ func (c *Client) run(args ...string) (stdout, stderr string, err error) {
 	cmd.Stderr = &stderrB
 
 	op := strings.Join(args, " ")
+	applog.Debugf("mita", "run: %s", op)
 	if err := cmd.Run(); err != nil {
 		so := strings.TrimSpace(stdoutB.String())
 		se := strings.TrimSpace(stderrB.String())
@@ -213,7 +216,23 @@ func (c *Client) run(args ...string) (stdout, stderr string, err error) {
 		if msg == "" {
 			msg = err.Error()
 		}
+		applog.Errorf("mita", "%s failed: %s", op, msg)
 		return so, se, &RunError{Op: op, Reason: msg, Stdout: so, Stderr: se}
 	}
-	return strings.TrimSpace(stdoutB.String()), strings.TrimSpace(stderrB.String()), nil
+	so := strings.TrimSpace(stdoutB.String())
+	se := strings.TrimSpace(stderrB.String())
+	if se != "" {
+		applog.Warnf("mita", "%s stderr: %s", op, se)
+	}
+	return so, se, nil
+}
+
+// Logs returns the last `lines` lines from `mita logs`. Empty lines means default.
+func (c *Client) Logs(lines int) (string, error) {
+	args := []string{"logs"}
+	if lines > 0 {
+		args = append(args, "-n", fmt.Sprintf("%d", lines))
+	}
+	out, _, err := c.run(args...)
+	return out, err
 }
