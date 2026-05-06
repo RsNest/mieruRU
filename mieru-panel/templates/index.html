@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>mieru-panel</title>
+  <style>
+    body { margin:0; font-family:Arial,sans-serif; background:#0f1117; color:#e8edf4; }
+    .wrap { max-width:1000px; margin:20px auto; padding:0 12px; }
+    .card { background:#1a1d27; border-radius:10px; padding:16px; margin-bottom:14px; }
+    .btn { background:#00d4aa; color:#031511; border:0; border-radius:8px; padding:8px 12px; cursor:pointer; font-weight:700; }
+    .btn.secondary { background:#2a3142; color:#e8edf4; }
+    input { width:100%; box-sizing:border-box; margin:6px 0; padding:8px; border-radius:6px; border:1px solid #30384b; background:#121622; color:#e8edf4; }
+    table { width:100%; border-collapse:collapse; }
+    th,td { padding:8px; border-bottom:1px solid #2c3343; text-align:left; }
+    .row { display:flex; gap:10px; flex-wrap:wrap; }
+    .hidden { display:none; }
+    .badge { padding:3px 9px; border-radius:10px; font-size:12px; }
+    .run { background:#173d34; color:#77ffd8; }
+    .idle { background:#3b2626; color:#ffb4b4; }
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
+<body>
+  <div class="wrap">
+    <div id="loginCard" class="card">
+      <h2>mieru-panel login</h2>
+      <input id="adminPass" type="password" placeholder="Admin password">
+      <button class="btn" onclick="login()">Login</button>
+      <div id="loginErr"></div>
+    </div>
+
+    <div id="dashboard" class="hidden">
+      <div class="card row">
+        <div>mita status: <span id="statusBadge" class="badge idle">IDLE</span></div>
+        <button class="btn secondary" onclick="startMita()">Start</button>
+        <button class="btn secondary" onclick="stopMita()">Stop</button>
+        <button class="btn secondary" onclick="logout()">Logout</button>
+      </div>
+      <div class="card">
+        <h3>Add user</h3>
+        <div class="row">
+          <input id="name" placeholder="Username">
+          <input id="pass" placeholder="Password">
+          <input id="qday" type="number" placeholder="Quota MB/day">
+          <input id="qmon" type="number" placeholder="Quota MB/month">
+          <button class="btn" onclick="addUser()">Add user</button>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Users</h3>
+        <table>
+          <thead><tr><th>Name</th><th>Today</th><th>30d</th><th>Quota</th><th>Sub</th><th>Actions</th></tr></thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    async function api(path, opts={}) {
+      const res = await fetch(path, Object.assign({headers: {'Content-Type':'application/json'}}, opts));
+      let data = {};
+      try { data = await res.json(); } catch (_) {}
+      if (!res.ok) throw new Error(data.error || res.statusText);
+      return data;
+    }
+    async function checkAuth() {
+      try { await api('/api/me'); showDash(); } catch (_) { showLogin(); }
+    }
+    function showDash(){ document.getElementById('loginCard').classList.add('hidden'); document.getElementById('dashboard').classList.remove('hidden'); refresh(); }
+    function showLogin(){ document.getElementById('dashboard').classList.add('hidden'); document.getElementById('loginCard').classList.remove('hidden'); }
+    async function login() {
+      try { await api('/api/login', {method:'POST', body:JSON.stringify({password:adminPass.value})}); showDash(); }
+      catch (e) { loginErr.textContent = e.message; }
+    }
+    async function logout(){ await api('/api/logout',{method:'POST'}); showLogin(); }
+    async function refresh() {
+      const users = await api('/api/users');
+      const status = await api('/api/status');
+      renderUsers(users.users || []);
+      const badge = document.getElementById('statusBadge');
+      badge.textContent = status.status || 'IDLE';
+      badge.className = 'badge ' + ((status.status||'').includes('RUN') ? 'run':'idle');
+    }
+    async function addUser() {
+      await api('/api/users',{method:'POST',body:JSON.stringify({
+        name:document.getElementById('name').value,
+        password:document.getElementById('pass').value,
+        quotaDayMB:Number(document.getElementById('qday').value||0),
+        quotaMonthMB:Number(document.getElementById('qmon').value||0)
+      })});
+      refresh();
+    }
+    async function delUser(name){ if (!confirm('Delete '+name+'?')) return; await api('/api/users/'+encodeURIComponent(name),{method:'DELETE'}); refresh(); }
+    async function regen(name){ const r=await api('/api/users/'+encodeURIComponent(name)+'/regenerate',{method:'POST'}); alert('New password: '+r.password); refresh(); }
+    async function startMita(){ await api('/api/mita/start',{method:'POST'}); refresh(); }
+    async function stopMita(){ await api('/api/mita/stop',{method:'POST'}); refresh(); }
+    function renderUsers(users){
+      const host = location.origin;
+      tbody.innerHTML = users.map(u => {
+        const sub = host + '/sub/' + u.subToken;
+        return `<tr>
+          <td>${u.name}</td><td>${u.trafficDay||'-'}</td><td>${u.trafficMon||'-'}</td>
+          <td>${u.quotaDayMB||0}/${u.quotaMonMB||0} MB</td>
+          <td><details><summary>URL</summary><div style="max-width:240px;overflow-wrap:anywhere">${sub}</div><div id="qr-${u.name}"></div></details></td>
+          <td><button class="btn secondary" onclick="regen('${u.name}')">Regenerate</button> <button class="btn secondary" onclick="delUser('${u.name}')">Delete</button></td>
+        </tr>`;
+      }).join('');
+      users.forEach(u => {
+        const box = document.getElementById('qr-'+u.name);
+        if (box) { box.innerHTML=''; new QRCode(box, {text: host + '/sub/' + u.subToken, width: 96, height: 96}); }
+      });
+    }
+    checkAuth();
+  </script>
+</body>
+</html>

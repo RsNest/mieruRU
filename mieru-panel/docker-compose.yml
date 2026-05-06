@@ -1,0 +1,33 @@
+version: "3.9"
+
+services:
+  mita:
+    image: enfein/mita:latest
+    container_name: mita
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - mita_data:/var/lib/mita
+      - mita_run:/var/run/mita
+    cap_add:
+      - NET_ADMIN
+
+  panel:
+    build: .
+    container_name: mieru-panel
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - panel_data:/app/data
+      - mita_run:/var/run/mita
+    environment:
+      - PANEL_CONFIG=/app/data/config.json
+      - MITA_SOCKET=/var/run/mita/mita.sock
+    depends_on:
+      - mita
+
+volumes:
+  mita_data:
+  mita_run:
+  panel_data:
