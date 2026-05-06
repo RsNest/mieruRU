@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"crypto/rand"
 	"embed"
 	"encoding/hex"
@@ -9,6 +10,7 @@ import (
 	"flag"
 	"io/fs"
 	"log"
+	"mime"
 	"net/http"
 	"os"
 	"path"
@@ -272,43 +274,72 @@ func runInit(args []string) error {
 	return os.WriteFile(*configPath, body, 0o600)
 }
 
+// spaHandler serves files baked into the embedded Next.js export.
+//
+// We deliberately do NOT use http.FileServer for the matched file because
+// Go's serveFile rewrites canonical paths (it issues 301 "Moved Permanently"
+// redirects for /index.html → ./ and for directory paths missing a trailing
+// slash). With a static export at "/" that produces an infinite redirect
+// loop in the browser. Instead we resolve the file ourselves and stream
+// it via http.ServeContent which only sets caching headers.
 func spaHandler(static fs.FS) http.Handler {
-	fileServer := http.FileServer(http.FS(static))
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		p := path.Clean(r.URL.Path)
-		if p == "." {
-			p = "/"
+		if p == "." || p == "/" {
+			serveStatic(w, r, static, "index.html")
+			return
 		}
 		target := strings.TrimPrefix(p, "/")
-		var candidates []string
-		if target == "" {
-			candidates = []string{"index.html"}
-		} else {
-			candidates = []string{
-				target,
-				target + ".html",
-				path.Join(target, "index.html"),
+		// Try the literal path, then path.html, then path/index.html
+		// to support Next.js static exports of nested routes.
+		for _, candidate := range []string{target, target + ".html", path.Join(target, "index.html")} {
+			if exists(static, candidate) {
+				serveStatic(w, r, static, candidate)
+				return
 			}
 		}
-		for _, candidate := range candidates {
-			f, err := static.Open(candidate)
-			if err != nil {
-				continue
-			}
-			_ = f.Close()
-			r.URL.Path = "/" + candidate
-			fileServer.ServeHTTP(w, r)
-			return
-		}
-		index, indexErr := static.Open("index.html")
-		if indexErr != nil {
-			http.Error(w, "frontend build not found", http.StatusServiceUnavailable)
-			return
-		}
-		_ = index.Close()
-		r.URL.Path = "/index.html"
-		fileServer.ServeHTTP(w, r)
+		// SPA fallback for any unknown path.
+		serveStatic(w, r, static, "index.html")
 	})
+}
+
+func exists(static fs.FS, name string) bool {
+	f, err := static.Open(name)
+	if err != nil {
+		return false
+	}
+	defer f.Close()
+	info, err := f.Stat()
+	if err != nil {
+		return false
+	}
+	return !info.IsDir()
+}
+
+func serveStatic(w http.ResponseWriter, r *http.Request, static fs.FS, name string) {
+	data, err := fs.ReadFile(static, name)
+	if err != nil {
+		http.Error(w, "frontend build not found", http.StatusServiceUnavailable)
+		return
+	}
+	if ct := mime.TypeByExtension(strings.ToLower(filepath.Ext(name))); ct != "" {
+		w.Header().Set("Content-Type", ct)
+	}
+	// HTML must not be cached; fingerprinted assets under /_next/static can
+	// be cached aggressively. Anything else gets a short TTL.
+	switch {
+	case strings.HasSuffix(name, ".html"):
+		w.Header().Set("Cache-Control", "no-store")
+	case strings.HasPrefix(name, "_next/static/"):
+		w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
+	default:
+		w.Header().Set("Cache-Control", "public, max-age=300")
+	}
+	var modtime time.Time
+	if info, err := fs.Stat(static, name); err == nil {
+		modtime = info.ModTime()
+	}
+	http.ServeContent(w, r, name, modtime, bytes.NewReader(data))
 }
 
 func randomHex(size int) (string, error) {
