@@ -1,6 +1,15 @@
+# Single-command deploy:
+#   cd mieru-panel
+#   PANEL_SERVER_IP=<your.public.ip> docker compose up -d --build
+#
+# Both images are built from local sources – no Docker Hub image required.
+
 services:
   mita:
-    image: enfein/mita:latest
+    build:
+      context: ..
+      dockerfile: deployments/docker/mita/Dockerfile
+    image: mieru-mita:local
     container_name: mita
     restart: unless-stopped
     network_mode: host
@@ -11,7 +20,10 @@ services:
       - NET_ADMIN
 
   panel:
-    build: .
+    build:
+      context: ..
+      dockerfile: mieru-panel/Dockerfile
+    image: mieru-panel:local
     container_name: mieru-panel
     restart: unless-stopped
     network_mode: host
@@ -19,9 +31,9 @@ services:
       - panel_data:/app/data
       - mita_run:/var/run/mita
     environment:
-      # First-start defaults. Override before `docker compose up` or change later in the UI.
-      # The panel auto-creates config.json on first run; PANEL_ADMIN_PASS will reset
-      # the admin password on every restart, set it once and remove for safety.
+      # The panel auto-creates data/config.json on first start.
+      # PANEL_ADMIN_PASS resets the admin password on every restart, set it once
+      # and clear afterwards. PANEL_SERVER_IP can also be edited later in the UI.
       - PANEL_CONFIG=/app/data/config.json
       - PANEL_HOST=0.0.0.0
       - MITA_SOCKET=/var/run/mita/mita.sock

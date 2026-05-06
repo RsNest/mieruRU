@@ -24,6 +24,9 @@ UI 中完成。
 
 ## 快速开始（Docker Compose）
 
+两个镜像都在仓库中**本地构建**,不依赖 Docker Hub,也不再需要 `enfein/mita:latest`。
+一条命令同时启动 `mita` 与面板:
+
 ```bash
 git clone https://github.com/RsNest/mieruRU
 cd mieruRU/mieru-panel
@@ -38,6 +41,9 @@ export PANEL_PORT_RANGE=2012-2022
 
 docker compose up -d --build
 ```
+
+第一次构建会在两个多阶段 Dockerfile 中分别编译 mita（`cmd/mita`）与面板
+（Go + Next.js）;之后的重建会命中缓存。
 
 面板监听 `8080` 端口。默认使用 `network_mode: host`,会绑定到主机的
 `0.0.0.0:8080`,对外暴露时建议用 nginx(见 `docs/nginx.conf`)。mita 同样以
@@ -122,9 +128,11 @@ make build # 然后用 go build 嵌入 UI 编译二进制
 
 ## 更新 mita
 
+mita 从仓库内的源码构建(`cmd/mita`、`pkg/`、`apis/`)。同步上游变更只需:
+
 ```bash
-docker compose pull mita
-docker compose up -d mita
+git pull
+docker compose up -d --build mita
 ```
 
 ## 备份

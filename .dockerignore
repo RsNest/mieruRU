@@ -1,0 +1,51 @@
+# Keep the root build context small for `docker compose build`.
+# The repo root is used as the context for both:
+#   - mieru-panel/Dockerfile        (panel + bundled mita CLI)
+#   - deployments/docker/mita/Dockerfile (mita server)
+
+# git
+.git
+.gitignore
+.gitattributes
+.github
+
+# editor / OS / coverage
+.vscode
+.idea
+.DS_Store
+*.swp
+coverage.out
+coverage.html
+
+# secondary clones / vendored sources we never want to push into the build
+sharx-code
+.codex
+vendor
+
+# binaries and packaged artefacts
+bin
+release
+build/package
+*.deb
+*.rpm
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Next.js artefacts that the Dockerfile rebuilds from source
+mieru-panel/panel/node_modules
+mieru-panel/panel/.next
+mieru-panel/panel/out
+mieru-panel/panel/.turbo
+mieru-panel/panel/.next-env.d.ts
+
+# panel runtime data – never copy into the image (mounted as volume)
+mieru-panel/data
+
+# tooling
+tools/build
+__pycache__
+
+# Markdown drafts that have no place in the build context
+**/*.draft.md

@@ -33,7 +33,7 @@ docker-build:
 	docker compose build
 
 docker-up:
-	docker compose up -d
+	docker compose up -d --build
 
 docker-down:
 	docker compose down
@@ -46,3 +46,8 @@ docker-restart:
 
 docker-shell:
 	docker exec -it mieru-panel sh
+
+# Pull, build, restart in one go.
+docker-update:
+	docker compose pull --ignore-buildable || true
+	docker compose up -d --build

@@ -27,6 +27,10 @@ the rest of the work happens in the UI.
 
 ## Quick start (Docker Compose)
 
+Both images are built **from local sources** in this repo — there is nothing to pull
+from Docker Hub, no `enfein/mita:latest` dependency. One command brings up `mita`
+plus the panel:
+
 ```bash
 git clone https://github.com/RsNest/mieruRU
 cd mieruRU/mieru-panel
@@ -41,6 +45,9 @@ export PANEL_PORT_RANGE=2012-2022
 
 docker compose up -d --build
 ```
+
+The first build compiles mita (`cmd/mita`) and the panel (Go + Next.js) inside two
+multi-stage Dockerfiles; subsequent rebuilds are cached.
 
 The panel listens on port `8080`. With `network_mode: host` (default) it binds to
 `0.0.0.0:8080` on the host – put nginx in front if you expose it to the internet
@@ -129,9 +136,12 @@ make build # then go build with the embedded UI
 
 ## Updating mita
 
+mita is built from the in-repo sources (`cmd/mita`, `pkg/`, `apis/`). To pick up
+upstream changes pull this repo and rebuild:
+
 ```bash
-docker compose pull mita
-docker compose up -d mita
+git pull
+docker compose up -d --build mita
 ```
 
 ## Backup
