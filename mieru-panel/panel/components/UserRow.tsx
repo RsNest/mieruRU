@@ -17,7 +17,7 @@ interface UserRowProps {
   onSelectToggle: () => void
   onToggleOpen: () => void
   onDelete: (name: string) => void
-  onRegen: (name: string) => void
+  onRegenRequest: (name: string) => void
   onUpdate: (
     name: string,
     payload: {
@@ -60,7 +60,7 @@ export function UserRow({
   onSelectToggle,
   onToggleOpen,
   onDelete,
-  onRegen,
+  onRegenRequest,
   onUpdate,
   onResetDevices,
   onClearPassword,
@@ -83,8 +83,7 @@ export function UserRow({
   )
 
   const onNameDoubleClick = async () => {
-    if (!confirm(t('users_dblclick_regen_confirm', { name: user.name }))) return
-    onRegen(user.name)
+    onRegenRequest(user.name)
   }
 
   const editExpiry = async () => {
@@ -192,7 +191,7 @@ export function UserRow({
           <button
             type="button"
             className="action-btn icon-only"
-            onClick={() => onRegen(user.name)}
+            onClick={() => onRegenRequest(user.name)}
             title={t('users_action_regen')}
             aria-label={t('users_action_regen')}
           >

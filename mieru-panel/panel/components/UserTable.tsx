@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { User } from '@/lib/types'
+import { ConfirmModal } from './ConfirmModal'
 import { UserRow } from './UserRow'
 import { useToast } from './useToast'
 
@@ -50,6 +51,8 @@ export function UserTable({
   const [openName, setOpenName] = useState<string | null>(null)
   const [newPasswords, setNewPasswords] = useState<Record<string, string>>({})
   const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [regenConfirmName, setRegenConfirmName] = useState<string | null>(null)
+  const [bulkConfirmOpen, setBulkConfirmOpen] = useState(false)
 
   if (loading) {
     return (
@@ -129,11 +132,12 @@ export function UserTable({
 
   const runBulkDelete = async () => {
     if (selected.size === 0) return
-    if (!confirm(t('users_bulk_confirm', { count: selected.size }))) return
+    const count = selected.size
     try {
       await onBulkDelete(Array.from(selected))
       setSelected(new Set())
-      success(t('users_bulk_deleted', { count: selected.size }))
+      setBulkConfirmOpen(false)
+      success(t('users_bulk_deleted', { count }))
     } catch (e) {
       toastError((e as Error).message || t('toast_error'))
     }
@@ -147,7 +151,11 @@ export function UserTable({
           <button type="button" className="btn-secondary" onClick={() => setSelected(new Set())}>
             {t('confirm_no')}
           </button>
-          <button type="button" className="btn-secondary danger" onClick={() => void runBulkDelete()}>
+          <button
+            type="button"
+            className="btn-secondary danger"
+            onClick={() => setBulkConfirmOpen(true)}
+          >
             ✕ {t('users_bulk_delete')}
           </button>
         </div>
@@ -195,7 +203,7 @@ export function UserTable({
                 onSelectToggle={() => toggleOne(user.name)}
                 onToggleOpen={() => setOpenName((current) => (current === user.name ? null : user.name))}
                 onDelete={onDelete}
-                onRegen={handleRegen}
+                onRegenRequest={(name) => setRegenConfirmName(name)}
                 onUpdate={onUpdate}
                 onResetDevices={onResetDevices}
                 onClearPassword={() =>
@@ -210,6 +218,28 @@ export function UserTable({
           ))}
         </motion.div>
       </AnimatePresence>
+      <ConfirmModal
+        open={regenConfirmName !== null}
+        title={t('users_action_regen')}
+        message={t('users_dblclick_regen_confirm', { name: regenConfirmName || '' })}
+        confirmLabel={t('users_action_regen')}
+        cancelLabel={t('confirm_no')}
+        onConfirm={() => {
+          const name = regenConfirmName
+          setRegenConfirmName(null)
+          if (name) void handleRegen(name)
+        }}
+        onCancel={() => setRegenConfirmName(null)}
+      />
+      <ConfirmModal
+        open={bulkConfirmOpen}
+        title={t('users_bulk_delete')}
+        message={t('users_bulk_confirm', { count: selected.size })}
+        confirmLabel={t('users_bulk_delete')}
+        cancelLabel={t('confirm_no')}
+        onConfirm={() => void runBulkDelete()}
+        onCancel={() => setBulkConfirmOpen(false)}
+      />
     </div>
   )
 }
