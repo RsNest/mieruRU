@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { api } from '@/lib/api'
 import { dashboardHref, parseDashboardTab } from '@/lib/dashboardTab'
+import { parseTrafficToMB } from '@/lib/traffic'
 import type { User } from '@/lib/types'
 import { useServerStatusStore } from '@/store/serverStatus'
 import { AddUserModal } from './AddUserModal'
@@ -15,24 +16,6 @@ import { DashboardUsersTab } from './DashboardUsersTab'
 import { StatCard } from './StatCard'
 import { Toasts } from './Toast'
 import { useToast } from './useToast'
-
-// parseTraffic returns the cumulative number of MiB encoded in a "↓ 5.6 MiB
-// / ↑ 2.3 MiB" style string. Tokens with KiB/MiB/GiB or the legacy KB/MB/GB
-// suffixes are summed; tokens we cannot parse contribute 0.
-function parseTraffic(raw?: string): number {
-  if (!raw) return 0
-  const tokens = raw.match(/[\d.,]+\s*[KMG]i?B/gi)
-  if (!tokens || tokens.length === 0) return 0
-  return tokens.reduce((acc, tok) => {
-    const numeric = Number(tok.replace(',', '.').replace(/[^\d.]/g, ''))
-    if (Number.isNaN(numeric)) return acc
-    const upper = tok.toUpperCase()
-    if (upper.includes('GIB') || upper.includes('GB')) return acc + numeric * 1024
-    if (upper.includes('MIB') || upper.includes('MB')) return acc + numeric
-    if (upper.includes('KIB') || upper.includes('KB')) return acc + numeric / 1024
-    return acc + numeric / (1024 * 1024)
-  }, 0)
-}
 
 type BarRow = {
   name: string
@@ -98,7 +81,7 @@ export function DashboardPage() {
   }, [])
 
   const totalTrafficTodayMB = useMemo(
-    () => users.reduce((sum, user) => sum + parseTraffic(user.trafficDay), 0),
+    () => users.reduce((sum, user) => sum + parseTrafficToMB(user.trafficDay), 0),
     [users],
   )
 
@@ -113,7 +96,7 @@ export function DashboardPage() {
       .map((u) => ({
         fullName: u.name,
         name: u.name.length > 14 ? `${u.name.slice(0, 12)}…` : u.name,
-        trafficMB: Math.round(parseTraffic(u.trafficDay) * 100) / 100,
+        trafficMB: Math.round(parseTrafficToMB(u.trafficDay) * 100) / 100,
         displayDay: u.trafficDay || '-',
         displayMon: u.trafficMon || '-',
       }))
