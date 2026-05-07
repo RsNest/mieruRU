@@ -15,7 +15,7 @@ export function LoginPage() {
   const login = useAuthStore((state) => state.login)
   const theme = useSettingsStore((state) => state.theme)
   const lang = useSettingsStore((state) => state.lang)
-  const [username, setUsername] = useState('admin')
+  const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [shakeSeed, setShakeSeed] = useState(0)
