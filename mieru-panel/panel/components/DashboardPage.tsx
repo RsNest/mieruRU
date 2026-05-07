@@ -3,15 +3,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useRouter, useSearchParams } from 'next/navigation'
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts'
 import { api } from '@/lib/api'
 import { dashboardHref, parseDashboardTab } from '@/lib/dashboardTab'
 import type { User } from '@/lib/types'
@@ -20,9 +11,9 @@ import { AddUserModal } from './AddUserModal'
 import { ConfirmModal } from './ConfirmModal'
 import { DashboardLogsTab } from './DashboardLogsTab'
 import { DashboardServerTab } from './DashboardServerTab'
+import { DashboardUsersTab } from './DashboardUsersTab'
 import { StatCard } from './StatCard'
 import { Toasts } from './Toast'
-import { UserTable } from './UserTable'
 import { useToast } from './useToast'
 
 // parseTraffic returns the cumulative number of MiB encoded in a "↓ 5.6 MiB
@@ -215,130 +206,26 @@ export function DashboardPage() {
       </div>
 
       <div className={`tabs-stack tab-${tab}`}>
-      <div className={`tab-pane ${tab === 'users' ? 'active' : 'inactive'}`}>
-        <>
-          {!loading && users.length === 0 ? (
-            <div className="dashboard-card empty-state">
-              <h2>{t('empty_state_title')}</h2>
-              <p className="muted">{t('empty_state_hint')}</p>
-              <button type="button" className="btn-primary" onClick={() => setShowAdd(true)}>
-                + {t('users_add')}
-              </button>
-            </div>
-          ) : null}
-
-          {users.length > 0 ? (
-            <div className="dashboard-card">
-              <div className="section-head">
-                <div>
-                  <h2>{t('stats_chart_title')}</h2>
-                  <p className="muted" style={{ margin: 0 }}>
-                    {t('stats_chart_hint')}
-                  </p>
-                </div>
-                <button type="button" className="btn-secondary" onClick={downloadSubscriptions}>
-                  ⤓ {t('users_export_subs')}
-                </button>
-              </div>
-              {barData.length === 0 || barData.every((row) => row.trafficMB === 0) ? (
-                <p className="muted" style={{ marginBottom: 0 }}>{t('stats_chart_empty')}</p>
-              ) : (
-                <div className="chart-wrap">
-                  <ResponsiveContainer width="100%" height={240}>
-                    <BarChart data={barData} margin={{ top: 10, right: 8, left: -10, bottom: 4 }}>
-                      <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
-                      <XAxis
-                        dataKey="name"
-                        stroke="var(--text-secondary)"
-                        tick={{ fontSize: 11 }}
-                        interval={0}
-                        angle={-28}
-                        textAnchor="end"
-                        height={64}
-                      />
-                      <YAxis
-                        stroke="var(--text-secondary)"
-                        tick={{ fontSize: 11 }}
-                        label={{
-                          value: t('stats_chart_axis_mb'),
-                          angle: -90,
-                          position: 'insideLeft',
-                          fill: 'var(--text-secondary)',
-                          fontSize: 11,
-                        }}
-                      />
-                      <Tooltip
-                        cursor={{ fill: 'color-mix(in oklab, var(--accent) 8%, transparent)' }}
-                        formatter={(value: number) => [
-                          `${value} ${t('unit_mb').toUpperCase()}`,
-                          t('stats_day'),
-                        ]}
-                        labelFormatter={(label, payload) => {
-                          const full = payload?.[0]?.payload as BarRow | undefined
-                          return full?.fullName ?? String(label)
-                        }}
-                        contentStyle={{
-                          background: 'var(--bg-elevated)',
-                          border: '1px solid var(--border)',
-                          borderRadius: 8,
-                          fontFamily: 'var(--font-mono)',
-                          color: 'var(--text-primary)',
-                        }}
-                      />
-                      <Bar
-                        dataKey="trafficMB"
-                        fill={accentColor}
-                        name={t('stats_day')}
-                        radius={[6, 6, 0, 0]}
-                        isAnimationActive={false}
-                      />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              )}
-            </div>
-          ) : null}
-
-          {users.length > 0 ? (
-            <div className="dashboard-card">
-              <div className="section-head">
-                <h2>{t('nav_users')}</h2>
-                <div className="inline-actions">
-                  <input
-                    type="search"
-                    className="search-input"
-                    placeholder={t('users_search_placeholder')}
-                    value={search}
-                    onChange={(ev) => setSearch(ev.target.value)}
-                    aria-label={t('users_search_placeholder')}
-                  />
-                  <button
-                    type="button"
-                    className="btn-primary"
-                    onClick={() => setShowAdd(true)}
-                  >
-                    + {t('users_add')}
-                  </button>
-                </div>
-              </div>
-              <UserTable
-                users={filteredUsers}
-                loading={loading}
-                error={hasError}
-                searchActive={search.trim().length > 0}
-                onClearSearch={() => setSearch('')}
-                onRetry={() => void fetchData(true)}
-                onDelete={(name) => setDeleteName(name)}
-                onRegen={onRegenUser}
-                onUpdate={onUpdateUser}
-                onResetDevices={onResetDevices}
-                onBulkDelete={onBulkDelete}
-                onAdd={() => setShowAdd(true)}
-              />
-            </div>
-          ) : null}
-        </>
-      </div>
+      <DashboardUsersTab
+        active={tab === 'users'}
+        users={users}
+        filteredUsers={filteredUsers}
+        loading={loading}
+        hasError={hasError}
+        search={search}
+        setSearch={setSearch}
+        barData={barData}
+        accentColor={accentColor}
+        onShowAdd={() => setShowAdd(true)}
+        onClearSearch={() => setSearch('')}
+        onRetry={() => void fetchData(true)}
+        onDelete={(name) => setDeleteName(name)}
+        onRegen={onRegenUser}
+        onUpdate={onUpdateUser}
+        onResetDevices={onResetDevices}
+        onBulkDelete={onBulkDelete}
+        onDownloadSubscriptions={downloadSubscriptions}
+      />
 
       <DashboardServerTab active={tab === 'server'} onRestored={() => void fetchData(false)} />
       <DashboardLogsTab active={tab === 'logs'} />
