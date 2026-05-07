@@ -5,6 +5,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { User } from '@/lib/types'
 import { ConfirmModal } from './ConfirmModal'
+import { EditExpiryModal } from './EditExpiryModal'
 import { UserRow } from './UserRow'
 import { useToast } from './useToast'
 
@@ -53,6 +54,8 @@ export function UserTable({
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [regenConfirmName, setRegenConfirmName] = useState<string | null>(null)
   const [bulkConfirmOpen, setBulkConfirmOpen] = useState(false)
+  const [expiryEditName, setExpiryEditName] = useState<string | null>(null)
+  const [expiryEditDate, setExpiryEditDate] = useState('')
 
   if (loading) {
     return (
@@ -143,6 +146,23 @@ export function UserTable({
     }
   }
 
+  const runEditExpiry = async (nextDate: string | null) => {
+    if (!expiryEditName) return
+    try {
+      if (nextDate === null) {
+        await onUpdate(expiryEditName, { expiresAt: 0 })
+      } else {
+        const parsed = Date.parse(nextDate)
+        if (Number.isNaN(parsed)) return
+        await onUpdate(expiryEditName, { expiresAt: Math.floor(parsed / 1000) })
+      }
+      setExpiryEditName(null)
+      setExpiryEditDate('')
+    } catch (e) {
+      toastError((e as Error).message || t('toast_error'))
+    }
+  }
+
   return (
     <div className="user-table">
       {selected.size > 0 ? (
@@ -204,6 +224,10 @@ export function UserTable({
                 onToggleOpen={() => setOpenName((current) => (current === user.name ? null : user.name))}
                 onDelete={onDelete}
                 onRegenRequest={(name) => setRegenConfirmName(name)}
+                onEditExpiryRequest={(name, expiresAt) => {
+                  setExpiryEditName(name)
+                  setExpiryEditDate(expiresAt ? new Date(expiresAt * 1000).toISOString().slice(0, 10) : '')
+                }}
                 onUpdate={onUpdate}
                 onResetDevices={onResetDevices}
                 onClearPassword={() =>
@@ -239,6 +263,15 @@ export function UserTable({
         cancelLabel={t('confirm_no')}
         onConfirm={() => void runBulkDelete()}
         onCancel={() => setBulkConfirmOpen(false)}
+      />
+      <EditExpiryModal
+        open={expiryEditName !== null}
+        currentDate={expiryEditDate}
+        onSubmit={runEditExpiry}
+        onCancel={() => {
+          setExpiryEditName(null)
+          setExpiryEditDate('')
+        }}
       />
     </div>
   )

@@ -18,6 +18,7 @@ interface UserRowProps {
   onToggleOpen: () => void
   onDelete: (name: string) => void
   onRegenRequest: (name: string) => void
+  onEditExpiryRequest: (name: string, expiresAt?: number) => void
   onUpdate: (
     name: string,
     payload: {
@@ -61,6 +62,7 @@ export function UserRow({
   onToggleOpen,
   onDelete,
   onRegenRequest,
+  onEditExpiryRequest,
   onUpdate,
   onResetDevices,
   onClearPassword,
@@ -84,21 +86,6 @@ export function UserRow({
 
   const onNameDoubleClick = async () => {
     onRegenRequest(user.name)
-  }
-
-  const editExpiry = async () => {
-    const current = user.expiresAt
-      ? new Date(user.expiresAt * 1000).toISOString().slice(0, 10)
-      : ''
-    const raw = prompt(t('users_edit_expiry_prompt'), current)
-    if (raw === null) return
-    if (raw.trim() === '') {
-      await onUpdate(user.name, { expiresAt: 0 })
-      return
-    }
-    const parsed = Date.parse(raw)
-    if (Number.isNaN(parsed)) return
-    await onUpdate(user.name, { expiresAt: Math.floor(parsed / 1000) })
   }
 
   const expired = !!user.expired
@@ -149,7 +136,7 @@ export function UserRow({
             <button
               type="button"
               className={`expiry-pill ${expired ? 'expired' : expiringSoon ? 'soon' : ''}`}
-              onClick={() => void editExpiry()}
+              onClick={() => onEditExpiryRequest(user.name, user.expiresAt)}
               title={t('users_edit_expiry_hint')}
             >
               {expired ? t('users_expired') : expiresLabel}
@@ -158,7 +145,7 @@ export function UserRow({
             <button
               type="button"
               className="expiry-pill ghost"
-              onClick={() => void editExpiry()}
+              onClick={() => onEditExpiryRequest(user.name, user.expiresAt)}
               title={t('users_edit_expiry_hint')}
             >
               ∞
