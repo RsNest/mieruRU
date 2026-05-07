@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
+import { isServerOffline, isServerRunning } from '@/lib/serverStatus'
 import { useServerStatusStore } from '@/store/serverStatus'
 
 /**
@@ -23,9 +24,8 @@ export function HeaderStatusBadge() {
     }
   }, [startPolling, stopPolling])
 
-  const upper = String(status).toUpperCase()
-  const running = upper.includes('RUN')
-  const offline = !reachable || upper.includes('OFFLINE') || upper.includes('UNAVAILABLE')
+  const running = isServerRunning(status)
+  const offline = isServerOffline(status, reachable)
 
   let label: string
   let cls: string

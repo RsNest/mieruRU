@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api } from '@/lib/api'
+import { isServerOffline, isServerRunning } from '@/lib/serverStatus'
 import type { ServerStatus as ServerStatusValue } from '@/lib/types'
 import { useServerStatusStore } from '@/store/serverStatus'
 import { useToast } from './useToast'
@@ -22,9 +23,8 @@ export function ServerStatus() {
     return () => stopPolling()
   }, [startPolling, stopPolling])
 
-  const upper = String(status).toUpperCase()
-  const running = upper.includes('RUN')
-  const offline = upper.includes('OFFLINE') || upper.includes('UNAVAILABLE')
+  const running = isServerRunning(status)
+  const offline = isServerOffline(status)
 
   const updateOptimistic = async (next: ServerStatusValue, call: () => Promise<unknown>) => {
     if (busy) return
