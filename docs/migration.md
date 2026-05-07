@@ -70,3 +70,20 @@ This document defines the migration sequence and gate checks for the panel UI re
 - Theme smoke test (`/users`, `/server`, `/logs`) across all themes.
 - Legacy `?tab` deep links verified.
 - A11y checks run before final merge.
+
+## PR 2 Changelog
+
+### Changed
+
+- Replaced legacy panel color tokens with unified `--color-*` token system.
+- Added Tailwind v4 `@theme` token declarations for color/radius/font baselines.
+- Rebalanced all existing themes (`midnight`, `sakura`, `ghost`, `daylight`, `solar`, `cyber`) under one token schema.
+- Simplified card and modal visuals to flat surfaces with subtle borders and a single card shadow.
+- Reduced background pattern intensity to low-opacity grid + radial fade.
+- Captured smoke-test screenshots for 6 themes × 3 pages in `docs/screenshots/pr2/`.
+
+### Not Changed
+
+- No layout shell migration (tabs and existing page structure remain as-is).
+- No route migration to `/users`, `/server`, `/logs`.
+- No feature-flag wiring in components yet (`NEXT_PUBLIC_UI_V2` remains preparatory).

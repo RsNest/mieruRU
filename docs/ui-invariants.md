@@ -13,16 +13,16 @@ These rules are non-negotiable for the redesign.
 
 ## Token and Theme System
 
-- [ ] All themes share the same variable schema.
-- [ ] Cards use flat surfaces (`--bg-surface`) with subtle borders.
-- [ ] No heavy gradients on cards (only on primary CTA).
+- [x] All themes share the same variable schema.
+- [x] Cards use flat surfaces (`--bg-surface`) with subtle borders.
+- [x] No heavy gradients on cards (only on primary CTA).
 
 ## Typography and Spacing
 
 - Allowed size scale: `11, 12, 13, 14, 16, 20, 24`.
 - Radius scale: `6, 8, 10` for regular components.
-- [ ] UI font is Inter.
-- [ ] Technical values (IP, ports, hashes, byte counts) use JetBrains Mono.
+- [x] UI font is Inter.
+- [x] Technical values (IP, ports, hashes, byte counts) use JetBrains Mono.
 - [ ] Monospace tabular figures are used for all numeric values.
 
 ## Components and States
@@ -36,7 +36,7 @@ These rules are non-negotiable for the redesign.
 
 ## Motion and Interaction
 
-- [ ] Color/background/border transitions are short and subtle.
+- [x] Color/background/border transitions are short and subtle.
 - [ ] Global layout animations are avoided; scoped framer-motion transitions only.
 - [ ] Sidebar expand/collapse behavior is smooth and deterministic.
 

@@ -39,7 +39,7 @@ export function DashboardPage() {
   const stopStatusPolling = useServerStatusStore((state) => state.stopPolling)
   const [showAdd, setShowAdd] = useState(false)
   const [deleteName, setDeleteName] = useState<string | null>(null)
-  const [accentColor, setAccentColor] = useState('var(--accent)')
+  const [accentColor, setAccentColor] = useState('var(--color-accent)')
   const [search, setSearch] = useState('')
 
   const fetchData = async (initial = false) => {
@@ -71,7 +71,7 @@ export function DashboardPage() {
 
   useEffect(() => {
     const readAccent = () => {
-      const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()
+      const accent = getComputedStyle(document.documentElement).getPropertyValue('--color-accent').trim()
       if (accent) setAccentColor(accent)
     }
     readAccent()

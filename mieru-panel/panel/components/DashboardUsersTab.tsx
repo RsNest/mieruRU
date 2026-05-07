@@ -104,10 +104,10 @@ export function DashboardUsersTab({
               <div className="chart-wrap">
                 <ResponsiveContainer width="100%" height={240}>
                   <BarChart data={barData} margin={{ top: 10, right: 8, left: -10, bottom: 4 }}>
-                    <CartesianGrid stroke="var(--border)" strokeDasharray="3 3" vertical={false} />
+                    <CartesianGrid stroke="var(--color-border-subtle)" strokeDasharray="3 3" vertical={false} />
                     <XAxis
                       dataKey="name"
-                      stroke="var(--text-secondary)"
+                      stroke="var(--color-text-secondary)"
                       tick={{ fontSize: 11 }}
                       interval={0}
                       angle={-28}
@@ -115,18 +115,18 @@ export function DashboardUsersTab({
                       height={64}
                     />
                     <YAxis
-                      stroke="var(--text-secondary)"
+                      stroke="var(--color-text-secondary)"
                       tick={{ fontSize: 11 }}
                       label={{
                         value: t('stats_chart_axis_mb'),
                         angle: -90,
                         position: 'insideLeft',
-                        fill: 'var(--text-secondary)',
+                        fill: 'var(--color-text-secondary)',
                         fontSize: 11,
                       }}
                     />
                     <Tooltip
-                      cursor={{ fill: 'color-mix(in oklab, var(--accent) 8%, transparent)' }}
+                      cursor={{ fill: 'color-mix(in oklab, var(--color-accent) 8%, transparent)' }}
                       formatter={(value: number) => [
                         `${value} ${t('unit_mb').toUpperCase()}`,
                         t('stats_day'),
@@ -136,11 +136,11 @@ export function DashboardUsersTab({
                         return full?.fullName ?? String(label)
                       }}
                       contentStyle={{
-                        background: 'var(--bg-elevated)',
-                        border: '1px solid var(--border)',
+                        background: 'var(--color-bg-elevated)',
+                        border: '1px solid var(--color-border-subtle)',
                         borderRadius: 8,
                         fontFamily: 'var(--font-mono)',
-                        color: 'var(--text-primary)',
+                        color: 'var(--color-text-primary)',
                       }}
                     />
                     <Bar

@@ -57,16 +57,16 @@ export function ServerStatus() {
             fontSize: 32,
             fontWeight: 500,
             color: running
-              ? 'var(--success)'
+              ? 'var(--color-success)'
               : offline
-                ? 'var(--danger, #f87171)'
-                : 'var(--text-muted)',
+                ? 'var(--color-danger)'
+                : 'var(--color-text-muted)',
             marginBottom: 8,
           }}
         >
           {running ? t('server_running') : offline ? t('server_offline') : t('server_idle')}
         </div>
-        <div style={{ color: 'var(--text-muted)', fontSize: 13, marginBottom: 32 }}>mita · 見た</div>
+        <div style={{ color: 'var(--color-text-muted)', fontSize: 13, marginBottom: 32 }}>mita · 見た</div>
       </div>
       <div className="server-actions">
         <button

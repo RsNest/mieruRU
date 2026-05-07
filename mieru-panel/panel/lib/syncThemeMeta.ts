@@ -1,14 +1,14 @@
 import type { Theme } from './types'
 
 const THEME_BROWSER_COLOR: Record<Theme, string> = {
-  midnight: '#0a1628',
-  sakura: '#140f0c',
-  ghost: '#f6f8fa',
-  daylight: '#fbfcfe',
-  solar: '#1f150a',
-  cyber: '#02030a',
+  midnight: '#0b0d12',
+  sakura: '#130f13',
+  ghost: '#f7f8fb',
+  daylight: '#f4f7ff',
+  solar: '#1a130c',
+  cyber: '#080b11',
   // Auto follows the system; pick the dark default for the browser chrome.
-  auto: '#0a1628',
+  auto: '#0b0d12',
 }
 
 /** Updates <meta name="theme-color"> for mobile/browser chrome (SharX-style). */

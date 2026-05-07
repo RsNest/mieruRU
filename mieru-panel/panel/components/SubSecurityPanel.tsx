@@ -109,7 +109,7 @@ export function SubSecurityPanel() {
           type="checkbox"
           checked={requireHWID}
           onChange={(ev) => setRequireHWID(ev.target.checked)}
-          style={{ width: 16, height: 16, accentColor: 'var(--accent)' }}
+          style={{ width: 16, height: 16, accentColor: 'var(--color-accent)' }}
         />
         <span>
           <strong>{t('sub_security_require_hwid')}</strong>

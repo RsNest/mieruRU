@@ -67,7 +67,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           bottom: '-4%',
           right: '-1%',
           fontSize: 'clamp(260px, 38vw, 520px)',
-          color: 'var(--accent)',
+          color: 'var(--color-accent)',
           opacity: 'var(--glyph-opacity)',
           fontFamily: 'var(--font-noto-jp), "Noto Sans JP", serif',
           fontWeight: 300,
