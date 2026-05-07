@@ -11,7 +11,7 @@ const POLL_MS = 10000
 /** ConnectionsPanel polls /api/connections every 10s and renders the
  *  active mita sessions in a compact table. While the proxy is IDLE the
  *  list is empty and we show a friendly hint instead of an error. */
-export function ConnectionsPanel() {
+export function ConnectionsPanel({ active = true }: { active?: boolean }) {
   const { t } = useTranslation()
   const [items, setItems] = useState<ConnectionInfo[]>([])
   const [available, setAvailable] = useState(true)
@@ -31,7 +31,7 @@ export function ConnectionsPanel() {
     }
   }, [])
 
-  usePollingTask(pollConnections, POLL_MS)
+  usePollingTask(pollConnections, POLL_MS, { enabled: active })
 
   return (
     <div className="dashboard-card">

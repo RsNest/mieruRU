@@ -1,0 +1,29 @@
+[
+  {
+    "name": "pr4-users-midnight.png",
+    "url": "/users",
+    "viewport": { "width": 1440, "height": 900 },
+    "mode": "v2",
+    "theme": "midnight"
+  },
+  {
+    "name": "pr4-users-ghost.png",
+    "url": "/users",
+    "viewport": { "width": 1440, "height": 900 },
+    "mode": "v2",
+    "theme": "ghost"
+  },
+  {
+    "name": "pr4-users-mobile.png",
+    "url": "/users",
+    "viewport": {
+      "width": 390,
+      "height": 844,
+      "isMobile": true,
+      "hasTouch": true,
+      "deviceScaleFactor": 3
+    },
+    "mode": "v2",
+    "theme": "midnight"
+  }
+]

@@ -1,36 +1,30 @@
 'use client'
 
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts'
 import { useTranslation } from 'react-i18next'
+import type { TopUser } from '@/hooks/useUsersStats'
 import type { User } from '@/lib/types'
+import { KpiStrip } from '@/components/users/KpiStrip'
+import { TopUsersList } from '@/components/users/TopUsersList'
 import { UserTable } from './UserTable'
-
-type BarRow = {
-  name: string
-  fullName: string
-  trafficMB: number
-  displayDay: string
-  displayMon: string
-}
 
 interface DashboardUsersTabProps {
   active: boolean
   users: User[]
   filteredUsers: User[]
   loading: boolean
+  connectionsLoading: boolean
   hasError: boolean
   search: string
   setSearch: (next: string) => void
-  barData: BarRow[]
-  accentColor: string
+  usersTotal: number
+  usersActive5m: number
+  todayTrafficTotal: number
+  todayTrafficUsers: number
+  connectionsCount: number
+  serverStatus: string
+  serverStatusSince: string | null
+  todayTopUsers: TopUser[]
+  monthTopUsers: TopUser[]
   onShowAdd: () => void
   onClearSearch: () => void
   onRetry: () => void
@@ -55,11 +49,19 @@ export function DashboardUsersTab({
   users,
   filteredUsers,
   loading,
+  connectionsLoading,
   hasError,
   search,
   setSearch,
-  barData,
-  accentColor,
+  usersTotal,
+  usersActive5m,
+  todayTrafficTotal,
+  todayTrafficUsers,
+  connectionsCount,
+  serverStatus,
+  serverStatusSince,
+  todayTopUsers,
+  monthTopUsers,
   onShowAdd,
   onClearSearch,
   onRetry,
@@ -98,62 +100,29 @@ export function DashboardUsersTab({
                 ⤓ {t('users_export_subs')}
               </button>
             </div>
-            {barData.length === 0 || barData.every((row) => row.trafficMB === 0) ? (
-              <p className="muted" style={{ marginBottom: 0 }}>{t('stats_chart_empty')}</p>
-            ) : (
-              <div className="chart-wrap">
-                <ResponsiveContainer width="100%" height={240}>
-                  <BarChart data={barData} margin={{ top: 10, right: 8, left: -10, bottom: 4 }}>
-                    <CartesianGrid stroke="var(--color-border-subtle)" strokeDasharray="3 3" vertical={false} />
-                    <XAxis
-                      dataKey="name"
-                      stroke="var(--color-text-secondary)"
-                      tick={{ fontSize: 11 }}
-                      interval={0}
-                      angle={-28}
-                      textAnchor="end"
-                      height={64}
-                    />
-                    <YAxis
-                      stroke="var(--color-text-secondary)"
-                      tick={{ fontSize: 11 }}
-                      label={{
-                        value: t('stats_chart_axis_mb'),
-                        angle: -90,
-                        position: 'insideLeft',
-                        fill: 'var(--color-text-secondary)',
-                        fontSize: 11,
-                      }}
-                    />
-                    <Tooltip
-                      cursor={{ fill: 'color-mix(in oklab, var(--color-accent) 8%, transparent)' }}
-                      formatter={(value: number) => [
-                        `${value} ${t('unit_mb').toUpperCase()}`,
-                        t('stats_day'),
-                      ]}
-                      labelFormatter={(label, payload) => {
-                        const full = payload?.[0]?.payload as BarRow | undefined
-                        return full?.fullName ?? String(label)
-                      }}
-                      contentStyle={{
-                        background: 'var(--color-bg-elevated)',
-                        border: '1px solid var(--color-border-subtle)',
-                        borderRadius: 8,
-                        fontFamily: 'var(--font-mono)',
-                        color: 'var(--color-text-primary)',
-                      }}
-                    />
-                    <Bar
-                      dataKey="trafficMB"
-                      fill={accentColor}
-                      name={t('stats_day')}
-                      radius={[6, 6, 0, 0]}
-                      isAnimationActive={false}
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            )}
+            <KpiStrip
+              loading={loading}
+              usersTotal={usersTotal}
+              usersActive5m={usersActive5m}
+              todayTrafficTotal={todayTrafficTotal}
+              todayTrafficUsers={todayTrafficUsers}
+              connectionsCount={connectionsCount}
+              connectionsLoading={connectionsLoading}
+              serverStatus={serverStatus}
+              serverStatusSince={serverStatusSince}
+            />
+            <div className="top-users-grid">
+              <TopUsersList
+                title={t('top_users.today_title')}
+                users={todayTopUsers}
+                emptyMessage={t('top_users.empty_today')}
+              />
+              <TopUsersList
+                title={t('top_users.month_title')}
+                users={monthTopUsers}
+                emptyMessage={t('top_users.empty_month')}
+              />
+            </div>
           </div>
         ) : null}
 

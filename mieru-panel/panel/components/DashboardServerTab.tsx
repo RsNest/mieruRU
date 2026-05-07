@@ -19,7 +19,7 @@ export function DashboardServerTab({ active, onRestored }: DashboardServerTabPro
       <div className="dashboard-card">
         <ServerStatus />
       </div>
-      <ConnectionsPanel />
+      <ConnectionsPanel active={active} />
       <ServerConfigPanel />
       <AdvancedSettingsPanel />
       <SubSecurityPanel />

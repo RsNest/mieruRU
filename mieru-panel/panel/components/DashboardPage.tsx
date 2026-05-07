@@ -5,7 +5,8 @@ import { useTranslation } from 'react-i18next'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { api } from '@/lib/api'
 import { type DashboardTab, dashboardHref, parseDashboardTab } from '@/lib/dashboardTab'
-import { parseTrafficToMB } from '@/lib/traffic'
+import { useConnectionsCount } from '@/hooks/useConnectionsCount'
+import { useUsersStats } from '@/hooks/useUsersStats'
 import type { User } from '@/lib/types'
 import { useServerStatusStore } from '@/store/serverStatus'
 import { AddUserModal } from './AddUserModal'
@@ -13,17 +14,8 @@ import { ConfirmModal } from './ConfirmModal'
 import { DashboardLogsTab } from './DashboardLogsTab'
 import { DashboardServerTab } from './DashboardServerTab'
 import { DashboardUsersTab } from './DashboardUsersTab'
-import { StatCard } from './StatCard'
 import { Toasts } from './Toast'
 import { useToast } from './useToast'
-
-type BarRow = {
-  name: string
-  fullName: string
-  trafficMB: number
-  displayDay: string
-  displayMon: string
-}
 
 type DashboardPageProps = {
   forcedTab?: DashboardTab
@@ -39,12 +31,13 @@ export function DashboardPage({ forcedTab }: DashboardPageProps = {}) {
   const [loading, setLoading] = useState(true)
   const [hasError, setHasError] = useState(false)
   const status = useServerStatusStore((state) => state.status)
+  const statusSince = useServerStatusStore((state) => state.currentStatusSince)
   const startStatusPolling = useServerStatusStore((state) => state.startPolling)
   const stopStatusPolling = useServerStatusStore((state) => state.stopPolling)
   const [showAdd, setShowAdd] = useState(false)
   const [deleteName, setDeleteName] = useState<string | null>(null)
-  const [accentColor, setAccentColor] = useState('var(--color-accent)')
   const [search, setSearch] = useState('')
+  const { count: connectionsCount, loading: connectionsLoading } = useConnectionsCount(tab === 'users')
 
   const fetchData = async (initial = false) => {
     if (initial) setLoading(true)
@@ -73,50 +66,12 @@ export function DashboardPage({ forcedTab }: DashboardPageProps = {}) {
     return () => stopStatusPolling()
   }, [startStatusPolling, stopStatusPolling])
 
-  useEffect(() => {
-    const readAccent = () => {
-      const accent = getComputedStyle(document.documentElement).getPropertyValue('--color-accent').trim()
-      if (accent) setAccentColor(accent)
-    }
-    readAccent()
-    const observer = new MutationObserver(readAccent)
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] })
-    return () => observer.disconnect()
-  }, [])
-
-  const totalTrafficTodayMB = useMemo(
-    () => users.reduce((sum, user) => sum + parseTrafficToMB(user.trafficDay), 0),
-    [users],
-  )
-
   const filteredUsers = useMemo(() => {
     const q = search.trim().toLowerCase()
     if (!q) return users
     return users.filter((u) => u.name.toLowerCase().includes(q))
   }, [users, search])
-
-  const barData: BarRow[] = useMemo(() => {
-    return [...users]
-      .map((u) => ({
-        fullName: u.name,
-        name: u.name.length > 14 ? `${u.name.slice(0, 12)}…` : u.name,
-        trafficMB: Math.round(parseTrafficToMB(u.trafficDay) * 100) / 100,
-        displayDay: u.trafficDay || '-',
-        displayMon: u.trafficMon || '-',
-      }))
-      .sort((a, b) => b.trafficMB - a.trafficMB)
-  }, [users])
-
-  const totalTrafficLabel =
-    totalTrafficTodayMB >= 1024
-      ? `${(totalTrafficTodayMB / 1024).toFixed(2)} ${t('unit_gb')}`
-      : `${totalTrafficTodayMB.toFixed(1)} ${t('unit_mb')}`
-  const upperStatus = String(status).toUpperCase()
-  const statusLabel = upperStatus.includes('RUN')
-    ? t('server_running')
-    : upperStatus.includes('OFFLINE') || upperStatus.includes('UNAVAILABLE')
-      ? t('server_offline')
-      : t('server_idle')
+  const usersStats = useUsersStats(users)
 
   const onAddUser = async (payload: {
     name: string
@@ -186,23 +141,25 @@ export function DashboardPage({ forcedTab }: DashboardPageProps = {}) {
     <section className="dashboard-stack">
       <Toasts />
 
-      <div className="stats-grid">
-        <StatCard label={t('stat_total_users')} value={users.length} accent />
-        <StatCard label={t('stat_total_traffic_today')} value={totalTrafficLabel} />
-        <StatCard label={t('stat_server_status')} value={statusLabel} />
-      </div>
-
       <div className={`tabs-stack tab-${tab}`}>
       <DashboardUsersTab
         active={tab === 'users'}
         users={users}
         filteredUsers={filteredUsers}
         loading={loading}
+        connectionsLoading={connectionsLoading}
         hasError={hasError}
         search={search}
         setSearch={setSearch}
-        barData={barData}
-        accentColor={accentColor}
+        usersTotal={usersStats.totalUsers}
+        usersActive5m={usersStats.activeUsers5m}
+        todayTrafficTotal={usersStats.todayTrafficTotal}
+        todayTrafficUsers={usersStats.todayNonZeroCount}
+        connectionsCount={connectionsCount}
+        serverStatus={status}
+        serverStatusSince={statusSince}
+        todayTopUsers={usersStats.todayTopUsers}
+        monthTopUsers={usersStats.monthTopUsers}
         onShowAdd={() => setShowAdd(true)}
         onClearSearch={() => setSearch('')}
         onRetry={() => void fetchData(true)}

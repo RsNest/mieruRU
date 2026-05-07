@@ -11,17 +11,27 @@ let suppressPollUntil = 0
 type ServerStatusState = {
   status: ServerStatus
   reachable: boolean
+  currentStatusSince: string | null
   refresh: () => Promise<void>
   startPolling: () => void
   stopPolling: () => void
   setOptimistic: (next: ServerStatus, suppressMs?: number) => void
 }
 
+function nowHHMM(): string {
+  return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+}
+
 async function refreshStatus() {
   if (Date.now() < suppressPollUntil) return
   try {
     const res = await api.getStatus()
-    useServerStatusStore.setState({ status: res.status, reachable: true })
+    useServerStatusStore.setState((state) => {
+      if (state.status === res.status) {
+        return { status: res.status, reachable: true }
+      }
+      return { status: res.status, reachable: true, currentStatusSince: nowHHMM() }
+    })
   } catch {
     useServerStatusStore.setState({ reachable: false })
   }
@@ -48,6 +58,7 @@ function stopGlobalPolling() {
 export const useServerStatusStore = create<ServerStatusState>(() => ({
   status: 'IDLE',
   reachable: true,
+  currentStatusSince: null,
   refresh: async () => {
     await refreshStatus()
   },
@@ -61,6 +72,11 @@ export const useServerStatusStore = create<ServerStatusState>(() => ({
   },
   setOptimistic: (next, suppressMs = 5000) => {
     suppressPollUntil = Date.now() + suppressMs
-    useServerStatusStore.setState({ status: next, reachable: true })
+    useServerStatusStore.setState((state) => {
+      if (state.status === next) {
+        return { status: next, reachable: true }
+      }
+      return { status: next, reachable: true, currentStatusSince: nowHHMM() }
+    })
   },
 }))

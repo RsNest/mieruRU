@@ -23,14 +23,14 @@ These rules are non-negotiable for the redesign.
 - Radius scale: `6, 8, 10` for regular components.
 - [x] UI font is Inter.
 - [x] Technical values (IP, ports, hashes, byte counts) use JetBrains Mono.
-- [ ] Monospace tabular figures are used for all numeric values.
+- [x] Monospace tabular figures are used for all numeric values (users page: KPI values and TopUsersList bytes column).
 
 ## Components and States
 
 - [ ] Buttons use only `primary`, `secondary`, `ghost` variants.
 - [ ] Button heights are constrained to `28`, `32`, `36`.
-- [ ] Every data view has loading state (skeleton).
-- [ ] Every data view has empty state (icon + title + description + CTA).
+- [x] Every data view has loading state (skeleton) (users page: KPI strip cards).
+- [x] Every data view has empty state (icon + title + description + CTA) (users page: TopUsersList today/month).
 - [ ] Every data view has error fallback.
 - [ ] Focus ring is visible and consistent (`2px` accent with offset).
 
