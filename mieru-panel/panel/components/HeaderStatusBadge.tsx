@@ -1,11 +1,8 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { api } from '@/lib/api'
-import type { ServerStatus } from '@/lib/types'
-
-const POLL_MS = 15000
+import { useServerStatusStore } from '@/store/serverStatus'
 
 /**
  * HeaderStatusBadge polls /api/status every 15s and shows the mita
@@ -14,29 +11,17 @@ const POLL_MS = 15000
  */
 export function HeaderStatusBadge() {
   const { t } = useTranslation()
-  const [status, setStatus] = useState<ServerStatus>('IDLE')
-  const [reachable, setReachable] = useState(true)
+  const status = useServerStatusStore((state) => state.status)
+  const reachable = useServerStatusStore((state) => state.reachable)
+  const startPolling = useServerStatusStore((state) => state.startPolling)
+  const stopPolling = useServerStatusStore((state) => state.stopPolling)
 
   useEffect(() => {
-    let cancelled = false
-    const tick = async () => {
-      try {
-        const res = await api.getStatus()
-        if (cancelled) return
-        setStatus(res.status)
-        setReachable(true)
-      } catch {
-        if (cancelled) return
-        setReachable(false)
-      }
-    }
-    void tick()
-    const id = window.setInterval(() => void tick(), POLL_MS)
+    startPolling()
     return () => {
-      cancelled = true
-      window.clearInterval(id)
+      stopPolling()
     }
-  }, [])
+  }, [startPolling, stopPolling])
 
   const upper = String(status).toUpperCase()
   const running = upper.includes('RUN')

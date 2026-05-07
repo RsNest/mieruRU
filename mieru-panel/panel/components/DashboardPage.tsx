@@ -14,7 +14,8 @@ import {
 } from 'recharts'
 import { api } from '@/lib/api'
 import { dashboardHref, parseDashboardTab } from '@/lib/dashboardTab'
-import type { ServerStatus as ServerStatusValue, User } from '@/lib/types'
+import type { User } from '@/lib/types'
+import { useServerStatusStore } from '@/store/serverStatus'
 import { AddUserModal } from './AddUserModal'
 import { AdminCredentialsPanel } from './AdminCredentialsPanel'
 import { AdvancedSettingsPanel } from './AdvancedSettingsPanel'
@@ -66,7 +67,9 @@ export function DashboardPage() {
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [hasError, setHasError] = useState(false)
-  const [status, setStatus] = useState<ServerStatusValue>('IDLE')
+  const status = useServerStatusStore((state) => state.status)
+  const startStatusPolling = useServerStatusStore((state) => state.startPolling)
+  const stopStatusPolling = useServerStatusStore((state) => state.stopPolling)
   const [showAdd, setShowAdd] = useState(false)
   const [deleteName, setDeleteName] = useState<string | null>(null)
   const [accentColor, setAccentColor] = useState('var(--accent)')
@@ -75,9 +78,8 @@ export function DashboardPage() {
   const fetchData = async (initial = false) => {
     if (initial) setLoading(true)
     try {
-      const [usersResp, statusResp] = await Promise.all([api.getUsers(), api.getStatus()])
+      const usersResp = await api.getUsers()
       setUsers(usersResp.users)
-      setStatus(statusResp.status)
       setHasError(false)
     } catch {
       if (initial) setHasError(true)
@@ -94,6 +96,11 @@ export function DashboardPage() {
     return () => window.clearInterval(id)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  useEffect(() => {
+    startStatusPolling()
+    return () => stopStatusPolling()
+  }, [startStatusPolling, stopStatusPolling])
 
   useEffect(() => {
     const readAccent = () => {
@@ -342,7 +349,7 @@ export function DashboardPage() {
 
       <div className={`tab-pane ${tab === 'server' ? 'active' : 'inactive'}`}>
         <div className="dashboard-card">
-          <ServerStatus initialStatus={status} onStatusChange={setStatus} />
+          <ServerStatus />
         </div>
         <ConnectionsPanel />
         <ServerConfigPanel />

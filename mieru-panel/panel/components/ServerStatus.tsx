@@ -1,44 +1,26 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api } from '@/lib/api'
 import type { ServerStatus as ServerStatusValue } from '@/lib/types'
+import { useServerStatusStore } from '@/store/serverStatus'
 import { useToast } from './useToast'
 
-interface ServerStatusProps {
-  initialStatus: ServerStatusValue
-  onStatusChange: (next: ServerStatusValue) => void
-}
-
-export function ServerStatus({ initialStatus, onStatusChange }: ServerStatusProps) {
+export function ServerStatus() {
   const { t } = useTranslation()
   const { error } = useToast()
-  const [status, setStatus] = useState<ServerStatusValue>(initialStatus)
+  const status = useServerStatusStore((state) => state.status)
+  const refresh = useServerStatusStore((state) => state.refresh)
+  const startPolling = useServerStatusStore((state) => state.startPolling)
+  const stopPolling = useServerStatusStore((state) => state.stopPolling)
+  const setOptimistic = useServerStatusStore((state) => state.setOptimistic)
   const [busy, setBusy] = useState(false)
-  // Timestamp (ms) until which background polling should ignore the
-  // server-reported status. After a click we trust the optimistic value
-  // long enough for the daemon to actually transition.
-  const suppressPollUntilRef = useRef<number>(0)
 
   useEffect(() => {
-    setStatus(initialStatus)
-  }, [initialStatus])
-
-  useEffect(() => {
-    const tick = async () => {
-      if (Date.now() < suppressPollUntilRef.current) return
-      try {
-        const res = await api.getStatus()
-        setStatus(res.status)
-        onStatusChange(res.status)
-      } catch {
-        // ignore transient polling errors
-      }
-    }
-    const id = window.setInterval(() => void tick(), 30000)
-    return () => window.clearInterval(id)
-  }, [onStatusChange])
+    startPolling()
+    return () => stopPolling()
+  }, [startPolling, stopPolling])
 
   const upper = String(status).toUpperCase()
   const running = upper.includes('RUN')
@@ -47,15 +29,13 @@ export function ServerStatus({ initialStatus, onStatusChange }: ServerStatusProp
   const updateOptimistic = async (next: ServerStatusValue, call: () => Promise<unknown>) => {
     if (busy) return
     setBusy(true)
-    suppressPollUntilRef.current = Date.now() + 5000
-    const prev = status
-    setStatus(next)
-    onStatusChange(next)
+    const prev = status as ServerStatusValue
+    setOptimistic(next, 5000)
     try {
       await call()
+      await refresh()
     } catch (err) {
-      setStatus(prev)
-      onStatusChange(prev)
+      setOptimistic(prev, 0)
       const msg = (err as Error)?.message
       error(msg && msg.trim() !== '' ? msg : t('toast_error'))
     } finally {
