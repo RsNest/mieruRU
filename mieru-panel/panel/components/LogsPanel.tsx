@@ -1,9 +1,10 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api } from '@/lib/api'
 import type { LogEntry, LogLevel } from '@/lib/types'
+import { usePollingTask } from './usePollingTask'
 
 const POLL_MS = 2000
 const LEVELS: Array<LogLevel | 'ALL'> = ['ALL', 'DEBUG', 'INFO', 'WARN', 'ERROR']
@@ -27,35 +28,25 @@ export function LogsPanel() {
   const [mitaAvailable, setMitaAvailable] = useState(true)
   const [mitaLoading, setMitaLoading] = useState(false)
 
-  useEffect(() => {
-    if (paused) return
-    let cancelled = false
-
-    const tick = async () => {
-      try {
-        const data = await api.getLogs(sinceRef.current)
-        if (cancelled) return
-        if (data.entries.length > 0) {
-          setEntries((prev) => {
-            const merged = [...prev, ...data.entries]
-            const trimmed = merged.length > 1000 ? merged.slice(-1000) : merged
-            return trimmed
-          })
-          sinceRef.current = data.entries[data.entries.length - 1]!.seq
-        }
-      } catch {
-        // Silent retry: a failed log poll is almost always a transient
-        // network blip, no need to spam toasts every 2 seconds.
+  const pollLogs = useCallback(async (isCancelled: () => boolean) => {
+    try {
+      const data = await api.getLogs(sinceRef.current)
+      if (isCancelled()) return
+      if (data.entries.length > 0) {
+        setEntries((prev) => {
+          const merged = [...prev, ...data.entries]
+          const trimmed = merged.length > 1000 ? merged.slice(-1000) : merged
+          return trimmed
+        })
+        sinceRef.current = data.entries[data.entries.length - 1]!.seq
       }
+    } catch {
+      // Silent retry: a failed log poll is almost always a transient
+      // network blip, no need to spam toasts every 2 seconds.
     }
+  }, [])
 
-    void tick()
-    const id = window.setInterval(() => void tick(), POLL_MS)
-    return () => {
-      cancelled = true
-      window.clearInterval(id)
-    }
-  }, [paused])
+  usePollingTask(pollLogs, POLL_MS, { enabled: !paused })
 
   useEffect(() => {
     if (paused) return
@@ -72,7 +63,7 @@ export function LogsPanel() {
     return entries.filter((e) => e.level === filter)
   }, [entries, filter])
 
-  const refreshMita = async () => {
+  const refreshMita = useCallback(async () => {
     setMitaLoading(true)
     try {
       const res = await api.getMitaLogs(200)
@@ -83,14 +74,9 @@ export function LogsPanel() {
     } finally {
       setMitaLoading(false)
     }
-  }
-
-  useEffect(() => {
-    void refreshMita()
-    const id = window.setInterval(() => void refreshMita(), 15000)
-    return () => window.clearInterval(id)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  usePollingTask(refreshMita, 15000)
 
   return (
     <div className="logs-stack">
