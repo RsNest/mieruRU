@@ -17,16 +17,9 @@ import { dashboardHref, parseDashboardTab } from '@/lib/dashboardTab'
 import type { User } from '@/lib/types'
 import { useServerStatusStore } from '@/store/serverStatus'
 import { AddUserModal } from './AddUserModal'
-import { AdminCredentialsPanel } from './AdminCredentialsPanel'
-import { AdvancedSettingsPanel } from './AdvancedSettingsPanel'
-import { AuditPanel } from './AuditPanel'
-import { ConfigBackupPanel } from './ConfigBackupPanel'
-import { SubSecurityPanel } from './SubSecurityPanel'
 import { ConfirmModal } from './ConfirmModal'
-import { ConnectionsPanel } from './ConnectionsPanel'
-import { LogsPanel } from './LogsPanel'
-import { ServerConfigPanel } from './ServerConfigPanel'
-import { ServerStatus } from './ServerStatus'
+import { DashboardLogsTab } from './DashboardLogsTab'
+import { DashboardServerTab } from './DashboardServerTab'
 import { StatCard } from './StatCard'
 import { Toasts } from './Toast'
 import { UserTable } from './UserTable'
@@ -347,22 +340,8 @@ export function DashboardPage() {
         </>
       </div>
 
-      <div className={`tab-pane ${tab === 'server' ? 'active' : 'inactive'}`}>
-        <div className="dashboard-card">
-          <ServerStatus />
-        </div>
-        <ConnectionsPanel />
-        <ServerConfigPanel />
-        <AdvancedSettingsPanel />
-        <SubSecurityPanel />
-        <ConfigBackupPanel onRestored={() => void fetchData(false)} />
-        <AdminCredentialsPanel />
-      </div>
-
-      <div className={`tab-pane ${tab === 'logs' ? 'active' : 'inactive'}`}>
-        <LogsPanel />
-        <AuditPanel />
-      </div>
+      <DashboardServerTab active={tab === 'server'} onRestored={() => void fetchData(false)} />
+      <DashboardLogsTab active={tab === 'logs'} />
       </div>
 
       <AddUserModal open={showAdd} onClose={() => setShowAdd(false)} onSubmit={onAddUser} />
