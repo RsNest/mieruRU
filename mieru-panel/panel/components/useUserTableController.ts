@@ -15,7 +15,7 @@ interface UserTableControllerDeps {
   onRegen: (name: string) => Promise<string>
   onUpdate: (name: string, payload: UpdateUserPayload) => Promise<void>
   onBulkDelete: (names: string[]) => Promise<void>
-  t: (key: string, options?: Record<string, unknown>) => string
+  translate: (key: string, options?: Record<string, unknown>) => string
   success: (message: string) => void
   toastError: (message: string) => void
 }
@@ -25,7 +25,7 @@ export function useUserTableController({
   onRegen,
   onUpdate,
   onBulkDelete,
-  t,
+  translate,
   success,
   toastError,
 }: UserTableControllerDeps) {
@@ -43,10 +43,10 @@ export function useUserTableController({
     try {
       const next = await onRegen(name)
       setNewPasswords((prev) => ({ ...prev, [name]: next }))
-      success(t('toast_password_regenerated'))
+      success(translate('toast_password_regenerated'))
       setOpenName(name)
     } catch {
-      toastError(t('toast_error'))
+      toastError(translate('toast_error'))
     }
   }
 
@@ -75,9 +75,9 @@ export function useUserTableController({
       await onBulkDelete(Array.from(selected))
       setSelected(new Set())
       setBulkConfirmOpen(false)
-      success(t('users_bulk_deleted', { count }))
+      success(translate('users_bulk_deleted', { count }))
     } catch (e) {
-      toastError((e as Error).message || t('toast_error'))
+      toastError((e as Error).message || translate('toast_error'))
     }
   }
 
@@ -94,7 +94,7 @@ export function useUserTableController({
       setExpiryEditName(null)
       setExpiryEditDate('')
     } catch (e) {
-      toastError((e as Error).message || t('toast_error'))
+      toastError((e as Error).message || translate('toast_error'))
     }
   }
 

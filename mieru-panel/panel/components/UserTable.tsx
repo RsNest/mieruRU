@@ -54,7 +54,7 @@ export function UserTable({
     onRegen,
     onUpdate,
     onBulkDelete,
-    t: (key, options) => t(key, options as never),
+    translate: (key, options) => String(t(key, options as never)),
     success,
     toastError,
   })
