@@ -16,6 +16,7 @@ type ViewportConfig = {
 type PreAction =
   | { type: 'click'; selector: string }
   | { type: 'wait'; ms: number }
+  | { type: 'type'; selector: string; text: string; delayMs?: number }
   | { type: 'waitForSelector'; selector: string; timeoutMs?: number }
 
 type ScreenshotConfigItem = {
@@ -71,6 +72,10 @@ async function runPreActions(page: Page, actions: PreAction[] = []) {
       await page.waitForSelector(action.selector, {
         timeout: action.timeoutMs ?? 10_000,
       })
+      continue
+    }
+    if (action.type === 'type') {
+      await page.type(action.selector, action.text, { delay: action.delayMs ?? 0 })
       continue
     }
     await new Promise((resolve) => setTimeout(resolve, action.ms))

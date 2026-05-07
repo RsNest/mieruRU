@@ -4,6 +4,7 @@ import { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api } from '@/lib/api'
 import type { ConnectionInfo } from '@/lib/types'
+import { SectionCard } from '@/components/ui/SectionCard'
 import { usePollingTask } from './usePollingTask'
 
 const POLL_MS = 10000
@@ -11,7 +12,7 @@ const POLL_MS = 10000
 /** ConnectionsPanel polls /api/connections every 10s and renders the
  *  active mita sessions in a compact table. While the proxy is IDLE the
  *  list is empty and we show a friendly hint instead of an error. */
-export function ConnectionsPanel({ active = true }: { active?: boolean }) {
+export function ConnectionsPanel({ active = true, compact = false }: { active?: boolean; compact?: boolean }) {
   const { t } = useTranslation()
   const [items, setItems] = useState<ConnectionInfo[]>([])
   const [available, setAvailable] = useState(true)
@@ -34,14 +35,13 @@ export function ConnectionsPanel({ active = true }: { active?: boolean }) {
   usePollingTask(pollConnections, POLL_MS, { enabled: active })
 
   return (
-    <div className="dashboard-card">
+    <SectionCard
+      title={t('connections_title')}
+      description={t('connections_hint')}
+      className={compact ? 'connections-card-compact' : undefined}
+    >
       <div className="section-head">
-        <div>
-          <h2>{t('connections_title')}</h2>
-          <p className="muted" style={{ margin: 0 }}>
-            {t('connections_hint')}
-          </p>
-        </div>
+        <div />
         <span className="badge">
           {items.length} {t('connections_count_suffix')}
         </span>
@@ -81,6 +81,6 @@ export function ConnectionsPanel({ active = true }: { active?: boolean }) {
           </table>
         </div>
       )}
-    </div>
+    </SectionCard>
   )
 }

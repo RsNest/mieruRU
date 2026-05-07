@@ -2,7 +2,11 @@
 
 import { useEffect, useState, type FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Button } from '@/components/ui/Button'
+import { Field } from '@/components/ui/Field'
+import { SectionCard } from '@/components/ui/SectionCard'
 import { api } from '@/lib/api'
+import { useDirty } from '@/hooks/useDirty'
 import type { ServerConfig } from '@/lib/types'
 import { useToast } from './useToast'
 
@@ -14,6 +18,7 @@ export function ServerConfigPanel() {
   const [serverIP, setServerIP] = useState('')
   const [defaultPort, setDefaultPort] = useState(2015)
   const [serverPortRange, setServerPortRange] = useState('2012-2022')
+  const [initialValues, setInitialValues] = useState({ serverIP: '', defaultPort: 2015, serverPortRange: '2012-2022' })
   const [loaded, setLoaded] = useState(false)
   const [submitting, setSubmitting] = useState(false)
 
@@ -26,6 +31,11 @@ export function ServerConfigPanel() {
         setServerIP(data.serverIP)
         setDefaultPort(data.defaultPort || 2015)
         setServerPortRange(data.serverPortRange || '2012-2022')
+        setInitialValues({
+          serverIP: data.serverIP,
+          defaultPort: data.defaultPort || 2015,
+          serverPortRange: data.serverPortRange || '2012-2022',
+        })
       } catch (err) {
         if (!cancelled) error((err as Error).message || t('toast_error'))
       } finally {
@@ -55,6 +65,11 @@ export function ServerConfigPanel() {
         error(t('server_settings_warning', { warning: res.warning }))
       } else {
         success(t('server_settings_saved'))
+        setInitialValues({
+          serverIP: serverIP.trim(),
+          defaultPort,
+          serverPortRange: serverPortRange.trim(),
+        })
       }
     } catch (err) {
       error((err as Error).message || t('toast_error'))
@@ -63,15 +78,13 @@ export function ServerConfigPanel() {
     }
   }
 
+  const currentValues = { serverIP, defaultPort, serverPortRange }
+  const isDirty = useDirty(initialValues, currentValues)
+
   return (
-    <div className="dashboard-card admin-credentials-card">
-      <h3 className="modal-title">{t('server_settings_title')}</h3>
-      <p className="muted" style={{ marginTop: 0, marginBottom: 20 }}>
-        {t('server_settings_hint')}
-      </p>
+    <SectionCard title={t('server_settings_title')} description={t('server_settings_hint')} isDirty={isDirty}>
       <form className="admin-credentials-form" onSubmit={(ev) => void onSubmit(ev)}>
-        <div className="field">
-          <label htmlFor="srv-ip">{t('server_settings_ip')}</label>
+        <Field label={t('server_settings_ip')} htmlFor="srv-ip" monospace>
           <input
             id="srv-ip"
             type="text"
@@ -80,9 +93,8 @@ export function ServerConfigPanel() {
             onChange={(ev) => setServerIP(ev.target.value)}
             disabled={!loaded}
           />
-        </div>
-        <div className="field">
-          <label htmlFor="srv-port">{t('server_settings_port')}</label>
+        </Field>
+        <Field label={t('server_settings_port')} htmlFor="srv-port" monospace>
           <input
             id="srv-port"
             type="number"
@@ -92,9 +104,8 @@ export function ServerConfigPanel() {
             onChange={(ev) => setDefaultPort(Number(ev.target.value) || 0)}
             disabled={!loaded}
           />
-        </div>
-        <div className="field">
-          <label htmlFor="srv-range">{t('server_settings_range')}</label>
+        </Field>
+        <Field label={t('server_settings_range')} htmlFor="srv-range" monospace>
           <input
             id="srv-range"
             type="text"
@@ -103,11 +114,11 @@ export function ServerConfigPanel() {
             onChange={(ev) => setServerPortRange(ev.target.value)}
             disabled={!loaded}
           />
-        </div>
-        <button type="submit" className="btn-primary" disabled={submitting || !loaded}>
+        </Field>
+        <Button type="submit" variant="primary" disabled={submitting || !loaded}>
           {t('server_settings_save')}
-        </button>
+        </Button>
       </form>
-    </div>
+    </SectionCard>
   )
 }

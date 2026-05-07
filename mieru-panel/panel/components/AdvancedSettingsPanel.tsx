@@ -3,7 +3,11 @@
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Button } from '@/components/ui/Button'
+import { Field } from '@/components/ui/Field'
+import { SectionCard } from '@/components/ui/SectionCard'
 import { api } from '@/lib/api'
+import { useDirty } from '@/hooks/useDirty'
 import type { AdvancedSettings } from '@/lib/types'
 import { useToast } from './useToast'
 
@@ -25,6 +29,7 @@ export function AdvancedSettingsPanel() {
   const { t } = useTranslation()
   const { success, error } = useToast()
   const [settings, setSettings] = useState<AdvancedSettings>(DEFAULT)
+  const [initialSettings, setInitialSettings] = useState<AdvancedSettings>(DEFAULT)
   const [saving, setSaving] = useState(false)
   const [loaded, setLoaded] = useState(false)
 
@@ -35,6 +40,11 @@ export function AdvancedSettingsPanel() {
       .then((value) => {
         if (cancelled) return
         setSettings({
+          loggingLevel: value.loggingLevel || 'INFO',
+          mtu: value.mtu || 1400,
+          multiplexing: value.multiplexing || 'MULTIPLEXING_HIGH',
+        })
+        setInitialSettings({
           loggingLevel: value.loggingLevel || 'INFO',
           mtu: value.mtu || 1400,
           multiplexing: value.multiplexing || 'MULTIPLEXING_HIGH',
@@ -62,6 +72,7 @@ export function AdvancedSettingsPanel() {
         error(res.warning)
       } else {
         success(t('advanced_saved'))
+        setInitialSettings(settings)
       }
     } catch (err) {
       error((err as Error).message || t('toast_error'))
@@ -70,20 +81,13 @@ export function AdvancedSettingsPanel() {
     }
   }
 
+  const isDirty = useDirty(initialSettings, settings)
+
   return (
-    <div className="dashboard-card">
-      <div className="section-head">
-        <div>
-          <h2>{t('advanced_title')}</h2>
-          <p className="muted" style={{ margin: 0 }}>
-            {t('advanced_hint')}
-          </p>
-        </div>
-      </div>
+    <SectionCard title={t('advanced_title')} description={t('advanced_hint')} isDirty={isDirty}>
       <form className="modal-form" onSubmit={submit} aria-busy={!loaded}>
         <div className="field-grid">
-          <label className="field">
-            {t('advanced_log_level')}
+          <Field label={t('advanced_log_level')}>
             <select
               value={settings.loggingLevel}
               onChange={(ev) =>
@@ -99,9 +103,8 @@ export function AdvancedSettingsPanel() {
                 </option>
               ))}
             </select>
-          </label>
-          <label className="field">
-            {t('advanced_mtu')}
+          </Field>
+          <Field label={t('advanced_mtu')} monospace>
             <input
               type="number"
               min={1280}
@@ -112,9 +115,8 @@ export function AdvancedSettingsPanel() {
                 setSettings((prev) => ({ ...prev, mtu: Number(ev.target.value) || 0 }))
               }
             />
-          </label>
-          <label className="field">
-            {t('advanced_multiplexing')}
+          </Field>
+          <Field label={t('advanced_multiplexing')}>
             <select
               value={settings.multiplexing}
               onChange={(ev) =>
@@ -130,14 +132,14 @@ export function AdvancedSettingsPanel() {
                 </option>
               ))}
             </select>
-          </label>
+          </Field>
         </div>
         <div className="modal-actions">
-          <button type="submit" className="btn-primary" disabled={saving || !loaded}>
+          <Button type="submit" variant="primary" disabled={saving || !loaded}>
             {saving ? t('saving') : t('modal_save')}
-          </button>
+          </Button>
         </div>
       </form>
-    </div>
+    </SectionCard>
   )
 }

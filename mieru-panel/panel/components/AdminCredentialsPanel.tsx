@@ -2,7 +2,11 @@
 
 import { useState, type FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Button } from '@/components/ui/Button'
+import { Field } from '@/components/ui/Field'
+import { SectionCard } from '@/components/ui/SectionCard'
 import { api } from '@/lib/api'
+import { useDirty } from '@/hooks/useDirty'
 import { useToast } from './useToast'
 
 const userNamePattern = /^[a-zA-Z0-9_-]{2,32}$/
@@ -14,6 +18,10 @@ export function AdminCredentialsPanel() {
   const [newUsername, setNewUsername] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const isDirty = useDirty(
+    { currentPassword: '', newUsername: '', newPassword: '' },
+    { currentPassword, newUsername, newPassword },
+  )
 
   const onSubmit = async (event: FormEvent) => {
     event.preventDefault()
@@ -45,14 +53,9 @@ export function AdminCredentialsPanel() {
   }
 
   return (
-    <div className="dashboard-card admin-credentials-card">
-      <h3 className="modal-title">{t('admin_settings_title')}</h3>
-      <p className="muted" style={{ marginTop: 0, marginBottom: 20 }}>
-        {t('admin_settings_hint')}
-      </p>
+    <SectionCard title={t('admin_settings_title')} description={t('admin_settings_hint')} isDirty={isDirty}>
       <form className="admin-credentials-form" onSubmit={(ev) => void onSubmit(ev)} aria-busy={submitting}>
-        <div className="field">
-          <label htmlFor="admin-current-pass">{t('admin_settings_current_password')}</label>
+        <Field label={t('admin_settings_current_password')} htmlFor="admin-current-pass">
           <input
             id="admin-current-pass"
             type="password"
@@ -61,9 +64,8 @@ export function AdminCredentialsPanel() {
             onChange={(ev) => setCurrentPassword(ev.target.value)}
             disabled={submitting}
           />
-        </div>
-        <div className="field">
-          <label htmlFor="admin-new-user">{t('admin_settings_new_username')}</label>
+        </Field>
+        <Field label={t('admin_settings_new_username')} htmlFor="admin-new-user">
           <input
             id="admin-new-user"
             type="text"
@@ -72,9 +74,8 @@ export function AdminCredentialsPanel() {
             onChange={(ev) => setNewUsername(ev.target.value)}
             disabled={submitting}
           />
-        </div>
-        <div className="field">
-          <label htmlFor="admin-new-pass">{t('admin_settings_new_password')}</label>
+        </Field>
+        <Field label={t('admin_settings_new_password')} htmlFor="admin-new-pass">
           <input
             id="admin-new-pass"
             type="password"
@@ -83,11 +84,11 @@ export function AdminCredentialsPanel() {
             onChange={(ev) => setNewPassword(ev.target.value)}
             disabled={submitting}
           />
-        </div>
-        <button type="submit" className="btn-primary" disabled={submitting}>
+        </Field>
+        <Button type="submit" variant="primary" disabled={submitting}>
           {submitting ? t('saving') : t('admin_settings_submit')}
-        </button>
+        </Button>
       </form>
-    </div>
+    </SectionCard>
   )
 }

@@ -1,12 +1,13 @@
 'use client'
 
+import { motion } from 'framer-motion'
 import { AdminCredentialsPanel } from './AdminCredentialsPanel'
 import { AdvancedSettingsPanel } from './AdvancedSettingsPanel'
 import { ConfigBackupPanel } from './ConfigBackupPanel'
 import { ConnectionsPanel } from './ConnectionsPanel'
 import { ServerConfigPanel } from './ServerConfigPanel'
-import { ServerStatus } from './ServerStatus'
 import { SubSecurityPanel } from './SubSecurityPanel'
+import { DaemonHeader } from '@/components/server/DaemonHeader'
 
 interface DashboardServerTabProps {
   active: boolean
@@ -16,15 +17,25 @@ interface DashboardServerTabProps {
 export function DashboardServerTab({ active, onRestored }: DashboardServerTabProps) {
   return (
     <div className={`tab-pane ${active ? 'active' : 'inactive'}`}>
-      <div className="dashboard-card">
-        <ServerStatus />
+      <DaemonHeader />
+      <ConnectionsPanel active={active} compact />
+      <div className="server-section-grid">
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25, delay: 0 }}>
+          <ServerConfigPanel />
+        </motion.div>
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25, delay: 0.03 }}>
+          <AdvancedSettingsPanel />
+        </motion.div>
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25, delay: 0.06 }}>
+          <SubSecurityPanel />
+        </motion.div>
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25, delay: 0.09 }}>
+          <ConfigBackupPanel onRestored={onRestored} />
+        </motion.div>
       </div>
-      <ConnectionsPanel active={active} />
-      <ServerConfigPanel />
-      <AdvancedSettingsPanel />
-      <SubSecurityPanel />
-      <ConfigBackupPanel onRestored={onRestored} />
-      <AdminCredentialsPanel />
+      <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25, delay: 0.12 }}>
+        <AdminCredentialsPanel />
+      </motion.div>
     </div>
   )
 }

@@ -1,0 +1,42 @@
+[
+  {
+    "name": "pr5a-server-midnight.png",
+    "url": "/server",
+    "viewport": { "width": 1440, "height": 900 },
+    "mode": "v2",
+    "theme": "midnight"
+  },
+  {
+    "name": "pr5a-server-ghost.png",
+    "url": "/server",
+    "viewport": { "width": 1440, "height": 900 },
+    "mode": "v2",
+    "theme": "ghost"
+  },
+  {
+    "name": "pr5a-server-mobile.png",
+    "url": "/server",
+    "viewport": {
+      "width": 390,
+      "height": 844,
+      "isMobile": true,
+      "hasTouch": true,
+      "deviceScaleFactor": 3
+    },
+    "mode": "v2",
+    "theme": "midnight"
+  },
+  {
+    "name": "pr5a-server-dirty-state.png",
+    "url": "/server",
+    "viewport": { "width": 1440, "height": 900 },
+    "mode": "v2",
+    "theme": "midnight",
+    "preActions": [
+      { "type": "click", "selector": "#srv-ip" },
+      { "type": "wait", "ms": 80 },
+      { "type": "type", "selector": "#srv-ip", "text": "1", "delayMs": 20 },
+      { "type": "wait", "ms": 250 }
+    ]
+  }
+]

@@ -2,7 +2,11 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Button } from '@/components/ui/Button'
+import { Field } from '@/components/ui/Field'
+import { SectionCard } from '@/components/ui/SectionCard'
 import { api } from '@/lib/api'
+import { useDirty } from '@/hooks/useDirty'
 import type { SubSecurity } from '@/lib/types'
 import { useToast } from './useToast'
 
@@ -18,6 +22,7 @@ export function SubSecurityPanel() {
   const [data, setData] = useState<SubSecurity | null>(null)
   const [text, setText] = useState('')
   const [requireHWID, setRequireHWID] = useState(false)
+  const [initialValues, setInitialValues] = useState({ text: '', requireHWID: false })
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
@@ -29,6 +34,7 @@ export function SubSecurityPanel() {
         setData(res)
         setText((res.allowedUserAgents ?? []).join('\n'))
         setRequireHWID(!!res.requireHWID)
+        setInitialValues({ text: (res.allowedUserAgents ?? []).join('\n'), requireHWID: !!res.requireHWID })
       } catch (e) {
         error((e as Error).message || t('toast_error'))
       }
@@ -59,6 +65,7 @@ export function SubSecurityPanel() {
     try {
       await api.updateSubSecurity({ allowedUserAgents: list, requireHWID })
       success(t('saved'))
+      setInitialValues({ text, requireHWID })
     } catch (e) {
       error((e as Error).message || t('toast_error'))
     } finally {
@@ -66,19 +73,16 @@ export function SubSecurityPanel() {
     }
   }
 
-  return (
-    <div className="dashboard-card">
-      <div className="section-head">
-        <div>
-          <h2>{t('sub_security_title')}</h2>
-          <p className="muted" style={{ margin: 0 }}>
-            {t('sub_security_hint')}
-          </p>
-        </div>
-      </div>
+  const isDirty = useDirty(initialValues, { text, requireHWID })
 
-      <div className="field" style={{ marginTop: 8 }}>
-        <span>{t('sub_security_allowed_label')}</span>
+  return (
+    <SectionCard title={t('sub_security_title')} description={t('sub_security_hint')} isDirty={isDirty}>
+
+      <Field
+        label={t('sub_security_allowed_label')}
+        description={t('sub_security_allowed_help')}
+        monospace
+      >
         <textarea
           value={text}
           onChange={(ev) => setText(ev.target.value)}
@@ -87,10 +91,7 @@ export function SubSecurityPanel() {
           spellCheck={false}
           style={{ fontFamily: 'var(--font-mono)', fontSize: 12 }}
         />
-        <span className="muted" style={{ fontSize: 11 }}>
-          {t('sub_security_allowed_help')}
-        </span>
-      </div>
+      </Field>
 
       <div className="preset-chips" style={{ margin: '8px 0' }}>
         <button type="button" className="chip" onClick={presetOfficial}>
@@ -104,26 +105,23 @@ export function SubSecurityPanel() {
         </button>
       </div>
 
-      <label className="field" style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-        <input
-          type="checkbox"
-          checked={requireHWID}
-          onChange={(ev) => setRequireHWID(ev.target.checked)}
-          style={{ width: 16, height: 16, accentColor: 'var(--color-accent)' }}
-        />
-        <span>
-          <strong>{t('sub_security_require_hwid')}</strong>
-          <span className="muted" style={{ fontSize: 11, display: 'block' }}>
-            {t('sub_security_require_hwid_hint')}
-          </span>
-        </span>
-      </label>
+      <Field label={t('sub_security_require_hwid')} description={t('sub_security_require_hwid_hint')}>
+        <label className="sub-security-checkbox">
+          <input
+            type="checkbox"
+            checked={requireHWID}
+            onChange={(ev) => setRequireHWID(ev.target.checked)}
+            style={{ width: 16, height: 16, accentColor: 'var(--color-accent)' }}
+          />
+          <span>{t('sub_security_require_hwid')}</span>
+        </label>
+      </Field>
 
       <div className="inline-actions" style={{ marginTop: 10 }}>
-        <button type="button" className="btn-primary" onClick={() => void save()} disabled={saving}>
+        <Button type="button" variant="primary" onClick={() => void save()} disabled={saving}>
           {saving ? t('saving') : t('save')}
-        </button>
+        </Button>
       </div>
-    </div>
+    </SectionCard>
   )
 }
