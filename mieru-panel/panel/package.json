@@ -9,6 +9,7 @@
     "capture:screenshots": "node --experimental-strip-types scripts/capture-screenshots.ts"
   },
   "dependencies": {
+    "@tanstack/react-virtual": "^3.13.24",
     "framer-motion": "^12.38.0",
     "i18next": "^26.0.8",
     "lucide-react": "^0.511.0",

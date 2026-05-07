@@ -116,6 +116,7 @@ export const zh = {
   logs_mita_unavailable:
     '尚未生成 mita 日志文件。请等待 mita 容器启动，或运行 `docker compose logs mita` 查看。',
   logs_mita_refresh: '刷新',
+  logs_mita_truncated_hint: '输出已截断。完整日志请使用 `docker compose logs mita`。',
   user_show_config: '查看 sing-box JSON',
   user_hide_config: '隐藏 JSON',
   user_copy_config: '复制 JSON',
@@ -198,6 +199,7 @@ export const zh = {
   audit_title: '审计日志',
   audit_hint: '所有安全相关事件：登录、用户 CRUD、订阅获取、参数变更。文件为追加写入。',
   audit_empty: '暂无审计记录。',
+  audit_load_more: '再加载 {count} 条',
   sub_security_title: '订阅安全',
   sub_security_hint:
     '将 /sub/<token> 绑定到指定客户端。可阻挡 curl 抓取，并防止通过修改 User-Agent 绕过设备数限制——指纹来源于 X-HWID。',

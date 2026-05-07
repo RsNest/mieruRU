@@ -1,0 +1,66 @@
+[
+  {
+    "name": "pr5b-logs-midnight.png",
+    "url": "/logs",
+    "viewport": { "width": 1440, "height": 900 },
+    "mode": "v2",
+    "theme": "midnight"
+  },
+  {
+    "name": "pr5b-logs-ghost.png",
+    "url": "/logs",
+    "viewport": { "width": 1440, "height": 900 },
+    "mode": "v2",
+    "theme": "ghost"
+  },
+  {
+    "name": "pr5b-logs-mobile.png",
+    "url": "/logs",
+    "viewport": {
+      "width": 390,
+      "height": 844,
+      "isMobile": true,
+      "hasTouch": true,
+      "deviceScaleFactor": 3
+    },
+    "mode": "v2",
+    "theme": "midnight"
+  },
+  {
+    "name": "pr5b-logs-error-filter.png",
+    "url": "/logs",
+    "viewport": { "width": 1440, "height": 900 },
+    "mode": "v2",
+    "theme": "midnight",
+    "preActions": [
+      { "type": "waitForSelector", "selector": ".logs-toolbar-v2", "timeoutMs": 10000 },
+      { "type": "click", "selector": ".logs-segmented .logs-segment:last-child" },
+      { "type": "wait", "ms": 250 }
+    ]
+  },
+  {
+    "name": "pr5b-logs-paused.png",
+    "url": "/logs",
+    "viewport": { "width": 1440, "height": 900 },
+    "mode": "v2",
+    "theme": "midnight",
+    "preActions": [
+      { "type": "waitForSelector", "selector": ".logs-toolbar-v2", "timeoutMs": 10000 },
+      { "type": "click", "selector": ".logs-toolbar-actions .logs-toggle:nth-child(1)" },
+      { "type": "wait", "ms": 250 }
+    ]
+  },
+  {
+    "name": "pr5b-logs-search.png",
+    "url": "/logs",
+    "viewport": { "width": 1440, "height": 900 },
+    "mode": "v2",
+    "theme": "midnight",
+    "preActions": [
+      { "type": "waitForSelector", "selector": ".logs-search", "timeoutMs": 10000 },
+      { "type": "click", "selector": ".logs-search" },
+      { "type": "type", "selector": ".logs-search", "text": "ERROR", "delayMs": 20 },
+      { "type": "wait", "ms": 250 }
+    ]
+  }
+]

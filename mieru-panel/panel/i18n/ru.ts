@@ -116,6 +116,8 @@ export const ru = {
   logs_mita_unavailable:
     'Лог-файл mita ещё не создан. Подожди, пока mita стартует, или проверь `docker compose logs mita`.',
   logs_mita_refresh: 'Обновить',
+  logs_mita_truncated_hint:
+    'Вывод обрезан. Для полного лога используйте `docker compose logs mita`.',
   user_show_config: 'Показать sing-box JSON',
   user_hide_config: 'Скрыть JSON',
   user_copy_config: 'Скопировать JSON',
@@ -215,6 +217,7 @@ export const ru = {
   audit_hint:
     'Все security-significant события: входы, CRUD пользователей, выдача подписок, смена настроек. Файл append-only.',
   audit_empty: 'Аудит-журнал пока пуст.',
+  audit_load_more: 'Загрузить ещё {count}',
   // sub security
   sub_security_title: 'Защита подписки',
   sub_security_hint:

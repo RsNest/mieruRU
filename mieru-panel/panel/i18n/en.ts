@@ -118,6 +118,7 @@ export const en = {
   logs_mita_unavailable:
     'mita log file not created yet. Wait for the mita container to start or check `docker compose logs mita`.',
   logs_mita_refresh: 'Refresh',
+  logs_mita_truncated_hint: 'Output truncated. See `docker compose logs mita` for the full log.',
   user_show_config: 'Show sing-box JSON',
   user_hide_config: 'Hide JSON',
   user_copy_config: 'Copy JSON',
@@ -204,6 +205,7 @@ export const en = {
   audit_hint:
     'Every security-relevant event: logins, user CRUD, subscription fetches, settings changes. File is append-only.',
   audit_empty: 'No audit entries yet.',
+  audit_load_more: 'Load {count} more',
   sub_security_title: 'Subscription security',
   sub_security_hint:
     'Pin /sub/<token> to specific clients. Stops curl-based scrapers and prevents bypassing the device limit by rotating User-Agent — the device fingerprint uses X-HWID.',

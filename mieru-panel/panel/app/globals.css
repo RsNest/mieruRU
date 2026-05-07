@@ -1747,7 +1747,7 @@ h3,
   }
 }
 
-/* === LogsPanel === */
+/* === Logs section === */
 .logs-stack {
   display: flex;
   flex-direction: column;
@@ -2694,6 +2694,327 @@ h3,
 
   .daemon-meta {
     white-space: normal;
+  }
+}
+
+.logs-toolbar-v2 {
+  position: sticky;
+  top: 56px;
+  z-index: 4;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  min-height: 56px;
+  margin-bottom: 12px;
+  padding: 8px 10px;
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 10px;
+  background: color-mix(in oklab, var(--color-bg-surface) 90%, transparent);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.logs-segmented {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 999px;
+  padding: 3px;
+}
+
+.logs-segment {
+  height: 28px;
+  padding: 0 10px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+}
+
+.logs-segment.active {
+  background: var(--color-bg-elevated);
+  color: var(--color-text-primary);
+}
+
+.logs-search {
+  width: 200px;
+  max-width: 100%;
+  padding: 6px 10px;
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 8px;
+  background: var(--color-bg-elevated);
+  color: var(--color-text-primary);
+  font-size: 12px;
+}
+
+.logs-toolbar-actions {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.logs-toggle {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  border: 1px solid var(--color-border-subtle);
+  background: transparent;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+
+.logs-toggle.on {
+  background: var(--color-bg-elevated);
+  color: var(--color-text-primary);
+}
+
+.log-stream-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 40%);
+  gap: 12px;
+}
+
+.log-stream-shell {
+  position: relative;
+}
+
+.log-stream-v2 {
+  height: 420px;
+  overflow: auto;
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 10px;
+  background: color-mix(in oklab, var(--color-bg-base) 80%, var(--color-bg-surface));
+}
+
+.log-row-v2 {
+  height: 24px;
+  display: grid;
+  grid-template-columns: 110px 64px 80px 1fr 24px;
+  align-items: center;
+  gap: 8px;
+  padding: 0 8px;
+  font-size: 12px;
+  font-family: var(--font-mono);
+}
+
+.log-row-v2:hover {
+  background: var(--color-bg-elevated);
+}
+
+.log-row-v2.level-error {
+  background: rgba(239, 68, 68, 0.04);
+}
+
+.log-time-v2 {
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.log-level-v2 {
+  width: 52px;
+  height: 16px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.log-level-v2.level-debug {
+  color: var(--color-text-muted);
+  background: color-mix(in oklab, var(--color-text-muted) 15%, transparent);
+}
+
+.log-level-v2.level-info {
+  color: var(--color-accent);
+  background: color-mix(in oklab, var(--color-accent) 15%, transparent);
+}
+
+.log-level-v2.level-warn {
+  color: var(--color-warning);
+  background: color-mix(in oklab, var(--color-warning) 15%, transparent);
+}
+
+.log-level-v2.level-error {
+  color: var(--color-danger);
+  background: color-mix(in oklab, var(--color-danger) 15%, transparent);
+}
+
+.log-source-v2 {
+  color: var(--color-text-muted);
+}
+
+.log-message-v2 {
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.log-copy-btn {
+  opacity: 0;
+}
+
+.log-row-v2:hover .log-copy-btn {
+  opacity: 1;
+}
+
+.jump-bottom-btn {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+}
+
+.log-json-side {
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 10px;
+  padding: 10px;
+  background: var(--color-bg-elevated);
+  position: sticky;
+  top: 118px;
+  height: fit-content;
+}
+
+.log-json-side h3 {
+  margin: 0 0 8px;
+  font-size: 13px;
+}
+
+.log-json-detail {
+  margin: 0;
+  max-height: 220px;
+  overflow: auto;
+  border-radius: 8px;
+  padding: 8px;
+  background: color-mix(in oklab, var(--color-bg-base) 75%, var(--color-bg-surface));
+  font-size: 12px;
+  font-family: var(--font-mono);
+}
+
+.logs-empty-v2 {
+  padding: 18px 8px;
+}
+
+.logs-mita-toolbar {
+  margin-bottom: 10px;
+}
+
+.audit-list-v2 {
+  display: grid;
+  gap: 6px;
+}
+
+.audit-row-v2 {
+  min-height: 32px;
+  border: 1px solid var(--color-border-subtle);
+  border-left: 3px solid var(--color-accent);
+  border-radius: 8px;
+  padding: 6px 10px;
+  display: grid;
+  grid-template-columns: 140px 1fr 130px 130px auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.audit-row-v2.warn {
+  border-left-color: var(--color-warning);
+}
+
+.audit-row-v2.denied {
+  border-left-color: var(--color-danger);
+}
+
+.audit-time-v2 {
+  font-family: var(--font-mono);
+  color: var(--color-text-muted);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.audit-action-v2 {
+  color: var(--color-text-primary);
+  font-size: 14px;
+}
+
+.audit-meta-v2 {
+  font-family: var(--font-mono);
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+
+.audit-result-v2 {
+  height: 18px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 8px;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.audit-result-v2.ok {
+  color: var(--color-success);
+  background: color-mix(in oklab, var(--color-success) 15%, transparent);
+}
+
+.audit-result-v2.denied {
+  color: var(--color-danger);
+  background: color-mix(in oklab, var(--color-danger) 15%, transparent);
+}
+
+.audit-result-v2.warn {
+  color: var(--color-warning);
+  background: color-mix(in oklab, var(--color-warning) 15%, transparent);
+}
+
+.audit-result-v2.running {
+  color: var(--color-accent);
+  background: color-mix(in oklab, var(--color-accent) 15%, transparent);
+}
+
+.audit-load-more {
+  margin-top: 10px;
+}
+
+@media (max-width: 767px) {
+  .logs-search {
+    width: 100%;
+    flex: 1 1 100%;
+  }
+
+  .logs-toolbar-actions {
+    margin-left: 0;
+  }
+
+  .log-stream-v2 {
+    height: 360px;
+  }
+
+  .log-stream-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .log-json-side {
+    position: static;
+  }
+
+  .log-row-v2 {
+    grid-template-columns: 96px 56px 62px 1fr 24px;
+    gap: 6px;
+  }
+
+  .audit-row-v2 {
+    grid-template-columns: 1fr;
+    gap: 4px;
   }
 }
 

@@ -53,5 +53,8 @@ These rules are non-negotiable for the redesign.
 
 ## Logs and Data Density
 
-- [ ] Logs support high-volume rendering (virtualization target in PR 5).
+- [x] Logs support high-volume rendering (logs page: virtualized stream with fixed row height in PR 5b).
+- [x] Logs toolbar is sticky and compact with segmented level filter (logs page).
+- [x] Logs include explicit pause and auto-scroll controls (logs page).
+- [x] Logs search and filtered download operate on client-side buffer only (logs page).
 - [ ] Status pill component is used everywhere (single source).
