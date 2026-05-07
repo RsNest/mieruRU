@@ -1,0 +1,58 @@
+[
+  {
+    "name": "legacy-users.png",
+    "url": "/",
+    "viewport": { "width": 1440, "height": 900 },
+    "mode": "legacy",
+    "theme": "midnight"
+  },
+  {
+    "name": "v2-users-midnight.png",
+    "url": "/users",
+    "viewport": { "width": 1440, "height": 900 },
+    "mode": "v2",
+    "theme": "midnight"
+  },
+  {
+    "name": "v2-server-midnight.png",
+    "url": "/server",
+    "viewport": { "width": 1440, "height": 900 },
+    "mode": "v2",
+    "theme": "midnight"
+  },
+  {
+    "name": "v2-logs-midnight.png",
+    "url": "/logs",
+    "viewport": { "width": 1440, "height": 900 },
+    "mode": "v2",
+    "theme": "midnight"
+  },
+  {
+    "name": "v2-sidebar-collapsed.png",
+    "url": "/users",
+    "viewport": { "width": 1440, "height": 900 },
+    "mode": "v2",
+    "theme": "midnight",
+    "preActions": [
+      { "type": "click", "selector": ".v2-sidebar-head .v2-icon-btn" },
+      { "type": "wait", "ms": 200 }
+    ]
+  },
+  {
+    "name": "v2-mobile-drawer.png",
+    "url": "/users",
+    "viewport": {
+      "width": 390,
+      "height": 844,
+      "isMobile": true,
+      "hasTouch": true,
+      "deviceScaleFactor": 3
+    },
+    "mode": "v2",
+    "theme": "midnight",
+    "preActions": [
+      { "type": "click", "selector": ".v2-mobile-only" },
+      { "type": "waitForSelector", "selector": ".v2-drawer .v2-sidebar.mobile", "timeoutMs": 10000 }
+    ]
+  }
+]

@@ -1,16 +1,48 @@
-import { mkdir, rm, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, rm } from 'node:fs/promises'
 import path from 'node:path'
 import puppeteer from 'puppeteer-core'
 import type { Browser, Page } from 'puppeteer-core'
 
-const OUTPUT_DIR = path.resolve(process.cwd(), '../../docs/screenshots/pr3')
+type CaptureMode = 'legacy' | 'v2'
+
+type ViewportConfig = {
+  width: number
+  height: number
+  isMobile?: boolean
+  hasTouch?: boolean
+  deviceScaleFactor?: number
+}
+
+type PreAction =
+  | { type: 'click'; selector: string }
+  | { type: 'wait'; ms: number }
+  | { type: 'waitForSelector'; selector: string; timeoutMs?: number }
+
+type ScreenshotConfigItem = {
+  name: string
+  url: string
+  viewport: ViewportConfig
+  mode: CaptureMode
+  theme: string
+  preActions?: PreAction[]
+}
+
 const BASE_URL = process.env.CAPTURE_BASE_URL ?? 'http://127.0.0.1:18080'
 const MODE = process.env.CAPTURE_MODE ?? 'all'
+const OUTPUT_DIR = path.resolve(
+  process.cwd(),
+  '..',
+  '..',
+  process.env.CAPTURE_OUTPUT ?? 'docs/screenshots/pr3',
+)
+const CONFIG_PATH = path.resolve(
+  process.cwd(),
+  process.env.CAPTURE_CONFIG ?? 'scripts/screenshots.config.json',
+)
 const CHROME_PATH =
   process.env.CHROME_PATH ?? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
 const USERNAME = process.env.PANEL_ADMIN_USER ?? 'admin'
 const PASSWORD = process.env.PANEL_ADMIN_PASS ?? 'admin'
-const DATE = new Date().toISOString().slice(0, 10)
 
 async function login(page: Page) {
   await page.goto(`${BASE_URL}/login`, { waitUntil: 'networkidle2' })
@@ -21,83 +53,56 @@ async function login(page: Page) {
   await Promise.all([page.waitForNavigation({ waitUntil: 'networkidle2' }), page.click('button[type="submit"]')])
 }
 
-async function setMidnightTheme(page: Page) {
-  await page.evaluate(() => {
-    localStorage.setItem('mieru-panel-theme', 'midnight')
-    document.documentElement.setAttribute('data-theme', 'midnight')
-  })
+async function setTheme(page: Page, theme: string) {
+  await page.evaluate((nextTheme) => {
+    localStorage.setItem('mieru-panel-theme', nextTheme)
+    document.documentElement.setAttribute('data-theme', nextTheme)
+  }, theme)
   await page.reload({ waitUntil: 'networkidle2' })
 }
 
-async function captureLegacy(browser: Browser) {
+async function runPreActions(page: Page, actions: PreAction[] = []) {
+  for (const action of actions) {
+    if (action.type === 'click') {
+      await page.click(action.selector)
+      continue
+    }
+    if (action.type === 'waitForSelector') {
+      await page.waitForSelector(action.selector, {
+        timeout: action.timeoutMs ?? 10_000,
+      })
+      continue
+    }
+    await new Promise((resolve) => setTimeout(resolve, action.ms))
+  }
+}
+
+function isSelectedMode(mode: string, target: CaptureMode) {
+  return mode === 'all' || mode === target
+}
+
+async function captureShot(browser: Browser, shot: ScreenshotConfigItem) {
   const page = await browser.newPage()
-  await page.setViewport({ width: 1440, height: 900 })
+  await page.setViewport(shot.viewport)
   await login(page)
-  await setMidnightTheme(page)
-  await page.goto(`${BASE_URL}/`, { waitUntil: 'networkidle2' })
-  await page.screenshot({ path: path.join(OUTPUT_DIR, 'legacy-users.png'), fullPage: true })
+  await setTheme(page, shot.theme)
+  await page.goto(`${BASE_URL}${shot.url}`, { waitUntil: 'networkidle2' })
+  await runPreActions(page, shot.preActions)
+  await page.screenshot({ path: path.join(OUTPUT_DIR, shot.name), fullPage: true })
   await page.close()
 }
 
-async function captureV2(browser: Browser) {
-  const page = await browser.newPage()
-  await page.setViewport({ width: 1440, height: 900 })
-  await login(page)
-  await setMidnightTheme(page)
-
-  await page.goto(`${BASE_URL}/users`, { waitUntil: 'networkidle2' })
-  await page.screenshot({ path: path.join(OUTPUT_DIR, 'v2-users-midnight.png'), fullPage: true })
-
-  await page.goto(`${BASE_URL}/server`, { waitUntil: 'networkidle2' })
-  await page.screenshot({ path: path.join(OUTPUT_DIR, 'v2-server-midnight.png'), fullPage: true })
-
-  await page.goto(`${BASE_URL}/logs`, { waitUntil: 'networkidle2' })
-  await page.screenshot({ path: path.join(OUTPUT_DIR, 'v2-logs-midnight.png'), fullPage: true })
-
-  await page.goto(`${BASE_URL}/users`, { waitUntil: 'networkidle2' })
-  await page.click('.v2-sidebar-head .v2-icon-btn')
-  await page.screenshot({ path: path.join(OUTPUT_DIR, 'v2-sidebar-collapsed.png'), fullPage: true })
-  await page.close()
-
-  const mobile = await browser.newPage()
-  await mobile.setViewport({ width: 390, height: 844, isMobile: true, hasTouch: true, deviceScaleFactor: 3 })
-  await login(mobile)
-  await setMidnightTheme(mobile)
-  await mobile.goto(`${BASE_URL}/users`, { waitUntil: 'networkidle2' })
-  await mobile.click('.v2-mobile-only')
-  await mobile.waitForSelector('.v2-drawer .v2-sidebar.mobile', { timeout: 10_000 })
-  await mobile.screenshot({ path: path.join(OUTPUT_DIR, 'v2-mobile-drawer.png'), fullPage: true })
-  await mobile.close()
-}
-
-async function writeReadme() {
-  const readme = `# PR3 Screenshots
-
-| страница | режим | тема | viewport | файл | дата |
-| --- | --- | --- | --- | --- | --- |
-| users | legacy (NEXT_PUBLIC_UI_V2=0) | midnight | 1440x900 | legacy-users.png | ${DATE} |
-| users | v2 (NEXT_PUBLIC_UI_V2=1) | midnight | 1440x900 | v2-users-midnight.png | ${DATE} |
-| server | v2 (NEXT_PUBLIC_UI_V2=1) | midnight | 1440x900 | v2-server-midnight.png | ${DATE} |
-| logs | v2 (NEXT_PUBLIC_UI_V2=1) | midnight | 1440x900 | v2-logs-midnight.png | ${DATE} |
-| sidebar collapsed | v2 (NEXT_PUBLIC_UI_V2=1) | midnight | 1440x900 | v2-sidebar-collapsed.png | ${DATE} |
-| mobile drawer open | v2 (NEXT_PUBLIC_UI_V2=1) | midnight | 390x844 | v2-mobile-drawer.png | ${DATE} |
-`
-  await writeFile(path.join(OUTPUT_DIR, 'README.md'), readme, 'utf8')
+async function loadConfig(): Promise<ScreenshotConfigItem[]> {
+  const raw = await readFile(CONFIG_PATH, 'utf8')
+  return JSON.parse(raw) as ScreenshotConfigItem[]
 }
 
 async function main() {
+  const config = await loadConfig()
   await mkdir(OUTPUT_DIR, { recursive: true })
-  if (MODE === 'all') {
-    for (const file of [
-      'legacy-users.png',
-      'v2-users-midnight.png',
-      'v2-server-midnight.png',
-      'v2-logs-midnight.png',
-      'v2-sidebar-collapsed.png',
-      'v2-mobile-drawer.png',
-    ]) {
-      await rm(path.join(OUTPUT_DIR, file), { force: true })
-    }
+  for (const shot of config) {
+    if (!isSelectedMode(MODE, shot.mode)) continue
+    await rm(path.join(OUTPUT_DIR, shot.name), { force: true })
   }
 
   const browser = await puppeteer.launch({
@@ -108,17 +113,13 @@ async function main() {
   })
 
   try {
-    if (MODE === 'legacy') await captureLegacy(browser)
-    else if (MODE === 'v2') await captureV2(browser)
-    else {
-      await captureLegacy(browser)
-      await captureV2(browser)
+    for (const shot of config) {
+      if (!isSelectedMode(MODE, shot.mode)) continue
+      await captureShot(browser, shot)
     }
   } finally {
     await browser.close()
   }
-
-  await writeReadme()
 }
 
 void main().catch((error) => {

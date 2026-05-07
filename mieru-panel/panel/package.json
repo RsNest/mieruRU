@@ -5,7 +5,8 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "lint": "next lint",
-    "start": "next start"
+    "start": "next start",
+    "capture:screenshots": "node --experimental-strip-types scripts/capture-screenshots.ts"
   },
   "dependencies": {
     "framer-motion": "^12.38.0",
