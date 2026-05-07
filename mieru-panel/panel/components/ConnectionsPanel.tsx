@@ -1,9 +1,10 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api } from '@/lib/api'
 import type { ConnectionInfo } from '@/lib/types'
+import { usePollingTask } from './usePollingTask'
 
 const POLL_MS = 10000
 
@@ -16,28 +17,21 @@ export function ConnectionsPanel() {
   const [available, setAvailable] = useState(true)
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    let cancelled = false
-    const tick = async () => {
-      try {
-        const res = await api.getConnections()
-        if (cancelled) return
-        setItems(res.items)
-        setAvailable(res.available)
-      } catch {
-        if (cancelled) return
-        setAvailable(false)
-      } finally {
-        if (!cancelled) setLoading(false)
-      }
-    }
-    void tick()
-    const id = window.setInterval(() => void tick(), POLL_MS)
-    return () => {
-      cancelled = true
-      window.clearInterval(id)
+  const pollConnections = useCallback(async (isCancelled: () => boolean) => {
+    try {
+      const res = await api.getConnections()
+      if (isCancelled()) return
+      setItems(res.items)
+      setAvailable(res.available)
+    } catch {
+      if (isCancelled()) return
+      setAvailable(false)
+    } finally {
+      if (!isCancelled()) setLoading(false)
     }
   }, [])
+
+  usePollingTask(pollConnections, POLL_MS)
 
   return (
     <div className="dashboard-card">

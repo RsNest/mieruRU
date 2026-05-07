@@ -1,9 +1,10 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api } from '@/lib/api'
 import type { AuditEntry } from '@/lib/types'
+import { usePollingTask } from './usePollingTask'
 
 const POLL_MS = 15000
 
@@ -27,26 +28,19 @@ export function AuditPanel() {
   const [entries, setEntries] = useState<AuditEntry[]>([])
   const [loaded, setLoaded] = useState(false)
 
-  useEffect(() => {
-    let cancelled = false
-    const tick = async () => {
-      try {
-        const res = await api.getAudit(200)
-        if (cancelled) return
-        setEntries(res.entries)
-      } catch {
-        // soft-fail; audit log might not exist yet
-      } finally {
-        if (!cancelled) setLoaded(true)
-      }
-    }
-    void tick()
-    const id = window.setInterval(() => void tick(), POLL_MS)
-    return () => {
-      cancelled = true
-      window.clearInterval(id)
+  const pollAudit = useCallback(async (isCancelled: () => boolean) => {
+    try {
+      const res = await api.getAudit(200)
+      if (isCancelled()) return
+      setEntries(res.entries)
+    } catch {
+      // soft-fail; audit log might not exist yet
+    } finally {
+      if (!isCancelled()) setLoaded(true)
     }
   }, [])
+
+  usePollingTask(pollAudit, POLL_MS)
 
   return (
     <div className="dashboard-card">
