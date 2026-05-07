@@ -129,7 +129,6 @@ export const ru = {
   users_export_subs: 'Экспорт всех подписок',
   users_dblclick_regen_confirm: 'Перевыпустить пароль для {name}?',
   users_dblclick_regen_hint: 'Двойной клик — перевыпустить пароль',
-  users_edit_expiry_prompt: 'Введите дату истечения (YYYY-MM-DD) или оставьте пустым для безлимита.',
   users_edit_expiry_hint: 'Изменить срок действия',
   users_expired: 'просрочен',
   toast_user_updated: 'Пользователь обновлён',

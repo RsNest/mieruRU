@@ -128,7 +128,6 @@ export const en = {
   users_export_subs: 'Export all subscriptions',
   users_dblclick_regen_confirm: 'Regenerate password for {name}?',
   users_dblclick_regen_hint: 'Double-click to regenerate password',
-  users_edit_expiry_prompt: 'Enter expiration date (YYYY-MM-DD), empty to remove.',
   users_edit_expiry_hint: 'Edit expiration',
   users_expired: 'expired',
   toast_user_updated: 'User updated',

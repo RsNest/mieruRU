@@ -126,7 +126,6 @@ export const zh = {
   users_export_subs: '导出全部订阅',
   users_dblclick_regen_confirm: '为 {name} 重新生成密码？',
   users_dblclick_regen_hint: '双击重新生成密码',
-  users_edit_expiry_prompt: '输入到期日期 (YYYY-MM-DD)，留空表示永久。',
   users_edit_expiry_hint: '修改有效期',
   users_expired: '已过期',
   toast_user_updated: '用户已更新',
