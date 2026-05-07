@@ -8,8 +8,8 @@ These rules are non-negotiable for the redesign.
 - Mobile uses a slide-in drawer and hamburger trigger.
 - Theme system uses CSS variables via `data-theme` attribute.
 
-- [ ] Sidebar navigation is mandatory for desktop layouts.
-- [ ] Top tabs are removed in V2 shell.
+- [x] Sidebar navigation is mandatory for desktop layouts.
+- [x] Top tabs are removed in V2 shell.
 
 ## Token and Theme System
 
@@ -38,7 +38,7 @@ These rules are non-negotiable for the redesign.
 
 - [x] Color/background/border transitions are short and subtle.
 - [ ] Global layout animations are avoided; scoped framer-motion transitions only.
-- [ ] Sidebar expand/collapse behavior is smooth and deterministic.
+- [x] Sidebar expand/collapse behavior is smooth and deterministic.
 
 ## Form Behavior
 

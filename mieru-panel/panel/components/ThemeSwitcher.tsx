@@ -14,10 +14,35 @@ const options: Array<{ value: Theme; icon: string; labelKey: string }> = [
   { value: 'cyber', icon: '⌬', labelKey: 'theme_cyber' },
 ]
 
-export function ThemeSwitcher() {
+type ThemeSwitcherProps = {
+  mode?: 'icon-grid' | 'select'
+  compact?: boolean
+}
+
+export function ThemeSwitcher({ mode = 'icon-grid', compact = false }: ThemeSwitcherProps = {}) {
   const { t } = useTranslation()
   const theme = useSettingsStore((state) => state.theme)
   const setTheme = useSettingsStore((state) => state.setTheme)
+
+  if (mode === 'select') {
+    return (
+      <label className={`v2-select-wrap ${compact ? 'compact' : ''}`}>
+        {!compact ? <span>{t('theme_switcher_aria')}</span> : null}
+        <select
+          className="v2-select"
+          value={theme}
+          aria-label={t('theme_switcher_aria')}
+          onChange={(event) => setTheme(event.target.value as Theme)}
+        >
+          {options.map((option) => (
+            <option key={option.value} value={option.value}>
+              {t(option.labelKey)}
+            </option>
+          ))}
+        </select>
+      </label>
+    )
+  }
 
   return (
     <div className="theme-switcher" role="group" aria-label={t('theme_switcher_aria')}>

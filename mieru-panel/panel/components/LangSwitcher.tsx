@@ -10,7 +10,12 @@ const options: Array<{ value: Lang; label: string }> = [
   { value: 'zh', label: '中文' },
 ]
 
-export function LangSwitcher() {
+type LangSwitcherProps = {
+  mode?: 'buttons' | 'segmented'
+  compact?: boolean
+}
+
+export function LangSwitcher({ mode = 'buttons', compact = false }: LangSwitcherProps = {}) {
   const { t, i18n } = useTranslation()
   const lang = useSettingsStore((state) => state.lang)
   const setLang = useSettingsStore((state) => state.setLang)
@@ -18,6 +23,25 @@ export function LangSwitcher() {
   const onChange = (value: Lang) => {
     setLang(value)
     void i18n.changeLanguage(value)
+  }
+
+  if (mode === 'segmented') {
+    return (
+      <div className={`v2-lang-segmented ${compact ? 'compact' : ''}`} role="group" aria-label={t('lang_switcher_aria')}>
+        {options.map((option) => (
+          <button
+            key={option.value}
+            type="button"
+            className={`v2-lang-segment ${lang === option.value ? 'active' : ''}`}
+            onClick={() => onChange(option.value)}
+            aria-label={option.label}
+            aria-pressed={lang === option.value}
+          >
+            {option.value === 'zh' ? '中' : option.label}
+          </button>
+        ))}
+      </div>
+    )
   }
 
   return (

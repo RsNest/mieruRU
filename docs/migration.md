@@ -87,3 +87,16 @@ This document defines the migration sequence and gate checks for the panel UI re
 - No layout shell migration (tabs and existing page structure remain as-is).
 - No route migration to `/users`, `/server`, `/logs`.
 - No feature-flag wiring in components yet (`NEXT_PUBLIC_UI_V2` remains preparatory).
+
+## PR 3 Changelog
+
+### Changed
+
+- Added a dedicated V2 shell with sidebar + top bar (`LayoutV2`) under `NEXT_PUBLIC_UI_V2=1`.
+- Added route pages `/users`, `/server`, `/logs` and wired them to existing dashboard tab content.
+- Added middleware redirects for legacy deep links:
+  - `/?tab=users|server|logs` -> `/users|/server|/logs` (308)
+  - `/?tab=<unknown>` -> `/users`
+  - `/` -> `/users` when `uiV2=true`
+- Kept legacy shell and behavior as default when `NEXT_PUBLIC_UI_V2=0`.
+- Added PR3 screenshot artifacts for both legacy mode and V2 mode.

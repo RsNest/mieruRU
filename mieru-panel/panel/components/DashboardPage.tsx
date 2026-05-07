@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { api } from '@/lib/api'
-import { dashboardHref, parseDashboardTab } from '@/lib/dashboardTab'
+import { type DashboardTab, dashboardHref, parseDashboardTab } from '@/lib/dashboardTab'
 import { parseTrafficToMB } from '@/lib/traffic'
 import type { User } from '@/lib/types'
 import { useServerStatusStore } from '@/store/serverStatus'
@@ -25,12 +25,16 @@ type BarRow = {
   displayMon: string
 }
 
-export function DashboardPage() {
+type DashboardPageProps = {
+  forcedTab?: DashboardTab
+}
+
+export function DashboardPage({ forcedTab }: DashboardPageProps = {}) {
   const { t } = useTranslation()
   const router = useRouter()
   const searchParams = useSearchParams()
   const { success, error } = useToast()
-  const tab = parseDashboardTab(searchParams)
+  const tab = forcedTab ?? parseDashboardTab(searchParams)
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [hasError, setHasError] = useState(false)
