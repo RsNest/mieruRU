@@ -41,7 +41,9 @@ export function MitaLogsSection() {
         <p className="muted">{t('logs_mita_unavailable')}</p>
       ) : (
         <>
-          <pre className="logs-mita-pre">{output || t('logs_empty')}</pre>
+          <pre className="logs-mita-pre" tabIndex={0}>
+            {output || t('logs_empty')}
+          </pre>
           {output.length > TRUNCATE_HINT_LIMIT ? (
             <p className="muted">{t('logs_mita_truncated_hint')}</p>
           ) : null}

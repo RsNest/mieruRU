@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import type { LogEntry } from '@/lib/types'
 import { Button } from '@/components/ui/Button'
+import { EmptyState } from '@/components/ui/EmptyState'
 import { LogRow, parseJSON } from './LogRow'
 
 type LogStreamProps = {
@@ -62,7 +63,12 @@ export function LogStream({ entries, autoScroll, setAutoScroll }: LogStreamProps
   }, [entries, autoScroll, hovering])
 
   if (entries.length === 0) {
-    return <p className="muted logs-empty-v2">No log entries yet.</p>
+    return (
+      <EmptyState
+        title="No log entries yet."
+        description="When logs arrive, they will stream here in real time."
+      />
+    )
   }
 
   return (
@@ -118,7 +124,7 @@ export function LogStream({ entries, autoScroll, setAutoScroll }: LogStreamProps
         </Button>
       ) : null}
       </div>
-      <aside className="log-json-side">
+      <div className="log-json-side">
         <h3>JSON detail</h3>
         {!expandedEntry ? (
           <p className="muted">Click a JSON log row to inspect payload.</p>
@@ -127,7 +133,7 @@ export function LogStream({ entries, autoScroll, setAutoScroll }: LogStreamProps
         ) : (
           <p className="muted">Selected row is plain text.</p>
         )}
-      </aside>
+      </div>
     </div>
   )
 }

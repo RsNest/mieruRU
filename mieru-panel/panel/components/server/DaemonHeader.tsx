@@ -8,6 +8,7 @@ import { isServerOffline, isServerRunning } from '@/lib/serverStatus'
 import type { ServerStatus } from '@/lib/types'
 import { useServerStatusStore } from '@/store/serverStatus'
 import { Button } from '@/components/ui/Button'
+import { StatusPill } from '@/components/ui/StatusPill'
 import { useToast } from '@/components/useToast'
 
 type ServerMeta = {
@@ -50,7 +51,7 @@ export function DaemonHeader() {
 
   const running = isServerRunning(status)
   const offline = isServerOffline(status)
-  const statusTone = running ? 'running' : offline ? 'offline' : 'idle'
+  const statusTone = running ? 'success' : offline ? 'neutral' : 'danger'
   const statusLabel = running ? t('server_running') : offline ? t('server_offline') : t('server_idle')
 
   const runWithOptimistic = async (next: ServerStatus, task: () => Promise<unknown>) => {
@@ -84,7 +85,13 @@ export function DaemonHeader() {
         <div className="daemon-title-wrap">
           <div className="daemon-title-row">
             <h2>mita daemon</h2>
-            <span className={`daemon-chip ${statusTone}`}>{statusLabel}</span>
+            <StatusPill
+              label={statusLabel}
+              tone={statusTone}
+              withDot
+              pulseDot={running}
+              className="daemon-chip"
+            />
           </div>
           <p className="daemon-meta">
             {`v1.x.x · ${t('kpi.status_since')} ${since ?? '--:--'} · port: ${meta.defaultPort || '-'} · ${meta.serverPortRange} · ${meta.serverIP}`}

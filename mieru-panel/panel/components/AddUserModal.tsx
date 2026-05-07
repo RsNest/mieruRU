@@ -1,9 +1,11 @@
 'use client'
 
 import { AnimatePresence, motion } from 'framer-motion'
+import { X } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Button } from '@/components/ui/Button'
 
 interface AddUserModalProps {
   open: boolean
@@ -177,7 +179,19 @@ export function AddUserModal({ open, onClose, onSubmit }: AddUserModalProps) {
             ref={rootRef}
             onClick={(event) => event.stopPropagation()}
           >
-            <h3 className="modal-title">{t('modal_add_title')}</h3>
+            <div className="modal-head">
+              <h3 className="modal-title">{t('modal_add_title')}</h3>
+              <Button
+                type="button"
+                variant="ghost"
+                size="compact"
+                className="modal-close-btn"
+                onClick={handleClose}
+                aria-label={t('modal_cancel')}
+              >
+                <X size={14} />
+              </Button>
+            </div>
             <form className="modal-form" onSubmit={submit}>
               <label className="field">
                 {t('modal_name')}
@@ -196,20 +210,22 @@ export function AddUserModal({ open, onClose, onSubmit }: AddUserModalProps) {
                     value={password}
                     onChange={(event) => setPassword(event.target.value)}
                   />
-                  <button
+                  <Button
                     type="button"
-                    className="btn-secondary"
+                    variant="secondary"
+                    size="sm"
                     onClick={() => setShowPassword((v) => !v)}
                   >
                     👁
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="button"
-                    className="btn-secondary"
+                    variant="secondary"
+                    size="sm"
                     onClick={() => setPassword(randomPassword())}
                   >
                     🎲
-                  </button>
+                  </Button>
                 </div>
               </label>
 
@@ -299,12 +315,12 @@ export function AddUserModal({ open, onClose, onSubmit }: AddUserModalProps) {
                 <p className="field-error">{t('modal_name_error')}</p>
               ) : null}
               <div className="modal-actions">
-                <button type="button" className="btn-secondary" onClick={handleClose}>
+                <Button type="button" variant="secondary" size="md" onClick={handleClose}>
                   {t('modal_cancel')}
-                </button>
-                <button type="submit" className="btn-primary">
+                </Button>
+                <Button type="submit" variant="primary" size="md">
                   {t('modal_save')}
-                </button>
+                </Button>
               </div>
             </form>
           </motion.div>

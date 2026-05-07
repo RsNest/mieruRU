@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation'
 import { syncThemeColorMeta } from '@/lib/syncThemeMeta'
 import { useAuthStore } from '@/store/auth'
 import { useSettingsStore } from '@/store/settings'
+import { Button } from '@/components/ui/Button'
 
 export function LoginPage() {
   const { t, i18n } = useTranslation()
@@ -86,9 +87,9 @@ export function LoginPage() {
             onChange={(event) => setPassword(event.target.value)}
           />
         </div>
-        <button type="submit" className="btn-primary">
+        <Button type="submit" variant="cta" size="lg">
           {t('login_btn')}
-        </button>
+        </Button>
         {error ? <p className="field-error">{error}</p> : null}
       </motion.form>
     </div>

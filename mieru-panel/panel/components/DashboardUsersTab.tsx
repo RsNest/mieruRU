@@ -5,6 +5,7 @@ import type { TopUser } from '@/hooks/useUsersStats'
 import type { User } from '@/lib/types'
 import { KpiStrip } from '@/components/users/KpiStrip'
 import { TopUsersList } from '@/components/users/TopUsersList'
+import { Button } from '@/components/ui/Button'
 import { UserTable } from './UserTable'
 
 interface DashboardUsersTabProps {
@@ -81,9 +82,9 @@ export function DashboardUsersTab({
           <div className="dashboard-card empty-state">
             <h2>{t('empty_state_title')}</h2>
             <p className="muted">{t('empty_state_hint')}</p>
-            <button type="button" className="btn-primary" onClick={onShowAdd}>
+            <Button type="button" variant="cta" size="md" onClick={onShowAdd}>
               + {t('users_add')}
-            </button>
+            </Button>
           </div>
         ) : null}
 
@@ -96,9 +97,9 @@ export function DashboardUsersTab({
                   {t('stats_chart_hint')}
                 </p>
               </div>
-              <button type="button" className="btn-secondary" onClick={onDownloadSubscriptions}>
+              <Button type="button" variant="secondary" size="md" onClick={onDownloadSubscriptions}>
                 ⤓ {t('users_export_subs')}
-              </button>
+              </Button>
             </div>
             <KpiStrip
               loading={loading}
@@ -139,9 +140,9 @@ export function DashboardUsersTab({
                   onChange={(ev) => setSearch(ev.target.value)}
                   aria-label={t('users_search_placeholder')}
                 />
-                <button type="button" className="btn-primary" onClick={onShowAdd}>
+                <Button type="button" variant="cta" size="md" onClick={onShowAdd}>
                   + {t('users_add')}
-                </button>
+                </Button>
               </div>
             </div>
             <UserTable

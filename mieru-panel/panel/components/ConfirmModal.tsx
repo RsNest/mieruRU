@@ -1,7 +1,9 @@
 'use client'
 
 import { AnimatePresence, motion } from 'framer-motion'
+import { X } from 'lucide-react'
 import { useEffect, useRef } from 'react'
+import { Button } from '@/components/ui/Button'
 
 interface ConfirmModalProps {
   open: boolean
@@ -75,15 +77,27 @@ export function ConfirmModal({
             ref={rootRef}
             onClick={(event) => event.stopPropagation()}
           >
-            <h3 className="modal-title">{title}</h3>
+            <div className="modal-head">
+              <h3 className="modal-title">{title}</h3>
+              <Button
+                type="button"
+                variant="ghost"
+                size="compact"
+                className="modal-close-btn"
+                onClick={onCancel}
+                aria-label={cancelLabel}
+              >
+                <X size={14} />
+              </Button>
+            </div>
             <p>{message}</p>
             <div className="modal-actions">
-              <button type="button" className="btn-secondary" onClick={onCancel}>
+              <Button type="button" variant="secondary" size="md" onClick={onCancel}>
                 {cancelLabel}
-              </button>
-              <button type="button" className="btn-danger" onClick={onConfirm}>
+              </Button>
+              <Button type="button" variant="danger" size="md" onClick={onConfirm}>
                 {confirmLabel}
-              </button>
+              </Button>
             </div>
           </motion.div>
         </motion.div>

@@ -4,7 +4,9 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { QRCodeSVG } from 'qrcode.react'
+import { Button } from '@/components/ui/Button'
 import { api } from '@/lib/api'
+import { ConfirmModal } from './ConfirmModal'
 import { useToast } from './useToast'
 
 interface SubPanelProps {
@@ -55,6 +57,7 @@ export function SubPanel({
   const [draftMonth, setDraftMonth] = useState(String(quotaMonMB))
   const [draftMaxDevices, setDraftMaxDevices] = useState(String(maxDevices))
   const [savingQuota, setSavingQuota] = useState(false)
+  const [confirmResetOpen, setConfirmResetOpen] = useState(false)
 
   useEffect(() => {
     setDraftDay(String(quotaDayMB))
@@ -106,7 +109,6 @@ export function SubPanel({
   }
 
   const resetAllDevices = async () => {
-    if (!confirm(t('sub_devices_reset_confirm'))) return
     try {
       await onResetDevices(userName)
       success(t('sub_devices_reset_ok'))
@@ -152,11 +154,13 @@ export function SubPanel({
         <strong>{t('sub_new_password')}</strong>
         <code className="new-password-value">{newPassword}</code>
         <div className="inline-actions">
-          <button type="button" className="action-btn" onClick={() => void copy(newPassword)}>
+          <Button type="button" variant="ghost" size="sm" className="action-btn" onClick={() => void copy(newPassword)}>
             {t('sub_copy')}
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
+            variant="ghost"
+            size="sm"
             className="action-btn"
             onClick={() => {
               if (timerId) {
@@ -166,7 +170,7 @@ export function SubPanel({
             }}
           >
             ✕
-          </button>
+          </Button>
         </div>
       </div>
     )
@@ -189,9 +193,9 @@ export function SubPanel({
               <label className="field">{t('sub_url_label')}</label>
               <div className="sub-url-field">
                 <input className="sub-url-input" readOnly value={subUrl} />
-                <button type="button" className="action-btn" onClick={() => void copy(subUrl)}>
+                <Button type="button" variant="ghost" size="sm" className="action-btn" onClick={() => void copy(subUrl)}>
                   {t('sub_copy')}
-                </button>
+                </Button>
               </div>
               <p className="sub-hint">{t('sub_qr_hint')}</p>
 
@@ -227,14 +231,15 @@ export function SubPanel({
                   </label>
                 </div>
                 <div className="inline-actions">
-                  <button
+                  <Button
                     type="button"
-                    className="btn-primary"
+                    variant="primary"
+                    size="md"
                     onClick={() => void saveQuotas()}
                     disabled={savingQuota}
                   >
                     {savingQuota ? t('saving') : t('sub_quota_save')}
-                  </button>
+                  </Button>
                 </div>
               </div>
 
@@ -242,13 +247,14 @@ export function SubPanel({
                 <div className="section-head" style={{ marginTop: 12 }}>
                   <strong className="quota-editor-title">{t('sub_devices_title')}</strong>
                   {devices.length > 0 ? (
-                    <button
+                    <Button
                       type="button"
-                      className="btn-secondary"
-                      onClick={() => void resetAllDevices()}
+                      variant="secondary"
+                      size="md"
+                      onClick={() => setConfirmResetOpen(true)}
                     >
                       ↺ {t('sub_devices_reset_all')}
-                    </button>
+                    </Button>
                   ) : null}
                 </div>
                 {devices.length === 0 ? (
@@ -274,15 +280,17 @@ export function SubPanel({
                             {new Date(d.lastSeen * 1000).toLocaleString()}
                           </span>
                         </div>
-                        <button
+                        <Button
                           type="button"
+                          variant="danger"
+                          size="compact"
                           className="action-btn icon-only danger"
                           onClick={() => void removeDevice(d.hash)}
                           aria-label={t('sub_devices_remove')}
                           title={t('sub_devices_remove')}
                         >
                           ✕
-                        </button>
+                        </Button>
                       </li>
                     ))}
                   </ul>
@@ -291,22 +299,26 @@ export function SubPanel({
 
               {passwordBlock}
               <div className="inline-actions" style={{ marginTop: 12 }}>
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
+                  size="sm"
                   className="action-btn"
                   disabled={configLoading}
                   onClick={() => void toggleConfig()}
                 >
                   {configOpen ? t('user_hide_config') : t('user_show_config')}
-                </button>
+                </Button>
                 {configJson ? (
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
+                    size="sm"
                     className="action-btn"
                     onClick={() => void copy(configJson)}
                   >
                     {t('user_copy_config')}
-                  </button>
+                  </Button>
                 ) : null}
               </div>
               {configOpen && configJson ? (
@@ -320,6 +332,18 @@ export function SubPanel({
           </div>
         </motion.div>
       ) : null}
+      <ConfirmModal
+        open={confirmResetOpen}
+        title={t('sub_devices_reset_all')}
+        message={t('sub_devices_reset_confirm')}
+        confirmLabel={t('sub_devices_reset_all')}
+        cancelLabel={t('confirm_no')}
+        onConfirm={() => {
+          setConfirmResetOpen(false)
+          void resetAllDevices()
+        }}
+        onCancel={() => setConfirmResetOpen(false)}
+      />
     </AnimatePresence>
   )
 }

@@ -3,6 +3,8 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { useTranslation } from 'react-i18next'
 import type { User } from '@/lib/types'
+import { Button } from '@/components/ui/Button'
+import { EmptyState } from '@/components/ui/EmptyState'
 import { ConfirmModal } from './ConfirmModal'
 import { EditExpiryModal } from './EditExpiryModal'
 import { UserRow } from './UserRow'
@@ -79,9 +81,9 @@ export function UserTable({
     return (
       <div className="table-state">
         <p>{t('toast_error')}</p>
-        <button type="button" className="ghost-btn" onClick={onRetry}>
+        <Button type="button" variant="ghost" size="md" onClick={onRetry}>
           {t('users_retry')}
-        </button>
+        </Button>
       </div>
     )
   }
@@ -92,16 +94,24 @@ export function UserTable({
         <div className="table-state">
           <p>{t('users_search_no_match')}</p>
           {onClearSearch ? (
-            <button type="button" className="ghost-btn" onClick={onClearSearch}>
+            <Button type="button" variant="ghost" size="md" onClick={onClearSearch}>
               {t('users_search_clear')}
-            </button>
+            </Button>
           ) : null}
         </div>
       )
     }
     return (
       <div className="table-state">
-        <p>{t('users_empty')}</p>
+        <EmptyState
+          title={t('users_empty')}
+          description={t('empty_state_hint')}
+          action={
+            <Button type="button" variant="cta" size="md" onClick={onAdd}>
+              + {t('users_add')}
+            </Button>
+          }
+        />
       </div>
     )
   }
@@ -111,24 +121,16 @@ export function UserTable({
       {controller.selected.size > 0 ? (
         <div className="bulk-bar">
           <span>{t('users_bulk_selected', { count: controller.selected.size })}</span>
-          <button
-            type="button"
-            className="btn-secondary"
-            onClick={() => controller.setSelected(new Set())}
-          >
+          <Button type="button" variant="secondary" size="md" onClick={() => controller.setSelected(new Set())}>
             {t('confirm_no')}
-          </button>
-          <button
-            type="button"
-            className="btn-secondary danger"
-            onClick={() => controller.setBulkConfirmOpen(true)}
-          >
+          </Button>
+          <Button type="button" variant="danger" size="md" onClick={() => controller.setBulkConfirmOpen(true)}>
             ✕ {t('users_bulk_delete')}
-          </button>
+          </Button>
         </div>
       ) : null}
       <div className="user-table-head">
-        <span aria-hidden="true" className="col-check">
+        <span className="col-check">
           <input
             type="checkbox"
             checked={controller.allSelected}

@@ -5,6 +5,8 @@ import { Menu } from 'lucide-react'
 import { usePathname, useRouter } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
 import { isServerRunning } from '@/lib/serverStatus'
+import { Button } from '@/components/ui/Button'
+import { StatusPill } from '@/components/ui/StatusPill'
 import { useAuthStore } from '@/store/auth'
 import { useServerStatusStore } from '@/store/serverStatus'
 import { useUIStore } from '@/store/ui'
@@ -34,6 +36,7 @@ export function TopBar() {
   const titleKey = breadcrumbByPath[pathname] ?? 'topbar_breadcrumb_users'
   const running = isServerRunning(status)
   const statusLabel = running ? t('status_running') : t('status_stopped')
+  const tone = status === 'RUNNING' ? 'success' : 'neutral'
 
   const onLogout = async () => {
     await logout()
@@ -43,23 +46,25 @@ export function TopBar() {
   return (
     <header className="v2-topbar">
       <div className="v2-topbar-left">
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="compact"
           className="v2-icon-btn v2-mobile-only"
           aria-label={t('mobile_menu_open')}
           onClick={() => setMobileSidebarOpen(true)}
         >
           <Menu size={18} />
-        </button>
+        </Button>
         <div>
-          <div className="v2-page-title">{t(titleKey)}</div>
+          <h1 className="v2-page-title">{t(titleKey)}</h1>
           <div className="v2-breadcrumbs">
             {t('topbar_breadcrumb_home')} / {t(titleKey)}
           </div>
         </div>
       </div>
       <div className="v2-topbar-right">
-        <span className={`v2-status-pill ${running ? 'ok' : 'stopped'}`}>{statusLabel}</span>
+        <StatusPill label={statusLabel} tone={tone} />
         <details className="v2-admin-menu">
           <summary aria-label={t('topbar_admin_menu')}>A</summary>
           <div className="v2-admin-menu-popover">

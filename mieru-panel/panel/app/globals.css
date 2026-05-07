@@ -8,7 +8,7 @@
   --color-border-default: rgba(255, 255, 255, 0.1);
   --color-text-primary: #e8eaed;
   --color-text-secondary: #9ca3af;
-  --color-text-muted: #6b7280;
+  --color-text-muted: #8f98a8;
   --color-accent: #7c9aff;
   --color-accent-hover: #6b89f5;
   --color-accent-glow: rgba(124, 154, 255, 0.15);
@@ -46,7 +46,7 @@
   --color-border-default: rgba(255, 255, 255, 0.1);
   --color-text-primary: #e8eaed;
   --color-text-secondary: #9ca3af;
-  --color-text-muted: #6b7280;
+  --color-text-muted: #8f98a8;
   --color-accent: #7c9aff;
   --color-accent-hover: #6b89f5;
   --color-accent-glow: rgba(124, 154, 255, 0.15);
@@ -162,6 +162,7 @@ html {
 }
 
 /* Subtle baseline pattern (opacity target <= 0.03). */
+/* exempt: app shell background, not card-level */
 html::before {
   content: '';
   position: fixed;
@@ -376,7 +377,10 @@ h3,
   align-items: center;
   justify-content: center;
   color: var(--color-text-muted);
-  transition: all 0.15s ease;
+  transition:
+    background-color 150ms ease-out,
+    border-color 150ms ease-out,
+    color 150ms ease-out;
 }
 
 .theme-btn.active {
@@ -510,13 +514,34 @@ h3,
 
 .btn-primary,
 .primary-btn {
+  width: auto;
+  height: 36px;
+  padding: 0 14px;
+  background: var(--color-accent);
+  color: var(--color-bg-base) !important;
+  border: 1px solid color-mix(in oklab, var(--color-accent) 55%, transparent);
+  border-radius: var(--radius-lg);
+  font-family: var(--font-sans) !important;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+  flex-shrink: 0;
+  cursor: pointer;
+  letter-spacing: 0.02em;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+  transition: opacity 0.2s ease, filter 0.2s ease;
+}
+
+.btn-cta {
   position: relative;
   overflow: hidden;
   width: auto;
-  padding: 10px 18px;
+  height: 36px;
+  padding: 0 14px;
   background: linear-gradient(135deg, var(--color-accent), var(--color-accent-hover)) !important;
   color: var(--color-bg-base) !important;
-  border: none;
+  border: 1px solid color-mix(in oklab, var(--color-accent) 40%, transparent);
   border-radius: var(--radius-lg);
   font-family: var(--font-sans) !important;
   font-size: 14px;
@@ -531,7 +556,7 @@ h3,
   transition: opacity 0.2s ease, filter 0.2s ease;
 }
 
-.btn-primary::before,
+.btn-cta::before,
 .primary-btn::before {
   content: '';
   position: absolute;
@@ -543,12 +568,16 @@ h3,
   transition: left 0.5s ease;
 }
 
-.btn-primary:hover::before,
+.btn-cta:hover::before,
 .primary-btn:hover::before {
   left: 100%;
 }
 
-.btn-primary:hover,
+.btn-primary:hover {
+  filter: brightness(1.03);
+}
+
+.btn-cta:hover,
 .primary-btn:hover {
   filter: brightness(1.05);
 }
@@ -589,6 +618,21 @@ h3,
   font-weight: 700;
 }
 
+.btn-size-sm {
+  height: 28px;
+  padding: 0 10px;
+}
+
+.btn-size-md {
+  height: 32px;
+  padding: 0 14px;
+}
+
+.btn-size-lg {
+  height: 36px;
+  padding: 0 16px;
+}
+
 .btn-compact {
   height: 32px;
   min-width: 32px;
@@ -596,6 +640,11 @@ h3,
   display: inline-flex;
   align-items: center;
   justify-content: center;
+}
+
+.focus-ring:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
 }
 
 .section-card {
@@ -665,6 +714,129 @@ h3,
   margin: 0;
   color: var(--color-danger);
   font-size: 12px;
+}
+
+.empty-state-v2 {
+  min-height: 120px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 8px;
+  padding: 16px;
+}
+
+.empty-state-v2-icon {
+  color: var(--color-text-muted);
+  display: inline-flex;
+}
+
+.empty-state-default-icon {
+  width: 20px;
+  height: 20px;
+}
+
+.empty-state-v2 h3 {
+  margin: 0;
+  font-size: 14px;
+  color: var(--color-text-primary);
+}
+
+.empty-state-v2 p {
+  margin: 0;
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+.empty-state-v2-action {
+  margin-top: 4px;
+}
+
+.skeleton-v2 {
+  display: inline-block;
+  background: color-mix(in oklab, var(--color-bg-elevated) 88%, transparent);
+  border-radius: 8px;
+  animation: skeleton-pulse 1.5s ease infinite;
+}
+
+.skeleton-v2-block {
+  width: 100%;
+  height: 64px;
+}
+
+.skeleton-v2-line {
+  width: 100%;
+  height: 12px;
+}
+
+.skeleton-v2-circle {
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+}
+
+.skeleton-v2-stack {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.status-pill {
+  height: 20px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 8px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.status-pill-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  margin-right: 6px;
+  background: currentColor;
+}
+
+.status-pill-dot.pulse {
+  animation: status-pill-pulse 1.8s infinite;
+}
+
+@keyframes status-pill-pulse {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in oklab, currentColor 45%, transparent);
+  }
+  70% {
+    box-shadow: 0 0 0 6px transparent;
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+
+.status-pill-success {
+  color: var(--color-success);
+  background: color-mix(in oklab, var(--color-success) 15%, transparent);
+}
+
+.status-pill-warn {
+  color: var(--color-warning);
+  background: color-mix(in oklab, var(--color-warning) 15%, transparent);
+}
+
+.status-pill-danger {
+  color: #ffffff;
+  background: #450a0a;
+}
+
+.status-pill-neutral {
+  color: var(--color-text-secondary);
+  background: color-mix(in oklab, var(--color-text-muted) 15%, transparent);
 }
 
 .daemon-header {
@@ -1084,7 +1256,10 @@ h3,
   font-size: 12px;
   font-weight: 600;
   white-space: nowrap;
-  transition: all 0.15s ease;
+  transition:
+    background-color 150ms ease-out,
+    border-color 150ms ease-out,
+    color 150ms ease-out;
 }
 
 /* Icon-only action buttons (regen, delete) keep the original square. */
@@ -1141,7 +1316,6 @@ h3,
   padding: 8px 12px;
   font-size: 12px;
   color: var(--color-text-secondary);
-  outline: none;
   cursor: text;
   white-space: nowrap;
   overflow: hidden;
@@ -1295,7 +1469,7 @@ h3,
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.65);
+  background: rgba(0, 0, 0, 0.6);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   display: flex;
@@ -1308,9 +1482,9 @@ h3,
   background: var(--color-bg-surface);
   border: 1px solid var(--color-border-subtle);
   border-radius: var(--radius-md);
-  padding: 28px;
+  padding: 16px;
   width: 100%;
-  max-width: 420px;
+  max-width: 480px;
   box-shadow: var(--shadow-card);
   position: relative;
   overflow: hidden;
@@ -1319,8 +1493,20 @@ h3,
 .modal-title {
   font-size: 18px;
   font-weight: 800;
-  margin-bottom: 24px;
+  margin: 0;
   color: var(--color-text-primary);
+}
+
+.modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.modal-close-btn {
+  flex-shrink: 0;
 }
 
 .modal-form {
@@ -1361,12 +1547,12 @@ h3,
   font-family: var(--font-sans);
   font-size: 14px;
   color: var(--color-text-primary);
-  outline: none;
   box-sizing: border-box;
   appearance: none;
 }
 
 /* Native dropdown caret on selects (since we set appearance:none above). */
+/* exempt: functional affordance, not decorative gradient */
 .field select {
   background-image: linear-gradient(
       45deg,
@@ -1387,7 +1573,17 @@ h3,
 .field select:focus,
 .field textarea:focus {
   border-color: var(--color-border-default);
-  box-shadow: 0 0 0 2px var(--color-accent);
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+a:focus-visible,
+[role='button']:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
 }
 
 .field-error {
@@ -2052,7 +2248,6 @@ h3,
 
 .search-input:focus {
   border-color: var(--color-accent);
-  outline: 2px solid color-mix(in oklab, var(--color-accent) 28%, transparent);
 }
 
 .inline-actions {
@@ -2250,6 +2445,7 @@ h3,
   font-weight: 600;
   line-height: 1;
   color: var(--color-text-primary);
+  font-variant-numeric: tabular-nums;
 }
 
 .kpi-value.status-running {
@@ -2844,8 +3040,8 @@ h3,
 }
 
 .log-level-v2.level-error {
-  color: var(--color-danger);
-  background: color-mix(in oklab, var(--color-danger) 15%, transparent);
+  color: #ffffff;
+  background: #7f1d1d;
 }
 
 .log-source-v2 {

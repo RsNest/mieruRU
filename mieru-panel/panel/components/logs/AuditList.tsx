@@ -2,7 +2,9 @@
 
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/Button'
+import { EmptyState } from '@/components/ui/EmptyState'
 import { SectionCard } from '@/components/ui/SectionCard'
+import { Skeleton } from '@/components/ui/Skeleton'
 import { useAuditPagination } from '@/hooks/useAuditPagination'
 import { AuditRow } from './AuditRow'
 
@@ -13,9 +15,9 @@ export function AuditList() {
   return (
     <SectionCard title={t('audit_title')} description={t('audit_hint')}>
       {!loaded ? (
-        <p className="muted">{t('loading')}</p>
+        <Skeleton variant="line" count={5} className="skeleton-v2-stack" />
       ) : entries.length === 0 ? (
-        <p className="muted">{t('audit_empty')}</p>
+        <EmptyState title={t('audit_empty')} description={t('audit_hint')} />
       ) : (
         <div className="audit-list-v2">
           {entries.map((entry, idx) => (

@@ -30,26 +30,26 @@ These rules are non-negotiable for the redesign.
 ## Components and States
 
 - [x] Buttons use only `primary`, `secondary`, `ghost` variants (server page cards and daemon header actions in PR 5a).
-- [x] Button heights are constrained to `28`, `32`, `36` (server page card actions use 32/36 in PR 5a).
+- [x] Button heights: `24px` (compact), `28px` (sm), `32px` (md, default), `36px` (lg).
 - [x] Buttons via shared `Button` component (server page).
 - [x] Form fields via shared `Field` component (server page).
 - [x] Dirty state indicated by accent dot near section title (server page).
 - [x] Every data view has loading state (skeleton) (users page: KPI strip cards).
 - [x] Every data view has empty state (icon + title + description + CTA) (users page: TopUsersList today/month).
-- [ ] Every data view has error fallback.
-- [ ] Focus ring is visible and consistent (`2px` accent with offset).
+- [ ] Every data view has error fallback. (deferred to post-PR5c)
+- [x] Focus ring is visible and consistent (`2px` accent with offset).
 
 ## Motion and Interaction
 
 - [x] Color/background/border transitions are short and subtle.
-- [ ] Global layout animations are avoided; scoped framer-motion transitions only.
+- [ ] Global layout animations are avoided; scoped framer-motion transitions only. (deferred to post-PR5c)
 - [x] Sidebar expand/collapse behavior is smooth and deterministic.
 
 ## Form Behavior
 
 - [x] Saves are scoped by section/card (no unrelated global save actions) (server page cards in PR 5a).
-- [ ] While submitting, relevant controls are disabled.
-- [ ] Validation and API errors are surfaced clearly.
+- [ ] While submitting, relevant controls are disabled. (deferred to post-PR5c)
+- [ ] Validation and API errors are surfaced clearly. (deferred to post-PR5c)
 
 ## Logs and Data Density
 
@@ -57,4 +57,10 @@ These rules are non-negotiable for the redesign.
 - [x] Logs toolbar is sticky and compact with segmented level filter (logs page).
 - [x] Logs include explicit pause and auto-scroll controls (logs page).
 - [x] Logs search and filtered download operate on client-side buffer only (logs page).
-- [ ] Status pill component is used everywhere (single source).
+- [x] Status pill component is used everywhere (single source).
+
+## Documented exemptions
+
+- App shell background grid (`html::before` in `panel/app/globals.css`) is exempt from card-level gradient constraints.
+- Custom select caret (`.field select` in `panel/app/globals.css`) is exempt as a functional affordance.
+- Legacy `Layout.tsx` contains one `btn-secondary` usage (out of scope until V2 becomes default; tracked separately).

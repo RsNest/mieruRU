@@ -1,0 +1,73 @@
+[
+  {
+    "name": "pr5c-users-midnight.png",
+    "url": "/users",
+    "viewport": { "width": 1440, "height": 900 },
+    "mode": "v2",
+    "theme": "midnight"
+  },
+  {
+    "name": "pr5c-server-midnight.png",
+    "url": "/server",
+    "viewport": { "width": 1440, "height": 900 },
+    "mode": "v2",
+    "theme": "midnight"
+  },
+  {
+    "name": "pr5c-logs-midnight.png",
+    "url": "/logs",
+    "viewport": { "width": 1440, "height": 900 },
+    "mode": "v2",
+    "theme": "midnight"
+  },
+  {
+    "name": "pr5c-empty-state.png",
+    "url": "/logs",
+    "viewport": { "width": 1440, "height": 900 },
+    "mode": "v2",
+    "theme": "midnight",
+    "preActions": [
+      { "type": "waitForSelector", "selector": ".logs-toolbar-v2", "timeoutMs": 10000 },
+      { "type": "click", "selector": ".logs-toolbar-actions button:nth-child(3)" },
+      { "type": "wait", "ms": 150 }
+    ]
+  },
+  {
+    "name": "pr5c-modal-add-user.png",
+    "url": "/users",
+    "viewport": { "width": 1440, "height": 900 },
+    "mode": "v2",
+    "theme": "midnight",
+    "preActions": [
+      { "type": "waitForSelector", "selector": ".section-head .inline-actions button", "timeoutMs": 10000 },
+      { "type": "click", "selector": ".section-head .inline-actions button" },
+      { "type": "wait", "ms": 200 }
+    ]
+  },
+  {
+    "name": "pr5c-confirm-danger.png",
+    "url": "/users",
+    "viewport": { "width": 1440, "height": 900 },
+    "mode": "v2",
+    "theme": "midnight",
+    "preActions": [
+      { "type": "waitForSelector", "selector": ".section-head .inline-actions button", "timeoutMs": 10000 },
+      { "type": "click", "selector": ".section-head .inline-actions button" },
+      { "type": "waitForSelector", "selector": ".modal-form input", "timeoutMs": 10000 },
+      { "type": "click", "selector": ".modal-form input" },
+      { "type": "type", "selector": ".modal-form input", "text": "pr5c_confirm_user" },
+      { "type": "click", "selector": ".modal-actions .btn-primary" },
+      { "type": "wait", "ms": 400 },
+      { "type": "waitForSelector", "selector": ".user-row .row-actions .action-btn.icon-only", "timeoutMs": 10000 },
+      { "type": "click", "selector": ".user-row .row-actions .action-btn.icon-only" },
+      { "type": "wait", "ms": 150 }
+    ]
+  },
+  {
+    "name": "pr5c-status-pills.png",
+    "url": "/server",
+    "viewport": { "width": 1440, "height": 900 },
+    "mode": "v2",
+    "theme": "midnight"
+  }
+]

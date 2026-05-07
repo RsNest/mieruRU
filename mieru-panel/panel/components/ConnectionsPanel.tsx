@@ -4,7 +4,9 @@ import { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api } from '@/lib/api'
 import type { ConnectionInfo } from '@/lib/types'
+import { EmptyState } from '@/components/ui/EmptyState'
 import { SectionCard } from '@/components/ui/SectionCard'
+import { Skeleton } from '@/components/ui/Skeleton'
 import { usePollingTask } from './usePollingTask'
 
 const POLL_MS = 10000
@@ -48,11 +50,11 @@ export function ConnectionsPanel({ active = true, compact = false }: { active?: 
       </div>
 
       {loading ? (
-        <p className="muted">{t('loading')}</p>
+        <Skeleton variant="line" count={3} className="skeleton-v2-stack" />
       ) : !available ? (
-        <p className="muted">{t('connections_unavailable')}</p>
+        <EmptyState title={t('connections_unavailable')} description={t('connections_hint')} />
       ) : items.length === 0 ? (
-        <p className="muted">{t('connections_empty')}</p>
+        <EmptyState title={t('connections_empty')} description={t('connections_hint')} />
       ) : (
         <div className="table-scroll">
           <table className="simple-table compact">

@@ -1,8 +1,10 @@
 'use client'
 
 import { AnimatePresence, motion } from 'framer-motion'
+import { X } from 'lucide-react'
 import { useEffect, useState, type FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
+import { Button } from '@/components/ui/Button'
 
 interface EditExpiryModalProps {
   open: boolean
@@ -60,24 +62,36 @@ export function EditExpiryModal({ open, currentDate, onCancel, onSubmit }: EditE
             exit="exit"
             onClick={(event) => event.stopPropagation()}
           >
-            <h3 className="modal-title">{t('users_edit_expiry_hint')}</h3>
+            <div className="modal-head">
+              <h3 className="modal-title">{t('users_edit_expiry_hint')}</h3>
+              <Button
+                type="button"
+                variant="ghost"
+                size="compact"
+                className="modal-close-btn"
+                onClick={onCancel}
+                aria-label={t('modal_cancel')}
+              >
+                <X size={14} />
+              </Button>
+            </div>
             <form className="modal-form" onSubmit={submit}>
               <label className="field">
                 {t('modal_expiry')}
                 <input type="date" value={value} onChange={(event) => setValue(event.target.value)} />
               </label>
               <div className="inline-actions">
-                <button type="button" className="btn-secondary" onClick={() => setValue('')}>
+                <Button type="button" variant="secondary" size="md" onClick={() => setValue('')}>
                   {t('expiry_never')}
-                </button>
+                </Button>
               </div>
               <div className="modal-actions">
-                <button type="button" className="btn-secondary" onClick={onCancel}>
+                <Button type="button" variant="secondary" size="md" onClick={onCancel}>
                   {t('modal_cancel')}
-                </button>
-                <button type="submit" className="btn-primary" disabled={saving}>
+                </Button>
+                <Button type="submit" variant="primary" size="md" disabled={saving}>
                   {saving ? t('saving') : t('modal_save')}
-                </button>
+                </Button>
               </div>
             </form>
           </motion.div>

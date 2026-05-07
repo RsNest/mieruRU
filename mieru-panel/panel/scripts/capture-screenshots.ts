@@ -1,7 +1,10 @@
-import { mkdir, readFile, rm } from 'node:fs/promises'
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import puppeteer from 'puppeteer-core'
 import type { Browser, Page } from 'puppeteer-core'
+import AxeBuilder from '@axe-core/playwright'
+import { chromium } from '@playwright/test'
+import type { Page as PlaywrightPage } from '@playwright/test'
 
 type CaptureMode = 'legacy' | 'v2'
 
@@ -40,6 +43,7 @@ const CONFIG_PATH = path.resolve(
   process.cwd(),
   process.env.CAPTURE_CONFIG ?? 'scripts/screenshots.config.json',
 )
+const A11Y_REPORT_PATH = path.resolve(process.cwd(), '..', '..', 'docs', 'pr5c-a11y.md')
 const CHROME_PATH =
   process.env.CHROME_PATH ?? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
 const USERNAME = process.env.PANEL_ADMIN_USER ?? 'admin'
@@ -60,6 +64,23 @@ async function setTheme(page: Page, theme: string) {
     document.documentElement.setAttribute('data-theme', nextTheme)
   }, theme)
   await page.reload({ waitUntil: 'networkidle2' })
+}
+
+async function loginPlaywright(page: PlaywrightPage) {
+  await page.goto(`${BASE_URL}/login`, { waitUntil: 'networkidle' })
+  const usernameInput = page.locator('#username')
+  if ((await usernameInput.count()) === 0) return
+  await page.fill('#username', USERNAME)
+  await page.fill('#password', PASSWORD)
+  await Promise.all([page.waitForNavigation({ waitUntil: 'networkidle' }), page.click('button[type="submit"]')])
+}
+
+async function setThemePlaywright(page: PlaywrightPage, theme: string) {
+  await page.evaluate((nextTheme) => {
+    localStorage.setItem('mieru-panel-theme', nextTheme)
+    document.documentElement.setAttribute('data-theme', nextTheme)
+  }, theme)
+  await page.reload({ waitUntil: 'networkidle' })
 }
 
 async function runPreActions(page: Page, actions: PreAction[] = []) {
@@ -102,6 +123,84 @@ async function loadConfig(): Promise<ScreenshotConfigItem[]> {
   return JSON.parse(raw) as ScreenshotConfigItem[]
 }
 
+function markdownEscape(value: string): string {
+  return value.replaceAll('|', '\\|')
+}
+
+async function waitForA11yReady(page: PlaywrightPage, url: string) {
+  const selectorByRoute: Record<string, string> = {
+    '/users': '.user-table, .table-state',
+    '/server': '.daemon-header',
+    '/logs': '.logs-toolbar-v2',
+  }
+  const selector = selectorByRoute[url] ?? 'main, body'
+  await page.waitForSelector(selector, { timeout: 15000 })
+}
+
+async function runA11y(config: ScreenshotConfigItem[]) {
+  const v2Shots = config.filter((shot) => isSelectedMode(MODE, shot.mode) && shot.mode === 'v2')
+  const uniqueByUrl = new Map<string, ScreenshotConfigItem>()
+  for (const shot of v2Shots) {
+    if (!uniqueByUrl.has(shot.url)) uniqueByUrl.set(shot.url, shot)
+  }
+  const pages = Array.from(uniqueByUrl.values())
+  if (!pages.length) return
+
+  const browser = await chromium.launch({
+    executablePath: CHROME_PATH,
+    headless: true,
+    args: ['--no-sandbox', '--disable-setuid-sandbox'],
+  })
+
+  const rows: string[] = []
+  const details: string[] = []
+  try {
+    for (const shot of pages) {
+      const ctx = await browser.newContext({ viewport: shot.viewport })
+      const page = await ctx.newPage()
+      await loginPlaywright(page)
+      await setThemePlaywright(page, shot.theme)
+      await page.goto(`${BASE_URL}${shot.url}`, { waitUntil: 'networkidle' })
+      await waitForA11yReady(page, shot.url)
+      const result = await new AxeBuilder({ page }).analyze()
+      const majorOrHigher = result.violations.filter((v) => {
+        const impact = v.impact ?? 'minor'
+        return impact === 'critical' || impact === 'serious' || impact === 'moderate'
+      })
+      rows.push(`| \`${shot.url}\` | ${result.violations.length} | ${majorOrHigher.length} |`)
+      for (const violation of result.violations) {
+        details.push(`### ${shot.url} — ${violation.id}`)
+        details.push(`- Impact: ${violation.impact ?? 'minor'}`)
+        details.push(`- Description: ${violation.description}`)
+        details.push(`- Help: ${violation.help}`)
+        details.push(`- Nodes: ${violation.nodes.length}`)
+        if (violation.nodes[0]) {
+          details.push(`- Example target: \`${markdownEscape(violation.nodes[0].target.join(', '))}\``)
+        }
+      }
+      await ctx.close()
+    }
+  } finally {
+    await browser.close()
+  }
+
+  const content = [
+    '# PR5c Accessibility Report',
+    '',
+    `Generated: ${new Date().toISOString()}`,
+    '',
+    '| Page | Total violations | Moderate+ violations |',
+    '| --- | ---: | ---: |',
+    ...rows,
+    '',
+    '## Violation details',
+    '',
+    ...(details.length ? details : ['No violations found.']),
+    '',
+  ].join('\n')
+  await writeFile(A11Y_REPORT_PATH, content, 'utf8')
+}
+
 async function main() {
   const config = await loadConfig()
   await mkdir(OUTPUT_DIR, { recursive: true })
@@ -125,6 +224,8 @@ async function main() {
   } finally {
     await browser.close()
   }
+
+  await runA11y(config)
 }
 
 void main().catch((error) => {
