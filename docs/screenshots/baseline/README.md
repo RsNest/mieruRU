@@ -7,14 +7,14 @@ Required matrix:
 - Pages: `users`, `server`, `logs`
 - Themes: `midnight` + `ghost`
 
-Files:
-
-- `users-midnight.md`
-- `server-midnight.md`
-- `logs-midnight.md`
-- `users-ghost.md`
-- `server-ghost.md`
-- `logs-ghost.md`
+| страница | тема | файл | дата |
+| --- | --- | --- | --- |
+| users | midnight | `users-midnight.png` | 2026-05-07 |
+| server | midnight | `server-midnight.png` | 2026-05-07 |
+| logs | midnight | `logs-midnight.png` | 2026-05-07 |
+| users | ghost | `users-ghost.png` | 2026-05-07 |
+| server | ghost | `server-ghost.png` | 2026-05-07 |
+| logs | ghost | `logs-ghost.png` | 2026-05-07 |
 
 Capture notes:
 
