@@ -2,9 +2,8 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useRouter, useSearchParams } from 'next/navigation'
 import { api } from '@/lib/api'
-import { type DashboardTab, dashboardHref, parseDashboardTab } from '@/lib/dashboardTab'
+import type { DashboardTab } from '@/lib/dashboardTab'
 import { useConnectionsCount } from '@/hooks/useConnectionsCount'
 import { useUsersStats } from '@/hooks/useUsersStats'
 import type { User } from '@/lib/types'
@@ -18,15 +17,13 @@ import { Toasts } from './Toast'
 import { useToast } from './useToast'
 
 type DashboardPageProps = {
-  forcedTab?: DashboardTab
+  forcedTab: DashboardTab
 }
 
-export function DashboardPage({ forcedTab }: DashboardPageProps = {}) {
+export function DashboardPage({ forcedTab }: DashboardPageProps) {
   const { t } = useTranslation()
-  const router = useRouter()
-  const searchParams = useSearchParams()
   const { success, error } = useToast()
-  const tab = forcedTab ?? parseDashboardTab(searchParams)
+  const tab = forcedTab
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [hasError, setHasError] = useState(false)
@@ -133,10 +130,6 @@ export function DashboardPage({ forcedTab }: DashboardPageProps = {}) {
     window.location.href = api.exportSubscriptionsUrl()
   }
 
-  // Avoid unused lint warnings while we keep `router` available for tab
-  // navigation triggered elsewhere on the page.
-  void router
-
   return (
     <section className="dashboard-stack">
       <Toasts />
@@ -189,8 +182,3 @@ export function DashboardPage({ forcedTab }: DashboardPageProps = {}) {
     </section>
   )
 }
-
-// Re-export so other components can deep-link to a tab. dashboardHref is
-// already exported from the lib but referenced here via `parseDashboardTab`
-// to keep the import surface stable.
-export { dashboardHref }

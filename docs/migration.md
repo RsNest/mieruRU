@@ -21,8 +21,8 @@ This document defines the migration sequence and gate checks for the panel UI re
   - `Users`, `Server`, `Logs`
   - Theme: `midnight` + one alternate theme (`ghost`)
 - Define feature-flag behavior:
-  - `NEXT_PUBLIC_UI_V2=1`: enable V2 shell/routes
-  - `NEXT_PUBLIC_UI_V2=0` or unset: keep legacy behavior
+  - Historical note: `NEXT_PUBLIC_UI_V2` controlled V1/V2 rollout during migration.
+  - V2-only mode is now the default (legacy shell removed in `refactor(mieru-panel): remove legacy layout and feature flag`).
 - Create i18n key map for existing and upcoming UI keys.
 
 ### PR 2 - Design Tokens and Theme System
@@ -86,17 +86,17 @@ This document defines the migration sequence and gate checks for the panel UI re
 
 - No layout shell migration (tabs and existing page structure remain as-is).
 - No route migration to `/users`, `/server`, `/logs`.
-- No feature-flag wiring in components yet (`NEXT_PUBLIC_UI_V2` remains preparatory).
+- Historical note: this entry refers to pre-removal migration stage (`NEXT_PUBLIC_UI_V2` has since been removed and V2 is default).
 
 ## PR 3 Changelog
 
 ### Changed
 
-- Added a dedicated V2 shell with sidebar + top bar (`LayoutV2`) under `NEXT_PUBLIC_UI_V2=1`.
+- Added a dedicated V2 shell with sidebar + top bar (`LayoutV2`).
 - Added route pages `/users`, `/server`, `/logs` and wired them to existing dashboard tab content.
 - Added middleware redirects for legacy deep links:
   - `/?tab=users|server|logs` -> `/users|/server|/logs` (308)
   - `/?tab=<unknown>` -> `/users`
-  - `/` -> `/users` when `uiV2=true`
-- Kept legacy shell and behavior as default when `NEXT_PUBLIC_UI_V2=0`.
+  - `/` -> `/users` (current behavior)
+- Historical note: legacy shell path (`NEXT_PUBLIC_UI_V2=0`) existed during rollout and was removed later.
 - Added PR3 screenshot artifacts for both legacy mode and V2 mode.
