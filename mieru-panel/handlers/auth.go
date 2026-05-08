@@ -40,6 +40,8 @@ type App struct {
 	TwoFAKey    []byte
 	TwoFAStore  *admin2fa.Store
 	TotpLockout *admin2fa.TotpStep2Lockout
+
+	dash *dashRuntime // dashboard metrics cache + minute timeseries (see dashboard.go)
 }
 
 // MitaApplyOptions mirrors mita.ApplyOptions through the handlers/mita
@@ -70,6 +72,9 @@ type MitaClient interface {
 	GetConnections() ([]MitaConnection, error)
 	Start() error
 	Stop() error
+	// Daemon metrics JSON from `mita get metrics` (pretty-printed object).
+	GetDaemonMetricsJSON() ([]byte, error)
+	DaemonVersion() (string, error)
 }
 
 type MitaUser struct {
@@ -90,11 +95,11 @@ type apiError struct {
 }
 
 type loginPayload struct {
-	Username         string `json:"username"`
-	Password         string `json:"password,omitempty"`
-	Code             string `json:"code,omitempty"`
-	ChallengeToken   string `json:"challenge_token,omitempty"`
-	UseBackup        bool   `json:"use_backup,omitempty"`
+	Username       string `json:"username"`
+	Password       string `json:"password,omitempty"`
+	Code           string `json:"code,omitempty"`
+	ChallengeToken string `json:"challenge_token,omitempty"`
+	UseBackup      bool   `json:"use_backup,omitempty"`
 }
 
 func consumeFailedPasswordAttempt(a *App, ip string, w http.ResponseWriter) bool {

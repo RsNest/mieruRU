@@ -30,9 +30,9 @@ type Client struct {
 
 	// Tracking for noisy "daemon is not running" errors so we don't spam
 	// the log every 2-3 seconds while mita is still warming up.
-	muNoise         sync.Mutex
-	lastOfflineLog  time.Time
-	offlineSquelch  time.Duration
+	muNoise        sync.Mutex
+	lastOfflineLog time.Time
+	offlineSquelch time.Duration
 }
 
 type User struct {
@@ -333,6 +333,50 @@ func (c *Client) applyConfigPayload(payload map[string]any) error {
 	}
 	_, _, err = c.run("reload")
 	return err
+}
+
+// GetDaemonMetricsJSON runs `mita get metrics` and returns the JSON blob printed by the CLI.
+func (c *Client) GetDaemonMetricsJSON() ([]byte, error) {
+	out, stderr, err := c.run("get", "metrics")
+	raw := strings.TrimSpace(out)
+	if raw == "" {
+		raw = strings.TrimSpace(stderr)
+	}
+	raw = extractJSONObject(raw)
+	if raw == "" {
+		if err != nil {
+			return nil, err
+		}
+		return nil, errors.New("empty metrics output")
+	}
+	var verify map[string]json.RawMessage
+	if e := json.Unmarshal([]byte(raw), &verify); e != nil {
+		if err != nil {
+			return nil, err
+		}
+		return nil, fmt.Errorf("metrics output is not json: %w", e)
+	}
+	return []byte(raw), nil
+}
+
+// DaemonVersion runs `mita version` (one-line app version string).
+func (c *Client) DaemonVersion() (string, error) {
+	out, _, err := c.run("version")
+	if err != nil {
+		return "", err
+	}
+	return strings.TrimSpace(out), nil
+}
+
+func extractJSONObject(s string) string {
+	s = strings.TrimSpace(s)
+	if i := strings.IndexByte(s, '{'); i >= 0 {
+		s = s[i:]
+	}
+	if j := strings.LastIndexByte(s, '}'); j >= 0 && j < len(s) {
+		s = s[:j+1]
+	}
+	return strings.TrimSpace(s)
 }
 
 func (c *Client) GetStatus() (string, error) {

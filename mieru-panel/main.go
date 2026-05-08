@@ -80,6 +80,14 @@ func (m *mitaAdapter) GetStatus() (string, error) { return m.client.GetStatus() 
 func (m *mitaAdapter) Start() error               { return m.client.Start() }
 func (m *mitaAdapter) Stop() error                { return m.client.Stop() }
 
+func (m *mitaAdapter) GetDaemonMetricsJSON() ([]byte, error) {
+	return m.client.GetDaemonMetricsJSON()
+}
+
+func (m *mitaAdapter) DaemonVersion() (string, error) {
+	return m.client.DaemonVersion()
+}
+
 func (m *mitaAdapter) GetConnections() ([]handlers.MitaConnection, error) {
 	rows, err := m.client.GetConnections()
 	if err != nil {
@@ -168,6 +176,8 @@ func main() {
 
 	go bootstrapMitaLoop(app)
 	go monitorMitaState(app)
+	app.InitDashboardRuntime()
+	go app.RunDashboardCollector()
 
 	mux := http.NewServeMux()
 	frontendFS, err := fs.Sub(uiDist, "panel/out")
@@ -189,6 +199,8 @@ func main() {
 	protected.HandleFunc("/api/users/bulk-delete", app.HandleUsersBulk)
 	protected.HandleFunc("/api/stats", app.HandleStats)
 	protected.HandleFunc("/api/status", app.HandleStatus)
+	protected.HandleFunc("/api/dashboard/metrics", app.HandleDashboardMetrics)
+	protected.HandleFunc("/api/dashboard/timeseries", app.HandleDashboardTimeseries)
 	protected.HandleFunc("/api/mita/start", app.HandleStart)
 	protected.HandleFunc("/api/mita/stop", app.HandleStop)
 	protected.HandleFunc("/api/mita/logs", app.HandleMitaLogs)
