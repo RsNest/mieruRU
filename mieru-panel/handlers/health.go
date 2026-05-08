@@ -38,14 +38,13 @@ func (a *App) HandleMetrics(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	cfg := a.Config.Snapshot()
+	running := a.isMitaRunning()
 	mitaState := 0
-	if status, err := a.Mita.GetStatus(); err == nil {
-		if strings.Contains(strings.ToUpper(status), "RUN") {
-			mitaState = 1
-		}
+	if running {
+		mitaState = 1
 	}
 	connCount := 0
-	if mitaState == 1 {
+	if running {
 		if rows, err := a.Mita.GetConnections(); err == nil {
 			connCount = len(rows)
 		}

@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"net/http"
-	"strings"
 )
 
 // HandleConnections returns the currently active mita sessions parsed from
@@ -13,8 +12,7 @@ func (a *App) HandleConnections(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusMethodNotAllowed, apiError{Error: "method not allowed"})
 		return
 	}
-	status, err := a.Mita.GetStatus()
-	if err != nil || !strings.Contains(strings.ToUpper(status), "RUNNING") {
+	if !a.isMitaRunning() {
 		writeJSON(w, http.StatusOK, map[string]any{
 			"items":     []any{},
 			"available": false,
