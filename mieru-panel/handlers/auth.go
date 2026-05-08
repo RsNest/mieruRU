@@ -13,6 +13,7 @@ import (
 
 	"golang.org/x/crypto/bcrypt"
 	"mieru-panel/config"
+	"mieru-panel/pkg/admin2fa"
 	"mieru-panel/pkg/applog"
 	"mieru-panel/pkg/audit"
 	"mieru-panel/pkg/ratelimit"
@@ -34,6 +35,11 @@ type App struct {
 	// which both rate-limits credential probing and prevents a single
 	// runaway client from exhausting the panel.
 	SubLimiter *ratelimit.Limiter
+
+	// Admin TOTP — TwoFAStore/TwoFAKey unset disables persistence layer.
+	TwoFAKey    []byte
+	TwoFAStore  *admin2fa.Store
+	TotpLockout *admin2fa.TotpStep2Lockout
 }
 
 // MitaApplyOptions mirrors mita.ApplyOptions through the handlers/mita
@@ -83,44 +89,84 @@ type apiError struct {
 	Error string `json:"error"`
 }
 
+type loginPayload struct {
+	Username         string `json:"username"`
+	Password         string `json:"password,omitempty"`
+	Code             string `json:"code,omitempty"`
+	ChallengeToken   string `json:"challenge_token,omitempty"`
+	UseBackup        bool   `json:"use_backup,omitempty"`
+}
+
+func consumeFailedPasswordAttempt(a *App, ip string, w http.ResponseWriter) bool {
+	if a.LoginLimiter != nil && !a.LoginLimiter.Allow(ip) {
+		applog.Warnf("auth", "login throttled ip=%s", ip)
+		audit.Log(audit.Entry{Action: "login.throttled", IP: ip, Result: "denied"})
+		writeJSON(w, http.StatusTooManyRequests, apiError{Error: "too many attempts, try again later"})
+		return false
+	}
+	return true
+}
+
 func (a *App) HandleLogin(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		writeJSON(w, http.StatusMethodNotAllowed, apiError{Error: "method not allowed"})
 		return
 	}
 	ip := clientIP(r)
-	if a.LoginLimiter != nil && !a.LoginLimiter.Allow(ip) {
-		applog.Warnf("auth", "login throttled ip=%s", ip)
-		audit.Log(audit.Entry{Action: "login.throttled", IP: ip, Result: "denied"})
-		writeJSON(w, http.StatusTooManyRequests, apiError{Error: "too many attempts, try again later"})
-		return
-	}
-	var req struct {
-		Username string `json:"username"`
-		Password string `json:"password"`
-	}
+	var req loginPayload
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		writeJSON(w, http.StatusBadRequest, apiError{Error: "invalid json"})
 		return
 	}
 	req.Username = strings.TrimSpace(req.Username)
 	cfg := a.Config.Snapshot()
+
+	// ----- Step 2: TOTP or backup within 60s challenge window -----
+	if strings.TrimSpace(req.Code) != "" && strings.TrimSpace(req.ChallengeToken) != "" {
+		a.handleLoginTotpFinish(w, r, ip, cfg, &req)
+		return
+	}
+
+	// ----- Step 1: credentials -----
 	if req.Username == "" || req.Password == "" {
+		if !consumeFailedPasswordAttempt(a, ip, w) {
+			return
+		}
 		writeJSON(w, http.StatusUnauthorized, apiError{Error: "invalid credentials"})
 		return
 	}
 	if req.Username != cfg.AdminUsername {
+		if !consumeFailedPasswordAttempt(a, ip, w) {
+			return
+		}
 		applog.Warnf("auth", "login failed (unknown user) ip=%s username=%q", ip, req.Username)
 		audit.Log(audit.Entry{Action: "login.failed", IP: ip, Actor: req.Username, Result: "denied", Fields: map[string]any{"reason": "unknown_user"}})
 		writeJSON(w, http.StatusUnauthorized, apiError{Error: "invalid credentials"})
 		return
 	}
 	if err := bcrypt.CompareHashAndPassword([]byte(cfg.AdminPasswordHash), []byte(req.Password)); err != nil {
+		if !consumeFailedPasswordAttempt(a, ip, w) {
+			return
+		}
 		applog.Warnf("auth", "login failed (bad password) ip=%s username=%q", ip, req.Username)
 		audit.Log(audit.Entry{Action: "login.failed", IP: ip, Actor: req.Username, Result: "denied", Fields: map[string]any{"reason": "bad_password"}})
 		writeJSON(w, http.StatusUnauthorized, apiError{Error: "invalid credentials"})
 		return
 	}
+
+	ok2FA, err := a.admin2FAConfiguredAndEnabled()
+	if err != nil {
+		applog.Errorf("auth", "2FA state: %v", err)
+		writeJSON(w, http.StatusInternalServerError, apiError{Error: "2FA unavailable"})
+		return
+	}
+
+	if ok2FA {
+		ctok := signChallengeToken(req.Username, cfg.SessionSecret, 60*time.Second)
+		writeJSON(w, http.StatusOK, map[string]any{"requires_2fa": true, "challenge_token": ctok})
+		return
+	}
+
 	if err := setSessionCookie(w, cfg.SessionSecret, req.Username); err != nil {
 		applog.Errorf("auth", "create session: %v", err)
 		writeJSON(w, http.StatusInternalServerError, apiError{Error: "failed to create session"})

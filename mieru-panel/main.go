@@ -21,6 +21,7 @@ import (
 
 	"mieru-panel/config"
 	"mieru-panel/handlers"
+	"mieru-panel/pkg/admin2fa"
 	"mieru-panel/pkg/applog"
 	"mieru-panel/pkg/audit"
 	"mieru-panel/pkg/mita"
@@ -146,12 +147,23 @@ func main() {
 		applog.Infof("notify", "telegram notifications enabled")
 	}
 
+	dataDir := filepath.Dir(configPath)
+	key2FA, keyErr := admin2fa.LoadOrCreateSymmetricKey(dataDir)
+	if keyErr != nil {
+		applog.Errorf("panel", "2FA symmetric key: %v", keyErr)
+		os.Exit(1)
+	}
+	tfaStorePath := filepath.Join(dataDir, "admin_2fa.json")
+
 	app := &handlers.App{
 		Config:       store,
 		Mita:         &mitaAdapter{client: mitaClient},
 		MitaLogs:     mitaClient.Logs,
 		LoginLimiter: ratelimit.New(5, 1.0/12.0, 5*time.Minute),
 		SubLimiter:   ratelimit.New(20, 5.0, 5*time.Minute),
+		TwoFAKey:     key2FA,
+		TwoFAStore:   admin2fa.NewStore(tfaStorePath),
+		TotpLockout:  admin2fa.NewTotpStep2Lockout(),
 	}
 
 	go bootstrapMitaLoop(app)
@@ -182,6 +194,11 @@ func main() {
 	protected.HandleFunc("/api/mita/logs", app.HandleMitaLogs)
 	protected.HandleFunc("/api/connections", app.HandleConnections)
 	protected.HandleFunc("/api/admin/credentials", app.HandleAdminCredentials)
+	protected.HandleFunc("/api/auth/2fa/setup", app.Handle2FASetup)
+	protected.HandleFunc("/api/auth/2fa/verify-setup", app.Handle2FAVerifySetup)
+	protected.HandleFunc("/api/auth/2fa/disable", app.Handle2FADisable)
+	protected.HandleFunc("/api/auth/2fa/regenerate-backup", app.Handle2FARegenerateBackup)
+	protected.HandleFunc("/api/auth/2fa/status", app.Handle2FAStatus)
 	protected.HandleFunc("/api/server-config", app.HandleServerConfig)
 	protected.HandleFunc("/api/advanced", app.HandleAdvancedSettings)
 	protected.HandleFunc("/api/security/subscription", app.HandleSubscriptionSecurity)

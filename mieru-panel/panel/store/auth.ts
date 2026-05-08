@@ -1,10 +1,15 @@
 import { create } from 'zustand'
 import { api } from '@/lib/api'
 
+export type CredentialsLoginResult =
+  | { needs2FA: false }
+  | { needs2FA: true; challengeToken: string }
+
 type AuthState = {
   authReady: boolean
   isAuthed: boolean
-  login: (username: string, password: string) => Promise<void>
+  loginWithPassword: (username: string, password: string) => Promise<CredentialsLoginResult>
+  complete2FALogin: (username: string, code: string, challengeToken: string, useBackup: boolean) => Promise<void>
   logout: () => Promise<void>
   bootstrap: () => Promise<void>
 }
@@ -12,8 +17,21 @@ type AuthState = {
 export const useAuthStore = create<AuthState>((set) => ({
   authReady: false,
   isAuthed: false,
-  login: async (username, password) => {
-    await api.login(username, password)
+  loginWithPassword: async (username, password) => {
+    const res = await api.postLogin({ username, password })
+    if ('requires_2fa' in res && res.requires_2fa) {
+      return { needs2FA: true, challengeToken: res.challenge_token }
+    }
+    set({ isAuthed: true })
+    return { needs2FA: false }
+  },
+  complete2FALogin: async (username, code, challengeToken, useBackup) => {
+    await api.postLogin({
+      username,
+      code,
+      challenge_token: challengeToken,
+      use_backup: useBackup,
+    })
     set({ isAuthed: true })
   },
   logout: async () => {

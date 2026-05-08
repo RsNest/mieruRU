@@ -9,7 +9,17 @@ import type {
   User,
 } from '@/lib/types'
 
-type LoginResponse = { ok: boolean }
+export type LoginStep1Response = { ok: true } | { requires_2fa: true; challenge_token: string }
+
+export class LoginLockedError extends Error {
+  retryAfterSeconds: number
+
+  constructor(message: string, retryAfterSeconds: number) {
+    super(message)
+    this.name = 'LoginLockedError'
+    this.retryAfterSeconds = retryAfterSeconds
+  }
+}
 type MeResponse = { authenticated: boolean; username?: string }
 type UsersResponse = { users: User[] }
 type StatusResponse = { status: ServerStatus }
@@ -44,11 +54,61 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return (await response.json()) as T
 }
 
+async function postLoginPayload(body: Record<string, unknown>): Promise<LoginStep1Response> {
+  const response = await fetch('/api/login', {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+  const data = (await response.json().catch(() => ({}))) as {
+    ok?: boolean
+    requires_2fa?: boolean
+    challenge_token?: string
+    error?: string
+    retry_after_seconds?: number
+  }
+  if (response.status === 423) {
+    throw new LoginLockedError(data.error || 'locked', Number(data.retry_after_seconds ?? 900))
+  }
+  if (!response.ok) {
+    throw new Error(data.error || response.statusText)
+  }
+  if (data.requires_2fa && data.challenge_token) {
+    return { requires_2fa: true, challenge_token: data.challenge_token }
+  }
+  return { ok: true }
+}
+
 export const api = {
-  login(username: string, password: string) {
-    return request<LoginResponse>('/api/login', {
+  /** Step 1 or step 2 admin login (2FA challenge flow). */
+  postLogin(body: Record<string, unknown>) {
+    return postLoginPayload(body)
+  },
+  get2FAStatus() {
+    return request<{ enabled: boolean; backupCodesRemaining: number; activatedAt?: string }>(
+      '/api/auth/2fa/status',
+    )
+  },
+  setup2FA() {
+    return request<{ secret: string; qrUri: string }>('/api/auth/2fa/setup', { method: 'POST', body: '{}' })
+  },
+  verify2FASetup(code: string) {
+    return request<{ backupCodes: string[] }>('/api/auth/2fa/verify-setup', {
       method: 'POST',
-      body: JSON.stringify({ username, password }),
+      body: JSON.stringify({ code }),
+    })
+  },
+  disable2FA(password: string, code: string) {
+    return request<{ ok: boolean }>('/api/auth/2fa/disable', {
+      method: 'POST',
+      body: JSON.stringify({ password, code }),
+    })
+  },
+  regenerate2FABackup(password: string, code: string) {
+    return request<{ backupCodes: string[] }>('/api/auth/2fa/regenerate-backup', {
+      method: 'POST',
+      body: JSON.stringify({ password, code }),
     })
   },
   logout() {
