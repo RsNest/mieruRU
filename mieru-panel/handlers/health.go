@@ -45,8 +45,10 @@ func (a *App) HandleMetrics(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	connCount := 0
-	if rows, err := a.Mita.GetConnections(); err == nil {
-		connCount = len(rows)
+	if mitaState == 1 {
+		if rows, err := a.Mita.GetConnections(); err == nil {
+			connCount = len(rows)
+		}
 	}
 
 	var b strings.Builder

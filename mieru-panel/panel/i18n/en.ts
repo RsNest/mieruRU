@@ -239,6 +239,7 @@ export const en = {
   'kpi.today_traffic_suffix': 'across {count} users',
   'kpi.connections': 'Active connections',
   'kpi.connections_no_active': 'no active sessions',
+  'kpi.connections_server_stopped': 'server stopped',
   'kpi.server_status': 'Server status',
   'kpi.status_since': 'since:',
   'top_users.today_title': 'Today',

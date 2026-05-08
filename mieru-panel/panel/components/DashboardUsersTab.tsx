@@ -22,6 +22,8 @@ interface DashboardUsersTabProps {
   todayTrafficTotal: number
   todayTrafficUsers: number
   connectionsCount: number
+  connectionsAvailable: boolean
+  connectionsErrorMessage?: string | null
   serverStatus: string
   serverStatusSince: string | null
   todayTopUsers: TopUser[]
@@ -59,6 +61,8 @@ export function DashboardUsersTab({
   todayTrafficTotal,
   todayTrafficUsers,
   connectionsCount,
+  connectionsAvailable,
+  connectionsErrorMessage = null,
   serverStatus,
   serverStatusSince,
   todayTopUsers,
@@ -109,6 +113,8 @@ export function DashboardUsersTab({
               todayTrafficUsers={todayTrafficUsers}
               connectionsCount={connectionsCount}
               connectionsLoading={connectionsLoading}
+              connectionsAvailable={connectionsAvailable}
+              connectionsErrorMessage={connectionsErrorMessage}
               serverStatus={serverStatus}
               serverStatusSince={serverStatusSince}
             />

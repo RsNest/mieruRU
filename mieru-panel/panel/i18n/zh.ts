@@ -232,6 +232,7 @@ export const zh = {
   'kpi.today_traffic_suffix': '覆盖 {count} 个用户',
   'kpi.connections': '活动连接',
   'kpi.connections_no_active': '暂无活动会话',
+  'kpi.connections_server_stopped': '服务器未运行',
   'kpi.server_status': '服务器状态',
   'kpi.status_since': '自:',
   'top_users.today_title': '今日',

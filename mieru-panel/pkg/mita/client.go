@@ -375,11 +375,12 @@ type ConnectionInfo struct {
 }
 
 // GetConnections runs `mita get connections` and parses the table.
-// Errors are best-effort (returns empty slice when proxy is IDLE).
+// On CLI failure it returns an error (callers that must avoid mita I/O when
+// the server is not RUNNING should check GetStatus first).
 func (c *Client) GetConnections() ([]ConnectionInfo, error) {
 	out, _, err := c.run("get", "connections")
 	if err != nil {
-		return []ConnectionInfo{}, nil
+		return nil, err
 	}
 	return parseConnectionsTable(out), nil
 }

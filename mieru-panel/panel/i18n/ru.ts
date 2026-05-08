@@ -252,6 +252,7 @@ export const ru = {
   'kpi.today_traffic_suffix': 'у {count} пользователей',
   'kpi.connections': 'Активные подключения',
   'kpi.connections_no_active': 'нет активных сессий',
+  'kpi.connections_server_stopped': 'сервер остановлен',
   'kpi.server_status': 'Статус сервера',
   'kpi.status_since': 'с:',
   'top_users.today_title': 'Сегодня',

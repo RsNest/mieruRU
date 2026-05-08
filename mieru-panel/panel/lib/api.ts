@@ -16,7 +16,12 @@ type StatusResponse = { status: ServerStatus }
 type RegenResponse = { ok: boolean; password: string }
 type LogsResponse = { entries: LogEntry[] }
 type MitaLogsResponse = { output: string; available: boolean; error?: string }
-type ConnectionsResponse = { items: ConnectionInfo[]; available: boolean; error?: string }
+type ConnectionsResponse = {
+  items: ConnectionInfo[]
+  available: boolean
+  error?: string
+  reason?: string
+}
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(path, {

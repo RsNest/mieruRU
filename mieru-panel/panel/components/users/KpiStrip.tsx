@@ -11,6 +11,10 @@ type KpiStripProps = {
   todayTrafficUsers: number
   connectionsCount: number
   connectionsLoading: boolean
+  /** When false, connections KPI shows a placeholder (mita not RUNNING or data unavailable). */
+  connectionsAvailable: boolean
+  /** Set when a fetch/RPC error occurred while the server was expected to be up. */
+  connectionsErrorMessage?: string | null
   serverStatus: string
   serverStatusSince: string | null
 }
@@ -41,6 +45,8 @@ export function KpiStrip({
   todayTrafficUsers,
   connectionsCount,
   connectionsLoading,
+  connectionsAvailable,
+  connectionsErrorMessage = null,
   serverStatus,
   serverStatusSince,
 }: KpiStripProps) {
@@ -75,11 +81,25 @@ export function KpiStrip({
       <article className="kpi-card">
         <div className="kpi-label">{t('kpi.connections')}</div>
         <div className={`kpi-value ${loading ? 'kpi-skeleton' : ''}`}>
-          {loading ? '' : connectionsLoading ? '...' : connectionsCount}
+          {loading
+            ? ''
+            : connectionsLoading && connectionsAvailable
+              ? '...'
+              : !connectionsAvailable
+                ? '—'
+                : connectionsCount}
         </div>
         <div className="kpi-sub">
           {loading ? (
             <span className="kpi-skeleton" style={{ width: 90, display: 'inline-block' }} />
+          ) : !connectionsAvailable ? (
+            connectionsErrorMessage ? (
+              <span className="muted" title={connectionsErrorMessage}>
+                {connectionsErrorMessage}
+              </span>
+            ) : (
+              t('kpi.connections_server_stopped')
+            )
           ) : connectionsCount > 0 ? (
             <span className="kpi-pulse-wrap">
               <span className="kpi-pulse-dot" aria-hidden />

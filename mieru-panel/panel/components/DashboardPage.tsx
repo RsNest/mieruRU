@@ -34,7 +34,12 @@ export function DashboardPage({ forcedTab }: DashboardPageProps) {
   const [showAdd, setShowAdd] = useState(false)
   const [deleteName, setDeleteName] = useState<string | null>(null)
   const [search, setSearch] = useState('')
-  const { count: connectionsCount, loading: connectionsLoading } = useConnectionsCount(tab === 'users')
+  const {
+    count: connectionsCount,
+    loading: connectionsLoading,
+    available: connectionsAvailable,
+    error: connectionsError,
+  } = useConnectionsCount(tab === 'users')
 
   const fetchData = async (initial = false) => {
     if (initial) setLoading(true)
@@ -149,6 +154,8 @@ export function DashboardPage({ forcedTab }: DashboardPageProps) {
         todayTrafficTotal={usersStats.todayTrafficTotal}
         todayTrafficUsers={usersStats.todayNonZeroCount}
         connectionsCount={connectionsCount}
+        connectionsAvailable={connectionsAvailable}
+        connectionsErrorMessage={connectionsError?.message ?? null}
         serverStatus={status}
         serverStatusSince={statusSince}
         todayTopUsers={usersStats.todayTopUsers}
