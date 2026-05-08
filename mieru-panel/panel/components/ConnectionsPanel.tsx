@@ -1,26 +1,46 @@
 'use client'
 
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api } from '@/lib/api'
 import type { ConnectionInfo } from '@/lib/types'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { SectionCard } from '@/components/ui/SectionCard'
 import { Skeleton } from '@/components/ui/Skeleton'
+import { useServerStatusStore } from '@/store/serverStatus'
 import { usePollingTask } from './usePollingTask'
 
 const POLL_MS = 10000
 
-/** ConnectionsPanel polls /api/connections every 10s and renders the
- *  active mita sessions in a compact table. While the proxy is IDLE the
- *  list is empty and we show a friendly hint instead of an error. */
+function isServerRunning(status: string): boolean {
+  return status.toUpperCase().includes('RUNNING')
+}
+
+/** ConnectionsPanel polls /api/connections every 10s while mita is RUNNING.
+ *  When the server is IDLE/OFFLINE, no requests are made; same empty state
+ *  as when the API reports connections unavailable. */
 export function ConnectionsPanel({ active = true, compact = false }: { active?: boolean; compact?: boolean }) {
   const { t } = useTranslation()
+  const status = useServerStatusStore((s) => s.status)
+  const pollEnabled = active && isServerRunning(status)
+
   const [items, setItems] = useState<ConnectionInfo[]>([])
   const [available, setAvailable] = useState(true)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
+  /** Avoid flashing "unavailable" on first paint after pollEnabled becomes true. */
+  const [initialFetchDone, setInitialFetchDone] = useState(false)
+
+  useEffect(() => {
+    if (!pollEnabled) {
+      setItems([])
+      setAvailable(false)
+      setLoading(false)
+      setInitialFetchDone(false)
+    }
+  }, [pollEnabled])
 
   const pollConnections = useCallback(async (isCancelled: () => boolean) => {
+    setLoading(true)
     try {
       const res = await api.getConnections()
       if (isCancelled()) return
@@ -30,11 +50,17 @@ export function ConnectionsPanel({ active = true, compact = false }: { active?: 
       if (isCancelled()) return
       setAvailable(false)
     } finally {
-      if (!isCancelled()) setLoading(false)
+      if (!isCancelled()) {
+        setLoading(false)
+        setInitialFetchDone(true)
+      }
     }
   }, [])
 
-  usePollingTask(pollConnections, POLL_MS, { enabled: active })
+  usePollingTask(pollConnections, POLL_MS, { enabled: pollEnabled })
+
+  const showServerStopped = !pollEnabled
+  const showLoading = pollEnabled && (!initialFetchDone || loading)
 
   return (
     <SectionCard
@@ -49,7 +75,9 @@ export function ConnectionsPanel({ active = true, compact = false }: { active?: 
         </span>
       </div>
 
-      {loading ? (
+      {showServerStopped ? (
+        <EmptyState title={t('connections_unavailable')} description={t('connections_hint')} />
+      ) : showLoading ? (
         <Skeleton variant="line" count={3} className="skeleton-v2-stack" />
       ) : !available ? (
         <EmptyState title={t('connections_unavailable')} description={t('connections_hint')} />
