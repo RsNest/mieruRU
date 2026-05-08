@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next'
 import { syncThemeColorMeta } from '@/lib/syncThemeMeta'
 import { useSettingsStore } from '@/store/settings'
 import { useUIStore } from '@/store/ui'
+import { LogsDrawer } from '@/components/logs/LogsDrawer'
 import { Sidebar } from './Sidebar'
 import { TopBar } from './TopBar'
 
@@ -49,6 +50,8 @@ export function LayoutV2({ children }: { children: React.ReactNode }) {
         <TopBar />
         <main className="v2-main-content">{children}</main>
       </div>
+
+      <LogsDrawer />
 
       <AnimatePresence>
         {mobileSidebarOpen ? (

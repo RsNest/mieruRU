@@ -10,9 +10,11 @@ type FilterLevel = LogLevel | 'ALL'
 type Options = {
   pollMs: number
   maxSize: number
+  /** When true, polls /api/logs. Default false so only explicit callers (e.g. LogsDrawer) opt in. */
+  enabled?: boolean
 }
 
-export function useLogBuffer({ pollMs, maxSize }: Options) {
+export function useLogBuffer({ pollMs, maxSize, enabled = false }: Options) {
   const [entries, setEntries] = useState<LogEntry[]>([])
   const [filter, setFilter] = useState<FilterLevel>('ALL')
   const [searchInput, setSearchInput] = useState('')
@@ -42,7 +44,7 @@ export function useLogBuffer({ pollMs, maxSize }: Options) {
     }
   }, [maxSize])
 
-  usePollingTask(pollLogs, pollMs, { enabled: !paused })
+  usePollingTask(pollLogs, pollMs, { enabled: enabled && !paused })
 
   const filtered = useMemo(() => {
     const q = debouncedSearch.trim().toLowerCase()

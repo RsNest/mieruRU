@@ -23,6 +23,7 @@ export function TopBar() {
   const router = useRouter()
   const { t } = useTranslation()
   const setMobileSidebarOpen = useUIStore((state) => state.setMobileSidebarOpen)
+  const openLogs = useUIStore((state) => state.openLogs)
   const logout = useAuthStore((state) => state.logout)
   const status = useServerStatusStore((state) => state.status)
   const startStatusPolling = useServerStatusStore((state) => state.startPolling)
@@ -65,6 +66,9 @@ export function TopBar() {
       </div>
       <div className="v2-topbar-right">
         <StatusPill label={statusLabel} tone={tone} />
+        <Button type="button" variant="secondary" size="compact" onClick={() => openLogs()}>
+          {t('nav_logs')}
+        </Button>
         <details className="v2-admin-menu">
           <summary aria-label={t('topbar_admin_menu')}>A</summary>
           <div className="v2-admin-menu-popover">

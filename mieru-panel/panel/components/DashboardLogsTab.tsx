@@ -25,7 +25,12 @@ export function DashboardLogsTab({ active }: DashboardLogsTabProps) {
     clear,
     paused,
     togglePause,
-  } = useLogBuffer({ pollMs: 2000, maxSize: 1000 })
+  } = useLogBuffer({
+    pollMs: 2000,
+    maxSize: 1000,
+    /** Legacy /logs tab: no polling until routing cleanup (stage 6); use TopBar → Logs drawer for live stream. */
+    enabled: false,
+  })
   const [autoScroll, setAutoScroll] = useState(true)
   const searchRef = useRef<HTMLInputElement | null>(null)
 
