@@ -5,5 +5,5 @@ function readBooleanFlag(raw: string | undefined, defaultValue = false): boolean
 }
 
 export const featureFlags = {
-  uiV2: readBooleanFlag(process.env.NEXT_PUBLIC_UI_V2, false),
+  uiV2: readBooleanFlag(process.env.NEXT_PUBLIC_UI_V2, true),
 } as const

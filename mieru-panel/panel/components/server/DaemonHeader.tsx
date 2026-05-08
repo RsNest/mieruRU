@@ -1,6 +1,6 @@
 'use client'
 
-import { RotateCw, Power } from 'lucide-react'
+import { RotateCw, Power, Play } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { api } from '@/lib/api'
@@ -76,6 +76,8 @@ export function DaemonHeader() {
       await api.startServer()
     })
 
+  const onStart = () => runWithOptimistic('RUNNING', () => api.startServer())
+
   const onStop = () => runWithOptimistic('IDLE', () => api.stopServer())
 
   return (
@@ -102,7 +104,18 @@ export function DaemonHeader() {
         <Button
           variant="ghost"
           size="compact"
-          disabled={busy}
+          type="button"
+          disabled={busy || running || offline}
+          aria-label="Start daemon"
+          onClick={() => void onStart()}
+        >
+          <Play size={16} />
+        </Button>
+        <Button
+          variant="ghost"
+          size="compact"
+          type="button"
+          disabled={busy || offline}
           aria-label="Restart daemon"
           onClick={() => void onRestart()}
         >
@@ -111,7 +124,8 @@ export function DaemonHeader() {
         <Button
           variant="ghost"
           size="compact"
-          disabled={busy || (!running && !offline)}
+          type="button"
+          disabled={busy || !running}
           aria-label="Stop daemon"
           onClick={() => void onStop()}
         >
