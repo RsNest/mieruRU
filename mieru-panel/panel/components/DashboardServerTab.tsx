@@ -19,6 +19,9 @@ export function DashboardServerTab({ active, onRestored }: DashboardServerTabPro
     <div className={`tab-pane ${active ? 'active' : 'inactive'}`}>
       <DaemonHeader />
       <ConnectionsPanel active={active} compact />
+      <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25, delay: 0 }}>
+        <AdminCredentialsPanel />
+      </motion.div>
       <div className="server-section-grid">
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25, delay: 0 }}>
           <ServerConfigPanel />
@@ -33,9 +36,6 @@ export function DashboardServerTab({ active, onRestored }: DashboardServerTabPro
           <ConfigBackupPanel onRestored={onRestored} />
         </motion.div>
       </div>
-      <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25, delay: 0.12 }}>
-        <AdminCredentialsPanel />
-      </motion.div>
     </div>
   )
 }
