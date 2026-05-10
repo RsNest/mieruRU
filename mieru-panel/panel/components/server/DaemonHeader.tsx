@@ -96,7 +96,7 @@ export function DaemonHeader() {
             />
           </div>
           <p className="daemon-meta">
-            {`v1.x.x · ${t('kpi.status_since')} ${since ?? '--:--'} · port: ${meta.defaultPort || '-'} · ${meta.serverPortRange} · ${meta.serverIP}`}
+            {`v1.x.x · ${t('kpi.status_since')} ${since ?? '--:--'} · ${t('dashboard.daemon_port_label')}: ${meta.defaultPort || '-'} · ${meta.serverPortRange} · ${meta.serverIP}`}
           </p>
         </div>
       </div>
@@ -106,7 +106,7 @@ export function DaemonHeader() {
           size="compact"
           type="button"
           disabled={busy || running || offline}
-          aria-label="Start daemon"
+          aria-label={t('dashboard.daemon_aria_start')}
           onClick={() => void onStart()}
         >
           <Play size={16} />
@@ -116,7 +116,7 @@ export function DaemonHeader() {
           size="compact"
           type="button"
           disabled={busy || offline}
-          aria-label="Restart daemon"
+          aria-label={t('dashboard.daemon_aria_restart')}
           onClick={() => void onRestart()}
         >
           <RotateCw size={16} />
@@ -126,7 +126,7 @@ export function DaemonHeader() {
           size="compact"
           type="button"
           disabled={busy || !running}
-          aria-label="Stop daemon"
+          aria-label={t('dashboard.daemon_aria_stop')}
           onClick={() => void onStop()}
         >
           <Power size={16} />
