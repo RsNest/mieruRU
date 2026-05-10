@@ -29,7 +29,7 @@ export function ErrorsChart({ data, error }: ErrorsChartProps) {
   return (
     <div className="dashboard-card">
       <div className="section-head">
-        <h2>{t('dashboard.chart_errors', { defaultValue: 'Errors (per bucket)' })}</h2>
+        <h2>{t('dashboard.chart_errors')}</h2>
         {error ? <span className="muted">{error}</span> : null}
       </div>
       <div
@@ -43,9 +43,7 @@ export function ErrorsChart({ data, error }: ErrorsChartProps) {
       >
         {chartData.length === 0 || !hasAnyErrors ? (
           <p className="muted" style={{ margin: 0, textAlign: 'center' }}>
-            {t('dashboard.chart_warming_up', {
-              defaultValue: 'Collecting data; charts will appear after ~5 minutes.',
-            })}
+            {t('dashboard.chart_warming_up')}
           </p>
         ) : (
           <ResponsiveContainer width="100%" height="100%">
@@ -60,7 +58,7 @@ export function ErrorsChart({ data, error }: ErrorsChartProps) {
                   borderRadius: 8,
                 }}
               />
-              <Bar dataKey="errors" name={t('dashboard.chart_errors', { defaultValue: 'Errors' })} fill="var(--color-warning)" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="errors" name={t('dashboard.chart_errors')} fill="var(--color-warning)" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         )}

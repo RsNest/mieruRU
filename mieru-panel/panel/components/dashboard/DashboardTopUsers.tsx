@@ -16,7 +16,7 @@ export function DashboardTopUsers({ users }: DashboardTopUsersProps) {
   return (
     <div className="dashboard-card">
       <div className="section-head">
-        <h2>{t('dashboard.top_users_section', { defaultValue: 'Traffic leaders' })}</h2>
+        <h2>{t('dashboard.top_users_section')}</h2>
       </div>
       <div className="top-users-grid">
         <TopUsersList

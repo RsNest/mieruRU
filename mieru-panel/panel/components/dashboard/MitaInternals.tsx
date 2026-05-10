@@ -29,12 +29,12 @@ export function MitaInternals({ data }: MitaInternalsProps) {
 
   return (
     <SectionCard
-      title={t('dashboard.mita_internals_title', { defaultValue: 'mita metrics' })}
-      description={t('dashboard.mita_internals_hint', { defaultValue: 'Values from daemon metrics JSON.' })}
+      title={t('dashboard.mita_internals_title')}
+      description={t('dashboard.mita_internals_hint')}
     >
       {rows.length === 0 ? (
         <p className="muted" style={{ margin: 0 }}>
-          {t('dashboard.mita_waiting', { defaultValue: 'Waiting for metrics…' })}
+          {t('dashboard.mita_waiting')}
         </p>
       ) : (
         <dl style={{ display: 'grid', gap: 8, margin: 0 }}>

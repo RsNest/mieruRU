@@ -59,21 +59,21 @@ export function RecentAudit() {
 
   return (
     <SectionCard
-      title={t('dashboard.recent_audit_title', { defaultValue: 'Recent audit' })}
-      description={t('dashboard.recent_audit_hint', { defaultValue: 'Latest security-relevant events.' })}
+      title={t('dashboard.recent_audit_title')}
+      description={t('dashboard.recent_audit_hint')}
     >
       <div className="section-head" style={{ marginBottom: 12 }}>
         <span className="muted" style={{ margin: 0 }}>
-          {loading ? t('loading', { defaultValue: 'Loading…' }) : null}
+          {loading ? t('loading') : null}
           {loadError ? loadError : null}
         </span>
         <Button type="button" variant="secondary" size="sm" onClick={load} disabled={loading}>
-          {t('action_refresh', { defaultValue: 'Refresh' })}
+          {t('action_refresh')}
         </Button>
       </div>
       {entries.length === 0 && !loading ? (
         <p className="muted" style={{ margin: 0 }}>
-          {t('dashboard.audit_empty', { defaultValue: 'No entries.' })}
+          {t('dashboard.audit_empty')}
         </p>
       ) : (
         <div className="audit-list-v2">

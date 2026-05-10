@@ -14,8 +14,8 @@ export function ResourceCards({ data }: ResourceCardsProps) {
 
   return (
     <SectionCard
-      title={t('dashboard.resources_title', { defaultValue: 'Host resources' })}
-      description={t('dashboard.resources_hint', { defaultValue: 'Live samples from the panel host.' })}
+      title={t('dashboard.resources_title')}
+      description={t('dashboard.resources_hint')}
     >
       <div className="stat-cards-grid">
         <div className="stat-card">
@@ -26,15 +26,15 @@ export function ResourceCards({ data }: ResourceCardsProps) {
           <div className="stat-value">
             {s != null ? `${s.memUsedMB} / ${s.memTotalMB} MB` : '—'}
           </div>
-          <div className="stat-label">{t('dashboard.mem', { defaultValue: 'Memory' })}</div>
+          <div className="stat-label">{t('dashboard.mem')}</div>
         </div>
         <div className="stat-card">
           <div className="stat-value">{s != null ? `${s.netRxMbps.toFixed(2)} Mbps` : '—'}</div>
-          <div className="stat-label">{t('dashboard.net_rx', { defaultValue: 'Net RX' })}</div>
+          <div className="stat-label">{t('dashboard.net_rx')}</div>
         </div>
         <div className="stat-card">
           <div className="stat-value">{s != null ? `${s.netTxMbps.toFixed(2)} Mbps` : '—'}</div>
-          <div className="stat-label">{t('dashboard.net_tx', { defaultValue: 'Net TX' })}</div>
+          <div className="stat-label">{t('dashboard.net_tx')}</div>
         </div>
       </div>
     </SectionCard>

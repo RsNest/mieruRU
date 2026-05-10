@@ -35,38 +35,32 @@ export function DashboardKpi({ data }: DashboardKpiProps) {
   return (
     <div className="dashboard-card">
       <div className="section-head">
-        <h2>{t('dashboard.kpi_title', { defaultValue: 'Overview' })}</h2>
+        <h2>{t('dashboard.kpi_title')}</h2>
       </div>
       <div className="stat-cards-grid">
         <div className="stat-card">
           <div className="stat-value">{m != null ? m.currEstablished : '—'}</div>
-          <div className="stat-label">
-            {t('dashboard.kpi_established', { defaultValue: 'Established sessions' })}
-          </div>
+          <div className="stat-label">{t('dashboard.kpi_established')}</div>
         </div>
         <div className="stat-card">
           <div className="stat-value">{m != null ? m.maxConn : '—'}</div>
-          <div className="stat-label">{t('dashboard.kpi_max_conn', { defaultValue: 'Max connections' })}</div>
+          <div className="stat-label">{t('dashboard.kpi_max_conn')}</div>
         </div>
         <div className="stat-card">
           <div className="stat-value">{errH != null ? errH : '—'}</div>
-          <div className="stat-label">
-            {t('dashboard.kpi_errors_hour', { defaultValue: 'Errors (1h)' })}
-          </div>
+          <div className="stat-label">{t('dashboard.kpi_errors_hour')}</div>
         </div>
         <div className="stat-card">
           <div className="stat-value">{data ? formatUptime(panelUp) : '—'}</div>
-          <div className="stat-label">
-            {t('dashboard.kpi_panel_uptime', { defaultValue: 'Panel uptime' })}
-          </div>
+          <div className="stat-label">{t('dashboard.kpi_panel_uptime')}</div>
         </div>
         <div className="stat-card">
           <div className="stat-value">{m != null ? formatBytes(m.downloadBytes) : '—'}</div>
-          <div className="stat-label">{t('dashboard.kpi_download_total', { defaultValue: 'Download (total)' })}</div>
+          <div className="stat-label">{t('dashboard.kpi_download_total')}</div>
         </div>
         <div className="stat-card">
           <div className="stat-value">{m != null ? formatBytes(m.uploadBytes) : '—'}</div>
-          <div className="stat-label">{t('dashboard.kpi_upload_total', { defaultValue: 'Upload (total)' })}</div>
+          <div className="stat-label">{t('dashboard.kpi_upload_total')}</div>
         </div>
       </div>
     </div>
