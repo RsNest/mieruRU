@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { usePathname } from 'next/navigation'
+import { usePathname, useSearchParams } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
 import { syncThemeColorMeta } from '@/lib/syncThemeMeta'
 import { useSettingsStore } from '@/store/settings'
@@ -13,11 +13,13 @@ import { TopBar } from './TopBar'
 
 export function LayoutV2({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
+  const searchParams = useSearchParams()
   const { i18n, t } = useTranslation()
   const theme = useSettingsStore((state) => state.theme)
   const lang = useSettingsStore((state) => state.lang)
   const mobileSidebarOpen = useUIStore((state) => state.mobileSidebarOpen)
   const setMobileSidebarOpen = useUIStore((state) => state.setMobileSidebarOpen)
+  const openLogs = useUIStore((state) => state.openLogs)
 
   useEffect(() => {
     const apply = (effective: typeof theme) => {
@@ -42,6 +44,18 @@ export function LayoutV2({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     setMobileSidebarOpen(false)
   }, [pathname, setMobileSidebarOpen])
+
+  // Support `?openLogs=1` as a drawer trigger so legacy bookmarks to /logs
+  // (redirected by middleware) still land on the right view.
+  useEffect(() => {
+    if (!searchParams) return
+    if (searchParams.get('openLogs') !== '1') return
+    openLogs()
+    if (typeof window !== 'undefined') {
+      const stripped = window.location.pathname + window.location.hash
+      window.history.replaceState(null, '', stripped)
+    }
+  }, [searchParams, openLogs])
 
   return (
     <div className="v2-shell">

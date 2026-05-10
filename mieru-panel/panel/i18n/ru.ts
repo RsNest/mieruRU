@@ -1,8 +1,10 @@
 export const ru = {
   app_title: 'MIERU PANEL',
+  nav_dashboard: 'Дашборд',
   nav_users: 'Пользователи',
   nav_stats: 'Статистика',
   nav_server: 'Сервер',
+  nav_settings: 'Настройки',
   nav_logs: 'Логи',
   nav_logout: 'Выйти',
   users_add: 'Добавить',
@@ -236,10 +238,13 @@ export const ru = {
   sidebar_collapse: 'Свернуть боковую панель',
   sidebar_expand: 'Развернуть боковую панель',
   topbar_breadcrumb_home: 'mieru',
+  topbar_breadcrumb_dashboard: 'Дашборд',
   topbar_breadcrumb_users: 'Пользователи',
   topbar_breadcrumb_server: 'Сервер',
+  topbar_breadcrumb_settings: 'Настройки',
   topbar_breadcrumb_logs: 'Логи',
   topbar_admin_menu: 'Меню администратора',
+  topbar_open_logs: 'Открыть логи',
   mobile_menu_open: 'Открыть меню',
   mobile_menu_close: 'Закрыть меню',
   status_running: 'RUNNING',
@@ -309,4 +314,6 @@ export const ru = {
   'auth.2fa.toast_regenerated': 'Резервные коды обновлены',
   saved: 'Сохранено',
   save: 'Сохранить',
+  'dashboard.chart_warming_up':
+    'Идёт сбор метрик, графики появятся через несколько минут.',
 } as const

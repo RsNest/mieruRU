@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { LogOut, PanelLeft, PanelLeftClose, ScrollText, Server, Users } from 'lucide-react'
+import { LayoutDashboard, LogOut, PanelLeft, PanelLeftClose, Settings, Users } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useAuthStore } from '@/store/auth'
 import { useUIStore } from '@/store/ui'
@@ -14,15 +14,15 @@ type SidebarProps = {
 }
 
 type NavItem = {
-  href: '/users' | '/server' | '/logs'
-  labelKey: 'nav_users' | 'nav_server' | 'nav_logs'
+  href: '/dashboard' | '/users' | '/settings'
+  labelKey: 'nav_dashboard' | 'nav_users' | 'nav_settings'
   icon: typeof Users
 }
 
 const navItems: NavItem[] = [
+  { href: '/dashboard', labelKey: 'nav_dashboard', icon: LayoutDashboard },
   { href: '/users', labelKey: 'nav_users', icon: Users },
-  { href: '/server', labelKey: 'nav_server', icon: Server },
-  { href: '/logs', labelKey: 'nav_logs', icon: ScrollText },
+  { href: '/settings', labelKey: 'nav_settings', icon: Settings },
 ]
 
 export function Sidebar({ mobile = false }: SidebarProps) {
@@ -43,7 +43,7 @@ export function Sidebar({ mobile = false }: SidebarProps) {
   return (
     <aside className={`v2-sidebar ${collapsed ? 'collapsed' : 'expanded'} ${mobile ? 'mobile' : ''}`}>
       <div className="v2-sidebar-head">
-        <Link href="/users" className="v2-wordmark">
+        <Link href="/dashboard" className="v2-wordmark">
           <span className="v2-wordmark-glyph">見</span>
           {!collapsed ? <span>mieru</span> : null}
         </Link>

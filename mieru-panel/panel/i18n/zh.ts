@@ -2,9 +2,11 @@ import { ru } from './ru'
 
 export const zh = {
   app_title: 'MIERU 面板',
+  nav_dashboard: '仪表盘',
   nav_users: '用户',
   nav_stats: '统计',
   nav_server: '服务器',
+  nav_settings: '设置',
   nav_logs: '日志',
   nav_logout: '退出',
   users_add: '添加',
@@ -216,10 +218,13 @@ export const zh = {
   sidebar_collapse: '收起侧边栏',
   sidebar_expand: '展开侧边栏',
   topbar_breadcrumb_home: 'mieru',
+  topbar_breadcrumb_dashboard: '仪表盘',
   topbar_breadcrumb_users: '用户',
   topbar_breadcrumb_server: '服务器',
+  topbar_breadcrumb_settings: '设置',
   topbar_breadcrumb_logs: '日志',
   topbar_admin_menu: '管理员菜单',
+  topbar_open_logs: '打开日志',
   mobile_menu_open: '打开菜单',
   mobile_menu_close: '关闭菜单',
   status_running: '运行中',
@@ -288,4 +293,5 @@ export const zh = {
   'auth.2fa.toast_regenerated': '备用码已更新',
   saved: '已保存',
   save: '保存',
+  'dashboard.chart_warming_up': '正在收集指标，图表将在几分钟后出现。',
 } satisfies Record<keyof typeof ru, string>

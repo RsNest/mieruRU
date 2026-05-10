@@ -35,16 +35,33 @@ export function BandwidthChart({ data, error }: BandwidthChartProps) {
     })
   }, [data])
 
+  // Treat the chart as "warming up" while the ring is empty or carries only zero-sum buckets.
+  // The collector fills minute buckets lazily, so the first ~5 minutes after boot are expected to be flat.
+  const hasAnyTraffic = useMemo(
+    () => chartData.some((p) => p.rxMb > 0 || p.txMb > 0),
+    [chartData],
+  )
+
   return (
     <div className="dashboard-card">
       <div className="section-head">
         <h2>{t('dashboard.chart_bandwidth', { defaultValue: 'Bandwidth (per bucket)' })}</h2>
         {error ? <span className="muted">{error}</span> : null}
       </div>
-      <div style={{ width: '100%', height: 260 }}>
-        {chartData.length === 0 ? (
-          <p className="muted" style={{ margin: 0 }}>
-            {t('dashboard.chart_empty', { defaultValue: 'No timeseries yet.' })}
+      <div
+        style={{
+          width: '100%',
+          height: 260,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        {chartData.length === 0 || !hasAnyTraffic ? (
+          <p className="muted" style={{ margin: 0, textAlign: 'center' }}>
+            {t('dashboard.chart_warming_up', {
+              defaultValue: 'Collecting data; charts will appear after ~5 minutes.',
+            })}
           </p>
         ) : (
           <ResponsiveContainer width="100%" height="100%">
@@ -84,3 +101,4 @@ export function BandwidthChart({ data, error }: BandwidthChartProps) {
     </div>
   )
 }
+

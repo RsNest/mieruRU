@@ -10,7 +10,7 @@ import type { User } from '@/lib/types'
 import { useServerStatusStore } from '@/store/serverStatus'
 import { AddUserModal } from './AddUserModal'
 import { ConfirmModal } from './ConfirmModal'
-import { DashboardLogsTab } from './DashboardLogsTab'
+import { DashboardPage as DashboardOverview } from './dashboard/DashboardPage'
 import { DashboardServerTab } from './DashboardServerTab'
 import { DashboardUsersTab } from './DashboardUsersTab'
 import { Toasts } from './Toast'
@@ -136,38 +136,45 @@ export function DashboardPage({ forcedTab }: DashboardPageProps) {
       <Toasts />
 
       <div className={`tabs-stack tab-${tab}`}>
-      <DashboardUsersTab
-        active={tab === 'users'}
-        users={users}
-        filteredUsers={filteredUsers}
-        loading={loading}
-        connectionsLoading={connectionsLoading}
-        hasError={hasError}
-        search={search}
-        setSearch={setSearch}
-        usersTotal={usersStats.totalUsers}
-        usersActive5m={usersStats.activeUsers5m}
-        todayTrafficTotal={usersStats.todayTrafficTotal}
-        todayTrafficUsers={usersStats.todayNonZeroCount}
-        connectionsCount={connectionsCount}
-        connectionsAvailable={connectionsAvailable}
-        serverStatus={status}
-        serverStatusSince={statusSince}
-        todayTopUsers={usersStats.todayTopUsers}
-        monthTopUsers={usersStats.monthTopUsers}
-        onShowAdd={() => setShowAdd(true)}
-        onClearSearch={() => setSearch('')}
-        onRetry={() => void fetchData(true)}
-        onDelete={(name) => setDeleteName(name)}
-        onRegen={onRegenUser}
-        onUpdate={onUpdateUser}
-        onResetDevices={onResetDevices}
-        onBulkDelete={onBulkDelete}
-        onDownloadSubscriptions={downloadSubscriptions}
-      />
+        {tab === 'dashboard' ? (
+          <DashboardOverview
+            users={users}
+            metricsEnabled
+            timeseriesEnabled
+          />
+        ) : null}
 
-      <DashboardServerTab active={tab === 'server'} onRestored={() => void fetchData(false)} />
-      <DashboardLogsTab active={tab === 'logs'} />
+        <DashboardUsersTab
+          active={tab === 'users'}
+          users={users}
+          filteredUsers={filteredUsers}
+          loading={loading}
+          connectionsLoading={connectionsLoading}
+          hasError={hasError}
+          search={search}
+          setSearch={setSearch}
+          usersTotal={usersStats.totalUsers}
+          usersActive5m={usersStats.activeUsers5m}
+          todayTrafficTotal={usersStats.todayTrafficTotal}
+          todayTrafficUsers={usersStats.todayNonZeroCount}
+          connectionsCount={connectionsCount}
+          connectionsAvailable={connectionsAvailable}
+          serverStatus={status}
+          serverStatusSince={statusSince}
+          todayTopUsers={usersStats.todayTopUsers}
+          monthTopUsers={usersStats.monthTopUsers}
+          onShowAdd={() => setShowAdd(true)}
+          onClearSearch={() => setSearch('')}
+          onRetry={() => void fetchData(true)}
+          onDelete={(name) => setDeleteName(name)}
+          onRegen={onRegenUser}
+          onUpdate={onUpdateUser}
+          onResetDevices={onResetDevices}
+          onBulkDelete={onBulkDelete}
+          onDownloadSubscriptions={downloadSubscriptions}
+        />
+
+        <DashboardServerTab active={tab === 'settings'} onRestored={() => void fetchData(false)} />
       </div>
 
       <AddUserModal open={showAdd} onClose={() => setShowAdd(false)} onSubmit={onAddUser} />

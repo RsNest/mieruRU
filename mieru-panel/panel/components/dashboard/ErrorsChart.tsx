@@ -22,16 +22,30 @@ export function ErrorsChart({ data, error }: ErrorsChartProps) {
     })
   }, [data])
 
+  // The errors series is meaningful only once the ring has collected data;
+  // before that we render a matching warm-up hint so the two charts stay in sync.
+  const hasAnyErrors = useMemo(() => chartData.some((p) => p.errors > 0), [chartData])
+
   return (
     <div className="dashboard-card">
       <div className="section-head">
         <h2>{t('dashboard.chart_errors', { defaultValue: 'Errors (per bucket)' })}</h2>
         {error ? <span className="muted">{error}</span> : null}
       </div>
-      <div style={{ width: '100%', height: 260 }}>
-        {chartData.length === 0 ? (
-          <p className="muted" style={{ margin: 0 }}>
-            {t('dashboard.chart_empty', { defaultValue: 'No timeseries yet.' })}
+      <div
+        style={{
+          width: '100%',
+          height: 260,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        {chartData.length === 0 || !hasAnyErrors ? (
+          <p className="muted" style={{ margin: 0, textAlign: 'center' }}>
+            {t('dashboard.chart_warming_up', {
+              defaultValue: 'Collecting data; charts will appear after ~5 minutes.',
+            })}
           </p>
         ) : (
           <ResponsiveContainer width="100%" height="100%">

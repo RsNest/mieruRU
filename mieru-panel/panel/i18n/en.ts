@@ -2,9 +2,11 @@ import { ru } from './ru'
 
 export const en = {
   app_title: 'MIERU PANEL',
+  nav_dashboard: 'Dashboard',
   nav_users: 'Users',
   nav_stats: 'Stats',
   nav_server: 'Server',
+  nav_settings: 'Settings',
   nav_logs: 'Logs',
   nav_logout: 'Logout',
   users_add: 'Add',
@@ -223,10 +225,13 @@ export const en = {
   sidebar_collapse: 'Collapse sidebar',
   sidebar_expand: 'Expand sidebar',
   topbar_breadcrumb_home: 'mieru',
+  topbar_breadcrumb_dashboard: 'Dashboard',
   topbar_breadcrumb_users: 'Users',
   topbar_breadcrumb_server: 'Server',
+  topbar_breadcrumb_settings: 'Settings',
   topbar_breadcrumb_logs: 'Logs',
   topbar_admin_menu: 'Administrator menu',
+  topbar_open_logs: 'Open logs',
   mobile_menu_open: 'Open menu',
   mobile_menu_close: 'Close menu',
   status_running: 'RUNNING',
@@ -296,4 +301,6 @@ export const en = {
   'auth.2fa.toast_regenerated': 'Backup codes regenerated',
   saved: 'Saved',
   save: 'Save',
+  'dashboard.chart_warming_up':
+    'Collecting metrics; charts will appear after a few minutes.',
 } satisfies Record<keyof typeof ru, string>

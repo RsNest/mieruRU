@@ -74,7 +74,7 @@ export function LoginPage() {
 				return
 			}
 			router.replace('/')
-		} catch (e) {
+		} catch {
 			setError(t('login_error'))
 			bumpShake()
 		} finally {
@@ -82,41 +82,47 @@ export function LoginPage() {
 		}
 	}
 
-	const submitTotp = useCallback(async () => {
-		if (totpSubmitBusy.current) {
-			return
-		}
-		const u = username.trim()
-		if (!challengeToken || !u) {
-			setError(t('login_error'))
-			return
-		}
-		totpSubmitBusy.current = true
-		setError('')
-		setPending(true)
-		try {
-			const code = useBackup ? backupCode.trim() : otpCode.trim()
-			await complete2FALogin(u, code, challengeToken, useBackup)
-			router.replace('/')
-		} catch (e) {
-			if (e instanceof LoginLockedError) {
-				const m = Math.max(lockMinutes(e.retryAfterSeconds), 1)
-				setError(t('auth.2fa.locked_minutes', { minutes: m }))
-			} else {
-				setError(t('auth.2fa.code_invalid'))
-				bumpShake()
+	// Takes the literal code as an argument so the auto-submit path can pass
+	// the freshly typed digits without racing against setState.
+	const submitTotpWith = useCallback(
+		async (code: string) => {
+			if (totpSubmitBusy.current) {
+				return
 			}
-		} finally {
-			setPending(false)
-			totpSubmitBusy.current = false
-		}
-	}, [backupCode, challengeToken, complete2FALogin, otpCode, router, t, username, useBackup])
+			const u = username.trim()
+			if (!challengeToken || !u) {
+				setError(t('login_error'))
+				return
+			}
+			totpSubmitBusy.current = true
+			setError('')
+			setPending(true)
+			try {
+				await complete2FALogin(u, code, challengeToken, useBackup)
+				router.replace('/')
+			} catch (e) {
+				if (e instanceof LoginLockedError) {
+					const m = Math.max(lockMinutes(e.retryAfterSeconds), 1)
+					setError(t('auth.2fa.locked_minutes', { minutes: m }))
+				} else {
+					setError(t('auth.2fa.code_invalid'))
+					bumpShake()
+				}
+			} finally {
+				setPending(false)
+				totpSubmitBusy.current = false
+			}
+		},
+		[challengeToken, complete2FALogin, router, t, username, useBackup],
+	)
+
+	const submitTotp = () => submitTotpWith(useBackup ? backupCode.trim() : otpCode.trim())
 
 	const handleOtpChange = (raw: string) => {
 		const digits = raw.replace(/\D/g, '').slice(0, 6)
 		setOtpCode(digits)
-		if (digits.length === 6 && !pending) {
-			setTimeout(() => void submitTotp(), 0)
+		if (digits.length === 6 && !pending && !totpSubmitBusy.current) {
+			void submitTotpWith(digits)
 		}
 	}
 

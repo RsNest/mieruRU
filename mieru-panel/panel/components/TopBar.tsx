@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
-import { Menu } from 'lucide-react'
+import { Menu, ScrollText } from 'lucide-react'
 import { usePathname, useRouter } from 'next/navigation'
 import { useTranslation } from 'react-i18next'
 import { isServerRunning } from '@/lib/serverStatus'
@@ -11,12 +11,16 @@ import { useAuthStore } from '@/store/auth'
 import { useServerStatusStore } from '@/store/serverStatus'
 import { useUIStore } from '@/store/ui'
 
-const breadcrumbByPath: Record<string, 'topbar_breadcrumb_users' | 'topbar_breadcrumb_server' | 'topbar_breadcrumb_logs'> =
-  {
-    '/users': 'topbar_breadcrumb_users',
-    '/server': 'topbar_breadcrumb_server',
-    '/logs': 'topbar_breadcrumb_logs',
-  }
+type BreadcrumbKey =
+  | 'topbar_breadcrumb_dashboard'
+  | 'topbar_breadcrumb_users'
+  | 'topbar_breadcrumb_settings'
+
+const breadcrumbByPath: Record<string, BreadcrumbKey> = {
+  '/dashboard': 'topbar_breadcrumb_dashboard',
+  '/users': 'topbar_breadcrumb_users',
+  '/settings': 'topbar_breadcrumb_settings',
+}
 
 export function TopBar() {
   const pathname = usePathname()
@@ -34,7 +38,7 @@ export function TopBar() {
     return () => stopStatusPolling()
   }, [startStatusPolling, stopStatusPolling])
 
-  const titleKey = breadcrumbByPath[pathname] ?? 'topbar_breadcrumb_users'
+  const titleKey = breadcrumbByPath[pathname] ?? 'topbar_breadcrumb_dashboard'
   const running = isServerRunning(status)
   const statusLabel = running ? t('status_running') : t('status_stopped')
   const tone = status === 'RUNNING' ? 'success' : 'neutral'
@@ -66,8 +70,16 @@ export function TopBar() {
       </div>
       <div className="v2-topbar-right">
         <StatusPill label={statusLabel} tone={tone} />
-        <Button type="button" variant="secondary" size="compact" onClick={() => openLogs()}>
-          {t('nav_logs')}
+        <Button
+          type="button"
+          variant="secondary"
+          size="compact"
+          onClick={() => openLogs()}
+          aria-label={t('topbar_open_logs')}
+          title={t('topbar_open_logs')}
+        >
+          <ScrollText size={16} />
+          <span className="v2-topbar-logs-label">{t('nav_logs')}</span>
         </Button>
         <details className="v2-admin-menu">
           <summary aria-label={t('topbar_admin_menu')}>A</summary>
